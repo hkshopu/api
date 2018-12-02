@@ -4,12 +4,12 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Product extends Model
+class Comment extends Model
 {
     /**
      * Bypass eloquent pluralization
      */
-    protected $table = 'product';
+    protected $table = 'comment';
 
     /**
      * The attributes that are mass assignable.
@@ -17,14 +17,10 @@ class Product extends Model
      * @var array
      */
     protected $fillable = [
-        'sku',
-        'name_en',
-        'name_tc',
-        'name_sc',
-        'description_en',
-        'description_tc',
-        'description_sc',
-        'shop_id',
+        'entity',
+        'entity_id',
+        'content',
+        'user_id',
         //
         'created_by',
         'updated_by',
@@ -38,6 +34,8 @@ class Product extends Model
      * @var array
      */
     protected $hidden = [
+        'entity',
+        'entity_id',
     ];
 }
 

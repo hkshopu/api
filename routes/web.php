@@ -19,39 +19,58 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     // Status
     $router->get('categorystatus',  ['uses' => 'StatusController@categoryStatusList']);
     $router->get('productstatus',  ['uses' => 'StatusController@productStatusList']);
+    $router->get('shopstatus',  ['uses' => 'StatusController@shopStatusList']);
     // Following
-    $router->post('imagefollowing', ['uses' => 'FollowingController@imageFollowingAdd']);
-    $router->get('imagefollowing/{image_id}',  ['uses' => 'FollowingController@imageFollowingGet']);
-    $router->delete('imagefollowing/{id}', ['uses' => 'FollowingController@imageFollowingDelete']);
     $router->post('productfollowing', ['uses' => 'FollowingController@productFollowingAdd']);
     $router->get('productfollowing/{product_id}',  ['uses' => 'FollowingController@productFollowingGet']);
     $router->delete('productfollowing/{id}', ['uses' => 'FollowingController@productFollowingDelete']);
+    $router->post('imagefollowing', ['uses' => 'FollowingController@imageFollowingAdd']);
+    $router->get('imagefollowing/{image_id}',  ['uses' => 'FollowingController@imageFollowingGet']);
+    $router->delete('imagefollowing/{id}', ['uses' => 'FollowingController@imageFollowingDelete']);
+    $router->post('shopfollowing', ['uses' => 'FollowingController@shopFollowingAdd']);
+    $router->get('shopfollowing/{shop_id}',  ['uses' => 'FollowingController@shopFollowingGet']);
+    $router->delete('shopfollowing/{id}', ['uses' => 'FollowingController@shopFollowingDelete']);
     // Image
     $router->post('productimage/{id}', ['uses' => 'ImageController@productImageAdd']);
+    $router->post('shopimage/{id}', ['uses' => 'ImageController@shopImageAdd']);
     $router->post('uploadimage', ['uses' => 'ImageController@uploadImage']);
     // Category
-    $router->get('productcategory',  ['uses' => 'ProductCategoryController@list']);
-    $router->post('productcategory',  ['uses' => 'ProductCategoryController@create']);
-    $router->get('productcategory/{id}',  ['uses' => 'ProductCategoryController@fetch']);
-    $router->patch('productcategory/{id}',  ['uses' => 'ProductCategoryController@update']);
-    $router->delete('productcategory/{id}',  ['uses' => 'ProductCategoryController@delete']);
-    $router->get('productcategoryparent/{id}',  ['uses' => 'ProductCategoryParentController@fetch']);
-    $router->get('shopcategory',  ['uses' => 'ShopCategoryController@list']);
-    $router->post('shopcategory',  ['uses' => 'ShopCategoryController@create']);
-    $router->get('shopcategory/{id}',  ['uses' => 'ShopCategoryController@fetch']);
-    $router->patch('shopcategory/{id}',  ['uses' => 'ShopCategoryController@update']);
-    $router->delete('shopcategory/{id}',  ['uses' => 'ShopCategoryController@delete']);
+    $router->get('productcategory',  ['uses' => 'CategoryController@productCategoryList']);
+    $router->post('productcategory',  ['uses' => 'CategoryController@productCategoryAdd']);
+    $router->get('productcategory/{id}',  ['uses' => 'CategoryController@productCategoryGet']);
+    $router->patch('productcategory/{id}',  ['uses' => 'CategoryController@productCategoryModify']);
+    $router->delete('productcategory/{id}',  ['uses' => 'CategoryController@productCategoryDelete']);
+    $router->get('productcategoryparent/{id}',  ['uses' => 'CategoryController@productCategoryParentGet']);
+    $router->get('shopcategory',  ['uses' => 'CategoryController@shopCategoryList']);
+    $router->post('shopcategory',  ['uses' => 'CategoryController@shopCategoryAdd']);
+    $router->get('shopcategory/{id}',  ['uses' => 'CategoryController@shopCategoryGet']);
+    $router->patch('shopcategory/{id}',  ['uses' => 'CategoryController@shopCategoryModify']);
+    $router->delete('shopcategory/{id}',  ['uses' => 'CategoryController@shopCategoryDelete']);
     // Product
-    $router->get('product',  ['uses' => 'ProductController@list']);
-    $router->post('product', ['uses' => 'ProductController@create']);
-    $router->get('product/{id}', ['uses' => 'ProductController@fetch']);
-    $router->delete('product/{id}', ['uses' => 'ProductController@delete']);
-    $router->patch('product/{id}', ['uses' => 'ProductController@update']);
-    $router->post('productstockadd/{id}', ['uses' => 'ProductInventoryController@add']);
-    $router->post('productstockremove/{id}', ['uses' => 'ProductInventoryController@remove']);
+    $router->get('product',  ['uses' => 'ProductController@productList']);
+    $router->post('product', ['uses' => 'ProductController@productCreate']);
+    $router->get('product/{id}', ['uses' => 'ProductController@productGet']);
+    $router->delete('product/{id}', ['uses' => 'ProductController@productDelete']);
+    $router->patch('product/{id}', ['uses' => 'ProductController@productModify']);
+    $router->post('productstockadd/{id}', ['uses' => 'ProductController@productStockAdd']);
+    $router->post('productstockremove/{id}', ['uses' => 'ProductController@productStockRemove']);
     // View
-    $router->post('productview', ['uses' => 'ProductViewController@create']);
-    $router->get('productview/{product_id}',  ['uses' => 'ProductViewController@fetch']);
+    $router->post('productview', ['uses' => 'ViewController@productViewAdd']);
+    $router->get('productview/{product_id}',  ['uses' => 'ViewController@productViewGet']);
+    // Shop
+    $router->get('shop',  ['uses' => 'ShopController@shopList']);
+    $router->post('shop', ['uses' => 'ShopController@shopCreate']);
+    $router->get('shop/{id}', ['uses' => 'ShopController@shopGet']);
+    $router->delete('shop/{id}', ['uses' => 'ShopController@shopDelete']);
+    $router->patch('shop/{id}', ['uses' => 'ShopController@shopModify']);
+    // Rating
+    $router->post('shoprating', ['uses' => 'RatingController@shopRatingAdd']);
+    $router->get('shoprating/{shop_id}',  ['uses' => 'RatingController@shopRatingGet']);
+    $router->delete('shoprating/{id}', ['uses' => 'RatingController@shopRatingDelete']);
+    // Comment
+    $router->post('shopcomment', ['uses' => 'CommentController@shopCommentAdd']);
+    $router->get('shopcomment/{shop_id}',  ['uses' => 'CommentController@shopCommentGet']);
+    $router->delete('shopcomment/{id}', ['uses' => 'CommentController@shopCommentDelete']);
     ///
     ///
     ///

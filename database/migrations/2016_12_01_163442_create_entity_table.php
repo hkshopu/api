@@ -18,7 +18,7 @@ class CreateEntityTable extends Migration
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->increments('id');
             $table->string('name');
-            
+
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');
             $table->integer('created_by');

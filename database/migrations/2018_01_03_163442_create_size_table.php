@@ -19,7 +19,7 @@ class CreateSizeTable extends Migration
             $table->increments('id');
             $table->string('code');
             $table->string('name');
-            
+
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');
             $table->integer('created_by');

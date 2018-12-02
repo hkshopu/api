@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Category;
 use App\Product;
+use App\Shop;
 use App\Entity;
 use App\Status;
 use App\StatusOption;
@@ -14,10 +15,10 @@ class StatusController extends Controller
     /**
      * @OA\Get(
      *     path="/api/categorystatus",
-     *     operationId="/api/categorystatus#get",
+     *     operationId="categoryStatusList",
      *     tags={"Status"},
      *     summary="Retrieves all category status",
-     *     description="This lists available statuses for the category dynamically.",
+     *     description="This provides available statuses to the category for frontend dynamically.",
      *     @OA\Response(
      *         response="200",
      *         description="Returns available category status",
@@ -38,16 +39,16 @@ class StatusController extends Controller
 
         $data = $statusList;
 
-        return response()->json($data);
+        return response()->json($data, 200);
     }
 
     /**
      * @OA\Get(
      *     path="/api/productstatus",
-     *     operationId="/api/productstatus#get",
+     *     operationId="productStatusList",
      *     tags={"Status"},
      *     summary="Retrieves all product status",
-     *     description="This lists available statuses for the product dynamically.",
+     *     description="This provides available statuses to the product for frontend dynamically.",
      *     @OA\Response(
      *         response="200",
      *         description="Returns available product status",
@@ -68,7 +69,37 @@ class StatusController extends Controller
 
         $data = $statusList;
 
-        return response()->json($data);
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/shopstatus",
+     *     operationId="shopStatusList",
+     *     tags={"Status"},
+     *     summary="Retrieves all shop status",
+     *     description="This provides available statuses to the shop for frontend dynamically.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns available shop status",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopStatusList()
+    {
+        $shop = new Shop();
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        $statusList = [];
+        $statusOptionList = StatusOption::where('entity', $shopEntity->id)->whereNull('deleted_at')->get();
+        foreach ($statusOptionList as $statusOption) {
+            $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
+        }
+
+        $data = $statusList;
+
+        return response()->json($data, 200);
     }
 }
 

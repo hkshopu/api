@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Following;
 use App\Product;
 use App\Image;
+use App\Shop;
 use App\Entity;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -14,8 +15,10 @@ class FollowingController extends Controller
     /**
      * @OA\Post(
      *     path="/api/productfollowing",
-     *     operationId="/api/productfollowing#post",
+     *     operationId="productFollowingAdd",
      *     tags={"Following"},
+     *     summary="Adds follower to product",
+     *     description="Adds follower to product.",
      *     @OA\Parameter(
      *         name="product_id",
      *         in="query",
@@ -44,19 +47,14 @@ class FollowingController extends Controller
      */
     public function productFollowingAdd(Request $request)
     {
-        $request->request->add([
-            'created_by' => 1,
-            'updated_by' => 1,
-        ]);
-
         $product = Product::where('id', $request->product_id)->whereNull('deleted_at')->first();
         if (empty($product)) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
         } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid user id',
             ], 400);
@@ -65,7 +63,7 @@ class FollowingController extends Controller
         $productEntity = Entity::where('name', $product->getTable())->first();
 
         if (!empty(Following::where('entity', $productEntity->id)->where('entity_id', $product->id)->where('user_id', $request->user_id)->whereNull('deleted_at')->first())) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Following already exists',
             ], 400);
@@ -74,20 +72,24 @@ class FollowingController extends Controller
         $request->request->add([
             'entity' => $productEntity->id,
             'entity_id' => $product->id,
+            'created_by' => 1,
+            'updated_by' => 1,
         ]);
 
         $following = Following::create($request->all());
-        return response([
+        return response()->json([
             'success' => true,
             'message' => 'Following added',
-        ], 200);
+        ], 201);
     }
 
     /**
      * @OA\Get(
      *     path="/api/productfollowing/{product_id}",
-     *     operationId="/api/productfollowing/{product_id}#get",
+     *     operationId="productFollowingGet",
      *     tags={"Following"},
+     *     summary="Retrieves all product followers given the product id",
+     *     description="Retrieves all product followers given the product id.",
      *     @OA\Parameter(
      *         name="product_id",
      *         in="path",
@@ -111,7 +113,7 @@ class FollowingController extends Controller
     {
         $product = Product::where('id', $product_id)->whereNull('deleted_at')->first();
         if (empty($product)) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
@@ -119,16 +121,18 @@ class FollowingController extends Controller
 
         $productEntity = Entity::where('name', $product->getTable())->first();
 
-        $followingList = Following::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->get();
+        $followingList = Following::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
 
-        return response()->json($followingList);
+        return response()->json($followingList, 200);
     }
 
     /**
      * @OA\Delete(
      *     path="/api/productfollowing/{id}",
-     *     operationId="/api/productfollowing/{id}#delete",
+     *     operationId="productFollowingDelete",
      *     tags={"Following"},
+     *     summary="Unfollows user to product",
+     *     description="Unfollows user to product.",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -150,30 +154,30 @@ class FollowingController extends Controller
      */
     public function productFollowingDelete($id, Request $request)
     {
-        $request->request->add([
-            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
-        ]);
-
         $product = new Product();
         $productEntity = Entity::where('name', $product->getTable())->first();
 
         if (empty(Following::where('id', $id)->whereNull('deleted_at')->first())) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid following id',
             ], 400);
         } else if (empty(Following::where('id', $id)->where('entity', $productEntity->id)->whereNull('deleted_at')->first())) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid following id for the product',
             ], 400);
         }
 
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => 1,
+        ]);
+
         $following = Following::where('id', $id)->where('entity', $productEntity->id)->whereNull('deleted_at')->first();
         $following->update($request->all());
 
-        return response([
+        return response()->json([
             'success' => true,
             'message' => 'Following removed',
         ], 200);
@@ -182,8 +186,10 @@ class FollowingController extends Controller
     /**
      * @OA\Post(
      *     path="/api/imagefollowing",
-     *     operationId="/api/imagefollowing#post",
+     *     operationId="imageFollowingAdd",
      *     tags={"Following"},
+     *     summary="Adds follower to image",
+     *     description="Adds follower to image.",
      *     @OA\Parameter(
      *         name="image_id",
      *         in="query",
@@ -212,19 +218,14 @@ class FollowingController extends Controller
      */
     public function imageFollowingAdd(Request $request)
     {
-        $request->request->add([
-            'created_by' => 1,
-            'updated_by' => 1,
-        ]);
-
         $image = Image::where('id', $request->image_id)->whereNull('deleted_at')->first();
         if (empty($image)) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid image id',
             ], 400);
         } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid user id',
             ], 400);
@@ -233,7 +234,7 @@ class FollowingController extends Controller
         $imageEntity = Entity::where('name', $image->getTable())->first();
 
         if (!empty(Following::where('entity', $imageEntity->id)->where('entity_id', $image->id)->where('user_id', $request->user_id)->whereNull('deleted_at')->first())) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Following already exists',
             ], 400);
@@ -242,20 +243,24 @@ class FollowingController extends Controller
         $request->request->add([
             'entity' => $imageEntity->id,
             'entity_id' => $image->id,
+            'created_by' => 1,
+            'updated_by' => 1,
         ]);
 
         $following = Following::create($request->all());
-        return response([
+        return response()->json([
             'success' => true,
             'message' => 'Following added',
-        ], 200);
+        ], 201);
     }
 
     /**
      * @OA\Get(
      *     path="/api/imagefollowing/{image_id}",
-     *     operationId="/api/imagefollowing/{image_id}#get",
+     *     operationId="imageFollowingGet",
      *     tags={"Following"},
+     *     summary="Retrieves all image followers given the image id",
+     *     description="Retrieves all image followers given the image id.",
      *     @OA\Parameter(
      *         name="image_id",
      *         in="path",
@@ -279,7 +284,7 @@ class FollowingController extends Controller
     {
         $image = Image::where('id', $image_id)->whereNull('deleted_at')->first();
         if (empty($image)) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid image id',
             ], 400);
@@ -287,16 +292,18 @@ class FollowingController extends Controller
 
         $imageEntity = Entity::where('name', $image->getTable())->first();
 
-        $followingList = Following::where('entity', $imageEntity->id)->where('entity_id', $image->id)->whereNull('deleted_at')->get();
+        $followingList = Following::where('entity', $imageEntity->id)->where('entity_id', $image->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
 
-        return response()->json($followingList);
+        return response()->json($followingList, 200);
     }
 
     /**
      * @OA\Delete(
      *     path="/api/imagefollowing/{id}",
-     *     operationId="/api/imagefollowing/{id}#delete",
+     *     operationId="imageFollowingDelete",
      *     tags={"Following"},
+     *     summary="Unfollows user to image",
+     *     description="Unfollows user to image.",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -318,34 +325,201 @@ class FollowingController extends Controller
      */
     public function imageFollowingDelete($id, Request $request)
     {
-        $request->request->add([
-            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
-        ]);
-
-        $request->request->add([
-            'deleted_by' => 1,
-        ]);
-
         $image = new Image();
         $imageEntity = Entity::where('name', $image->getTable())->first();
 
         if (empty(Following::where('id', $id)->whereNull('deleted_at')->first())) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid following id',
             ], 400);
         } else if (empty(Following::where('id', $id)->where('entity', $imageEntity->id)->whereNull('deleted_at')->first())) {
-            return response([
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid following id for the image',
             ], 400);
         }
 
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => 1,
+        ]);
+
         $following = Following::where('id', $id)->where('entity', $imageEntity->id)->whereNull('deleted_at')->first();
         $following->update($request->all());
 
-        return response([
+        return response()->json([
+            'success' => true,
+            'message' => 'Following removed',
+        ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/shopfollowing",
+     *     operationId="shopFollowingAdd",
+     *     tags={"Following"},
+     *     summary="Adds follower to shop",
+     *     description="Adds follower to shop.",
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="query",
+     *         description="The user id (Just enter any random integer, yah as in random ;)",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the shop following create status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop following create failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopFollowingAdd(Request $request)
+    {
+        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        } else if (empty($request->user_id) || $request->user_id < 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user id',
+            ], 400);
+        }
+
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        if (!empty(Following::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->where('user_id', $request->user_id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Following already exists',
+            ], 400);
+        }
+
+        $request->request->add([
+            'entity' => $shopEntity->id,
+            'entity_id' => $shop->id,
+            'created_by' => 1,
+            'updated_by' => 1,
+        ]);
+
+        $following = Following::create($request->all());
+        return response()->json([
+            'success' => true,
+            'message' => 'Following added',
+        ], 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/shopfollowing/{shop_id}",
+     *     operationId="shopFollowingGet",
+     *     tags={"Following"},
+     *     summary="Retrieves all shop followers given the shop id",
+     *     description="Retrieves all shop followers given the shop id.",
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="path",
+     *         description="The shop id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns all shop following",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop following get failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopFollowingGet(int $shop_id)
+    {
+        $shop = Shop::where('id', $shop_id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        $followingList = Following::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+
+        return response()->json($followingList, 200);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/shopfollowing/{id}",
+     *     operationId="shopFollowingDelete",
+     *     tags={"Following"},
+     *     summary="Unfollows user to shop",
+     *     description="Unfollows user to shop.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The shop following id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the shop following delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop following delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopFollowingDelete($id, Request $request)
+    {
+        $shop = new Shop();
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        if (empty(Following::where('id', $id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid following id',
+            ], 400);
+        } else if (empty(Following::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid following id for the shop',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => 1,
+        ]);
+
+        $following = Following::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
+        $following->update($request->all());
+
+        return response()->json([
             'success' => true,
             'message' => 'Following removed',
         ], 200);

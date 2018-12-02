@@ -20,6 +20,10 @@ class Shop extends Model
         'name_en',
         'name_tc',
         'name_sc',
+        'description_en',
+        'description_tc',
+        'description_sc',
+        'user_id',
         //
         'created_by',
         'updated_by',

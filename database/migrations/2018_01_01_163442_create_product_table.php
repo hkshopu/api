@@ -24,7 +24,8 @@ class CreateProductTable extends Migration
             $table->text('description_en');
             $table->text('description_tc');
             $table->text('description_sc');
-            
+            $table->integer('shop_id');
+
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');
             $table->integer('created_by');

@@ -4,9 +4,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateColorTable extends Migration
+class CreateRatingTable extends Migration
 {
-    const TABLE_NAME = 'color';
+    const TABLE_NAME = 'rating';
 
     /**
      * Run the migrations.
@@ -17,8 +17,11 @@ class CreateColorTable extends Migration
     {
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name');
-
+            $table->integer('entity');
+            $table->integer('entity_id');
+            $table->integer('rate');
+            $table->integer('user_id');
+            
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');
             $table->integer('created_by');
