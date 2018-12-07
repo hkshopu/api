@@ -33,6 +33,12 @@ class Category extends Model
      */
     protected $hidden = [
         'entity',
+        'created_at',
+        'created_by',
+        'updated_at',
+        'updated_by',
+        'deleted_at',
+        'deleted_by',
     ];
 }
 

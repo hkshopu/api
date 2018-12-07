@@ -31,6 +31,12 @@ class Color extends Model
      * @var array
      */
     protected $hidden = [
+        'created_at',
+        'created_by',
+        'updated_at',
+        'updated_by',
+        'deleted_at',
+        'deleted_by',
     ];
 }
 

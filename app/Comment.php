@@ -36,6 +36,11 @@ class Comment extends Model
     protected $hidden = [
         'entity',
         'entity_id',
+        'created_by',
+        'updated_at',
+        'updated_by',
+        'deleted_at',
+        'deleted_by',
     ];
 }
 
