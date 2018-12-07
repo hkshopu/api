@@ -156,6 +156,10 @@ class CategoryController extends Controller
                     'message' => 'Invalid category for the product',
                 ], 400);
             }
+        } else {
+            $request->request->add([
+                'parent_category_id' => 0,
+            ]);
         }
 
         $request->request->add([

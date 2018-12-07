@@ -582,6 +582,7 @@ class ProductController extends Controller
             $product['views'] = count($productViewList);
 
             $product['shop'] = Shop::where('id', $product->shop_id)->whereNull('deleted_at')->first();
+            unset($product['shop_id']);
             
         }
 

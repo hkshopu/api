@@ -264,7 +264,7 @@ class ShopController extends Controller
                 $shopRatingTotal += $shopRatingItem->rate;
             }
             $shopRating = [
-                'average' => $shopRatingTotal / (count($shopRatingList) <> 0 ?: 1),
+                'average' => $shopRatingTotal / (count($shopRatingList) ?: 1),
                 'count' => count($shopRatingList),
             ];
             $shop['rating'] = $shopRating;
