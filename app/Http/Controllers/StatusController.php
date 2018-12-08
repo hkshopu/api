@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Category;
 use App\Product;
 use App\Shop;
+use App\Comment;
 use App\Entity;
 use App\Status;
 use App\StatusOption;
@@ -93,6 +94,36 @@ class StatusController extends Controller
 
         $statusList = [];
         $statusOptionList = StatusOption::where('entity', $shopEntity->id)->whereNull('deleted_at')->get();
+        foreach ($statusOptionList as $statusOption) {
+            $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
+        }
+
+        $data = $statusList;
+
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/commentstatus",
+     *     operationId="commentStatusList",
+     *     tags={"Status"},
+     *     summary="Retrieves all comment status",
+     *     description="This provides available statuses to the comment for frontend dynamically.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns available comment status",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function commentStatusList()
+    {
+        $comment = new Comment();
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        $statusList = [];
+        $statusOptionList = StatusOption::where('entity', $commentEntity->id)->whereNull('deleted_at')->get();
         foreach ($statusOptionList as $statusOption) {
             $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
         }

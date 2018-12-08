@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Comment;
 use App\Shop;
 use App\Entity;
+use App\Status;
+use App\StatusMap;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -65,6 +67,9 @@ class CommentController extends Controller
             ], 400);
         }
 
+        // Setting ACTIVE status for comment
+        $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+
         $shopEntity = Entity::where('name', $shop->getTable())->first();
 
         $request->request->add([
@@ -76,6 +81,18 @@ class CommentController extends Controller
         ]);
 
         $comment = Comment::create($request->all());
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        $request->request->add([
+            'entity' => $commentEntity->id,
+            'entity_id' => $comment->id,
+            'status_id' => $status->id,
+            'created_by' => 1,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap = StatusMap::create($request->all());
+
         return response()->json([
             'success' => true,
             'message' => 'Comment added',
@@ -120,7 +137,18 @@ class CommentController extends Controller
 
         $shopEntity = Entity::where('name', $shop->getTable())->first();
 
+        $comment = new Comment();
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
         $commentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+        foreach ($commentList as $key => $comment) {
+            $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($statusMap)) {
+                $commentList[$key]['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+            } else {
+                $commentList[$key]['status'] = null;
+            }
+        }
 
         return response()->json($commentList, 200);
     }
@@ -176,9 +204,153 @@ class CommentController extends Controller
         $comment = Comment::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
         $comment->update($request->all());
 
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+        $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+        $statusMap->update($request->all());
+
         return response()->json([
             'success' => true,
             'message' => 'Comment removed',
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/shopcommentenable/{id}",
+     *     operationId="shopCommentEnable",
+     *     tags={"Comment"},
+     *     summary="Enables user comment to shop",
+     *     description="Enables user comment to shop.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The shop comment id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the shop comment enable status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop comment enable failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopCommentEnable($id, Request $request)
+    {
+        $shop = new Shop();
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id',
+            ], 400);
+        } else if (empty(Comment::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id for the shop',
+            ], 400);
+        }
+
+        $comment = Comment::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        // Setting ACTIVE status for comment
+        $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+        $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->first();
+
+        if ($statusMap->status_id == $status->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Comment status is already active',
+            ], 400);
+        }
+
+        $request->request->add([
+            'status_id' => $status->id,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment status changed to active',
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/shopcommentdisable/{id}",
+     *     operationId="shopCommentDisable",
+     *     tags={"Comment"},
+     *     summary="Disables user comment to shop",
+     *     description="Disables user comment to shop.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The shop comment id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the shop comment disable status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop comment disable failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopCommentDisable($id, Request $request)
+    {
+        $shop = new Shop();
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id',
+            ], 400);
+        } else if (empty(Comment::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id for the shop',
+            ], 400);
+        }
+
+        $comment = Comment::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        // Setting ACTIVE status for comment
+        $status = Status::where('name', 'disable')->whereNull('deleted_at')->first();
+        $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->first();
+
+        if ($statusMap->status_id == $status->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Comment status is already disable',
+            ], 400);
+        }
+
+        $request->request->add([
+            'status_id' => $status->id,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment status changed to disable',
         ], 200);
     }
 }

@@ -20,6 +20,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('categorystatus',  ['uses' => 'StatusController@categoryStatusList']);
     $router->get('productstatus',  ['uses' => 'StatusController@productStatusList']);
     $router->get('shopstatus',  ['uses' => 'StatusController@shopStatusList']);
+    $router->get('commentstatus',  ['uses' => 'StatusController@commentStatusList']);
     // Following
     $router->post('productfollowing', ['uses' => 'FollowingController@productFollowingAdd']);
     $router->get('productfollowing/{product_id}',  ['uses' => 'FollowingController@productFollowingGet']);
@@ -71,6 +72,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('shopcomment', ['uses' => 'CommentController@shopCommentAdd']);
     $router->get('shopcomment/{shop_id}',  ['uses' => 'CommentController@shopCommentGet']);
     $router->delete('shopcomment/{id}', ['uses' => 'CommentController@shopCommentDelete']);
+    $router->patch('shopcommentenable/{id}', ['uses' => 'CommentController@shopCommentEnable']);
+    $router->patch('shopcommentdisable/{id}', ['uses' => 'CommentController@shopCommentDisable']);
     ///
     ///
     ///
