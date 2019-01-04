@@ -6,6 +6,7 @@ use App\Category;
 use App\Product;
 use App\Shop;
 use App\Comment;
+use App\News;
 use App\Entity;
 use App\Status;
 use App\StatusOption;
@@ -124,6 +125,36 @@ class StatusController extends Controller
 
         $statusList = [];
         $statusOptionList = StatusOption::where('entity', $commentEntity->id)->whereNull('deleted_at')->get();
+        foreach ($statusOptionList as $statusOption) {
+            $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
+        }
+
+        $data = $statusList;
+
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/newsstatus",
+     *     operationId="newsStatusList",
+     *     tags={"Status"},
+     *     summary="Retrieves all news status",
+     *     description="This provides available statuses to the news for frontend dynamically.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns available news status",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsStatusList()
+    {
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        $statusList = [];
+        $statusOptionList = StatusOption::where('entity', $newsEntity->id)->whereNull('deleted_at')->get();
         foreach ($statusOptionList as $statusOption) {
             $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
         }

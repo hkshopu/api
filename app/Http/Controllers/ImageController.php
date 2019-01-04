@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Image;
 use App\Product;
 use App\Shop;
+use App\News;
 use App\Entity;
 use Illuminate\Http\Request;
 use Cloudder;
@@ -144,6 +145,74 @@ class ImageController extends Controller
         return response()->json([
             'succcess' => true,
             'message' => 'Shop image added successfully',
+        ], 201);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/newsimage/{id}",
+     *     operationId="newsImageAdd",
+     *     tags={"Image"},
+     *     summary="Adds image to the news",
+     *     description="Associates the image to the news using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The news id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="image_url",
+     *         in="query",
+     *         description="The image url",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the news image add status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news image add failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsImageAdd(int $id, Request $request)
+    {
+        $news = News::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($news)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid news id',
+            ], 400);
+        }
+
+        $newsEntity = Entity::where('name', $news->getTable())->orderBy('id', 'DESC')->first();
+
+        $image = Image::where('entity', $newsEntity->id)->where('entity_id', $news->id)->where('sort', '<>', 0)->whereNull('deleted_at')->orderBy('sort', 'DESC')->first();
+
+        $sort = 1;
+        if (!empty($image)) {
+            $sort = $image->sort + 1;
+        }
+
+        $request->request->add([
+            'entity' => $newsEntity->id,
+            'entity_id' => $news->id,
+            'url' => $request->image_url,
+            'sort' => $sort,
+            'created_by' => 1,
+            'updated_by' => 1,
+        ]);
+
+        Image::create($request->all());
+        return response()->json([
+            'succcess' => true,
+            'message' => 'News image added successfully',
         ], 201);
     }
 

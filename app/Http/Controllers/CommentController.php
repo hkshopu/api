@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Comment;
 use App\Shop;
+use App\News;
 use App\Entity;
 use App\Status;
 use App\StatusMap;
@@ -328,6 +329,348 @@ class CommentController extends Controller
         }
 
         $comment = Comment::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        // Setting ACTIVE status for comment
+        $status = Status::where('name', 'disable')->whereNull('deleted_at')->first();
+        $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->first();
+
+        if ($statusMap->status_id == $status->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Comment status is already disable',
+            ], 400);
+        }
+
+        $request->request->add([
+            'status_id' => $status->id,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment status changed to disable',
+        ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/newscomment",
+     *     operationId="newsCommentAdd",
+     *     tags={"Comment"},
+     *     summary="Adds comment to news",
+     *     description="Adds comment to news.",
+     *     @OA\Parameter(
+     *         name="news_id",
+     *         in="query",
+     *         description="The news id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="content",
+     *         in="query",
+     *         description="The news comment",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="query",
+     *         description="The user id (Just enter any random integer, yah as in random ;)",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the news comment create status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news comment create failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCommentAdd(Request $request)
+    {
+        $news = News::where('id', $request->news_id)->whereNull('deleted_at')->first();
+        if (empty($news)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid news id',
+            ], 400);
+        } else if (empty($request->user_id) || $request->user_id < 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user id',
+            ], 400);
+        }
+
+        // Setting ACTIVE status for comment
+        $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        $request->request->add([
+            'entity' => $newsEntity->id,
+            'entity_id' => $news->id,
+            'rate' => $request->comment,
+            'created_by' => 1,
+            'updated_by' => 1,
+        ]);
+
+        $comment = Comment::create($request->all());
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        $request->request->add([
+            'entity' => $commentEntity->id,
+            'entity_id' => $comment->id,
+            'status_id' => $status->id,
+            'created_by' => 1,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap = StatusMap::create($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment added',
+        ], 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/newscomment/{news_id}",
+     *     operationId="newsCommentGet",
+     *     tags={"Comment"},
+     *     summary="Retrieves all news comments given the news id",
+     *     description="Retrieves all news comments given the news id.",
+     *     @OA\Parameter(
+     *         name="news_id",
+     *         in="path",
+     *         description="The news id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns all news comment",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news comment get failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCommentGet(int $news_id)
+    {
+        $news = News::where('id', $news_id)->whereNull('deleted_at')->first();
+        if (empty($news)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid news id',
+            ], 400);
+        }
+
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        $comment = new Comment();
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        $commentList = Comment::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+        foreach ($commentList as $key => $comment) {
+            $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($statusMap)) {
+                $commentList[$key]['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+            } else {
+                $commentList[$key]['status'] = null;
+            }
+        }
+
+        return response()->json($commentList, 200);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/newscomment/{id}",
+     *     operationId="newsCommentDelete",
+     *     tags={"Comment"},
+     *     summary="Removes user comment to news",
+     *     description="Removes user comment to news.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The news comment id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the news comment delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news comment delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCommentDelete($id, Request $request)
+    {
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id',
+            ], 400);
+        } else if (empty(Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id for the news',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => 1,
+        ]);
+
+        $comment = Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
+        $comment->update($request->all());
+
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+        $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+        $statusMap->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment removed',
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/newscommentenable/{id}",
+     *     operationId="newsCommentEnable",
+     *     tags={"Comment"},
+     *     summary="Enables user comment to news",
+     *     description="Enables user comment to news.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The news comment id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the news comment enable status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news comment enable failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCommentEnable($id, Request $request)
+    {
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id',
+            ], 400);
+        } else if (empty(Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id for the news',
+            ], 400);
+        }
+
+        $comment = Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        // Setting ACTIVE status for comment
+        $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+        $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->first();
+
+        if ($statusMap->status_id == $status->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Comment status is already active',
+            ], 400);
+        }
+
+        $request->request->add([
+            'status_id' => $status->id,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment status changed to active',
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/newscommentdisable/{id}",
+     *     operationId="newsCommentDisable",
+     *     tags={"Comment"},
+     *     summary="Disables user comment to news",
+     *     description="Disables user comment to news.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The news comment id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the news comment disable status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news comment disable failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCommentDisable($id, Request $request)
+    {
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id',
+            ], 400);
+        } else if (empty(Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id for the news',
+            ], 400);
+        }
+
+        $comment = Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
         // Setting ACTIVE status for comment

@@ -7,6 +7,7 @@ use App\CategoryLevel;
 use App\CategoryMap;
 use App\Product;
 use App\Shop;
+use App\News;
 use App\Entity;
 use App\Status;
 use App\StatusMap;
@@ -492,7 +493,7 @@ class CategoryController extends Controller
      *     operationId="shopCategoryList",
      *     tags={"Category"},
      *     summary="Retrieves all shop category",
-     *     description="Retrieves all shop categories in hierarchial structure.",
+     *     description="Retrieves all shop categories.",
      *     @OA\Response(
      *         response="200",
      *         description="Returns all shop category",
@@ -796,6 +797,336 @@ class CategoryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Currently associated with shop',
+            ], 400);
+        }
+
+        $category->update($request->all());
+        $categoryLevel = CategoryLevel::where('category_id', $category->id)->whereNull('deleted_at')->first();
+        if (!empty($categoryLevel)) {
+            $categoryLevel->update($request->all());
+        }
+
+        $statusMap = StatusMap::where('entity_id', $category->id)->whereNull('deleted_at')->first();
+        if (!empty($statusMap)) {
+            $statusMap->update($request->all());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Deleted successfully',
+        ], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/newscategory",
+     *     operationId="newsCategoryList",
+     *     tags={"Category"},
+     *     summary="Retrieves all news category",
+     *     description="Retrieves all news categories.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns all news category",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCategoryList(Request $request)
+    {
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $category = new Category();
+        $categoryEntity = Entity::where('name', $category->getTable())->first();
+
+        $categoryList = Category::where('entity', $newsEntity->id)->whereNull('deleted_at')->get();
+        foreach ($categoryList as $categoryKey => $category) {
+            $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
+            $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+            $categoryList[$categoryKey]['status'] = $status->name;
+        }
+
+        $data = $categoryList;
+
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/newscategory",
+     *     operationId="newsCategoryAdd",
+     *     tags={"Category"},
+     *     summary="Adds news category",
+     *     description="Adds news category.",
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="query",
+     *         description="The news category name",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="status_id",
+     *         in="query",
+     *         description="The status id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the news category created",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news category create failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCategoryAdd(Request $request)
+    {
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        $request->request->add([
+            'entity' => $newsEntity->id,
+            'created_by' => 1,
+            'updated_by' => 1,
+        ]);
+
+        $category = Category::create($request->all());
+        $categoryEntity = Entity::where('name', $category->getTable())->first();
+
+        if (empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
+            $category->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid status id',
+            ], 400);
+        } else if (empty(StatusOption::where('entity', $categoryEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first())) {
+            $category->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid status for category',
+            ], 400);
+        }
+
+        $request->request->add([
+            'entity' => $categoryEntity->id,
+            'entity_id' => $category->id,
+            'created_by' => 1,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap = StatusMap::create($request->all());
+
+        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+
+        return response()->json($category, 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/newscategory/{id}",
+     *     operationId="newsCategoryGet",
+     *     tags={"Category"},
+     *     summary="Retrieves the news category given the id",
+     *     description="Retrieves the news category given the id.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The news category id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the news category",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news category get failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCategoryGet(int $id)
+    {
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+
+        $category = Category::where('id', $id)->whereNull('deleted_at')->first();
+
+        if (empty($category)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid category id',
+            ], 400);
+        } else if ($category->entity <> $newsEntity->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid category for the news',
+            ], 400);
+        }
+
+        $categoryEntity = Entity::where('name', $category->getTable())->first();
+
+        $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
+        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+
+        return response()->json($category, 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/newscategory/{id}",
+     *     operationId="newsCategoryModify",
+     *     tags={"Category"},
+     *     summary="Modifies the news category given the id with only defined fields",
+     *     description="Modifies the news category given the id with only defined fields.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The category id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="query",
+     *         description="The news category name",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="status_id",
+     *         in="query",
+     *         description="The status id",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the news category updated",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news category update failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCategoryModify(int $id, Request $request)
+    {
+        $category = Category::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($category)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid category id',
+            ], 400);
+        }
+
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $categoryEntity = Entity::where('name', $category->getTable())->first();
+        $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
+
+        $request->request->add([
+            'updated_by' => 1,
+        ]);
+
+        if ($request->name) {
+            $category->update($request->all());
+        }
+
+        if ($request->status_id) {
+            if (empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status id',
+                ], 400);
+            } else if (empty(StatusOption::where('entity', $categoryEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status for category',
+                ], 400);
+            }
+        }
+
+        $request->request->add([
+            'entity' => $categoryEntity->id,
+            'entity_id' => $category->id,
+            'updated_by' => 1,
+        ]);
+
+        $statusMap->update($request->all());
+
+        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+
+        return response()->json($category, 201);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/newscategory/{id}",
+     *     operationId="newsCategoryDelete",
+     *     tags={"Category"},
+     *     summary="Deletes the news category given the id",
+     *     description="Deletes the news category given the id.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The news category id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the news category delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the news category delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function newsCategoryDelete($id, Request $request)
+    {
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => 1,
+        ]);
+
+        $news = new News();
+        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $category = Category::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($category)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid category id',
+            ], 400);
+        } else if ($category->entity <> $newsEntity->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid category for the news',
+            ], 400);
+        } else if (
+            !empty(CategoryLevel::where('parent_category_id', $id)->whereNull('deleted_at')->first())
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Currently associated with sub category',
+            ], 400);
+        } else if (
+            !empty(CategoryMap::where('category_id', $id)->whereNull('deleted_at')->first())
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Currently associated with news',
             ], 400);
         }
 
