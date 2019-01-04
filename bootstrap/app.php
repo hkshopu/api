@@ -51,6 +51,7 @@ $app->singleton(
 );
 
 $app->configure('swagger-lume');
+$app->configure('cors');
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,16 @@ $app->configure('swagger-lume');
 //     'auth' => App\Http\Middleware\Authenticate::class,
 // ]);
 
+$app->middleware([
+    // ...
+    \Barryvdh\Cors\HandleCors::class,
+]);
+
+$app->routeMiddleware([
+    // ...
+    'cors' => \Barryvdh\Cors\HandleCors::class,
+]);
+
 /*
 |--------------------------------------------------------------------------
 | Register Service Providers
@@ -87,6 +98,7 @@ $app->configure('swagger-lume');
 // $app->register(App\Providers\EventServiceProvider::class);
 $app->register(\SwaggerLume\ServiceProvider::class);
 $app->register(JD\Cloudder\CloudderServiceProvider::class);
+$app->register(Barryvdh\Cors\ServiceProvider::class);
 
 /*
 |--------------------------------------------------------------------------
