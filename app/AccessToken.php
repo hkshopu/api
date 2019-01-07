@@ -4,12 +4,12 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class View extends Model
+class AccessToken extends Model
 {
     /**
      * Bypass eloquent pluralization
      */
-    protected $table = 'view';
+    protected $table = 'access_token';
 
     /**
      * The attributes that are mass assignable.
@@ -17,9 +17,9 @@ class View extends Model
      * @var array
      */
     protected $fillable = [
-        'entity',
-        'entity_id',
         'user_id',
+        'token',
+        'expires_at',
         //
         'created_by',
         'updated_by',
@@ -33,9 +33,6 @@ class View extends Model
      * @var array
      */
     protected $hidden = [
-        'entity',
-        'entity_id',
-        'created_at',
         'created_by',
         'updated_at',
         'updated_by',

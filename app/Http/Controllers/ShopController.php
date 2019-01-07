@@ -20,12 +20,31 @@ use Carbon\Carbon;
 class ShopController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/shop",
      *     operationId="shopList",
      *     tags={"Shop"},
      *     summary="Retrieves all shop",
      *     description="Retrieves all shop, filterable by shop name (in English), with pagination.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="name_en",
      *         in="query",
@@ -62,7 +81,6 @@ class ShopController extends Controller
     public function shopList(Request $request = null)
     {
         $shop = new Shop();
-        $shopEntity = Entity::where('name', $shop->getTable())->first();
 
         if (!empty($request->name_en)) {
             $shopList = Shop::where('name_en', 'LIKE', '%' . $request->name_en . '%')->whereNull('deleted_at')->get();
@@ -98,6 +116,15 @@ class ShopController extends Controller
      *     tags={"Shop"},
      *     summary="Creates new shop",
      *     description="Creates new shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="name_en",
      *         in="query",
@@ -183,8 +210,8 @@ class ShopController extends Controller
         }
 
         $request->request->add([
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $shop = Shop::create($request->all());
@@ -194,16 +221,16 @@ class ShopController extends Controller
             'entity' => $shopEntity->id,
             'entity_id' => $shop->id,
             'category_id' => $request->category_id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         CategoryMap::create($request->all());
 
         $request->request->add([
             'status_id' => $request->status_id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         StatusMap::create($request->all());
@@ -218,6 +245,15 @@ class ShopController extends Controller
      *     tags={"Shop"},
      *     summary="Retrieves the shop given the id",
      *     description="Retrieves the shop given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -269,7 +305,6 @@ class ShopController extends Controller
             ];
             $shop['rating'] = $shopRating;
 
-            
             $shopFollowingList = Following::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
             $shop['followers'] = count($shopFollowingList);
 
@@ -277,7 +312,6 @@ class ShopController extends Controller
 
             $shopCommentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->get();
             $shop['comments'] = count($shopCommentList);
-            
         }
 
         return response()->json($shop, 200);
@@ -290,6 +324,15 @@ class ShopController extends Controller
      *     tags={"Shop"},
      *     summary="Deletes the shop given the id",
      *     description="Deletes the shop given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -326,7 +369,7 @@ class ShopController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $shop->update($request->all());
@@ -355,6 +398,15 @@ class ShopController extends Controller
      *     tags={"Shop"},
      *     summary="Modifies the shop given the id with only defined fields",
      *     description="Modifies the shop given the id with only defined fields.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -483,8 +535,8 @@ class ShopController extends Controller
             $request->request->add([
                 'entity' => $shopEntity->id,
                 'entity_id' => $shop->id,
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             $categoryMap = CategoryMap::create($request->all());
@@ -516,8 +568,8 @@ class ShopController extends Controller
             $request->request->add([
                 'entity' => $shopEntity->id,
                 'entity_id' => $shop->id,
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             $statusMap = StatusMap::create($request->all());

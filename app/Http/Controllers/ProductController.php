@@ -29,12 +29,31 @@ use Carbon\Carbon;
 class ProductController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/product",
      *     operationId="productList",
      *     tags={"Product"},
      *     summary="Retrieves all product",
      *     description="Retrieves all product, filterable by category id AND product name (in English) or ANY, with pagination.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="category_id",
      *         in="query",
@@ -142,6 +161,15 @@ class ProductController extends Controller
      *     tags={"Product"},
      *     summary="Creates new product",
      *     description="Creates new product.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="sku",
      *         in="query",
@@ -359,8 +387,8 @@ class ProductController extends Controller
         }
 
         $request->request->add([
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $product = Product::create($request->all());
@@ -370,16 +398,16 @@ class ProductController extends Controller
             'entity' => $productEntity->id,
             'entity_id' => $product->id,
             'category_id' => $request->category_id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         CategoryMap::create($request->all());
 
         $request->request->add([
             'status_id' => $request->status_id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         StatusMap::create($request->all());
@@ -387,8 +415,8 @@ class ProductController extends Controller
         $request->request->add([
             'product_id' => $product->id,
             'price' => abs($request->price_original),
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         ProductPricing::create($request->all());
@@ -404,8 +432,8 @@ class ProductController extends Controller
                 'product_id' => $product->id,
                 'type' => 'fixed',
                 'amount' => abs($discountedAmount()),
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             ProductDiscount::create($request->all());
@@ -414,8 +442,8 @@ class ProductController extends Controller
         $request->request->add([
             'product_id' => $product->id,
             'amount' => abs($request->shipping_price),
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         ProductShipping::create($request->all());
@@ -426,8 +454,8 @@ class ProductController extends Controller
             }
 
             $request->request->add([
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             if (!empty($productAttribute->whereNull('deleted_at')->first())) {
@@ -444,8 +472,8 @@ class ProductController extends Controller
         $request->request->add([
             'attribute_id' => $attribute['id'],
             'stock' => abs($request->stock),
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         ProductInventory::create($request->all());
@@ -460,6 +488,15 @@ class ProductController extends Controller
      *     tags={"Product"},
      *     summary="Retrieves the product given the id",
      *     description="Retrieves the product given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -597,6 +634,15 @@ class ProductController extends Controller
      *     summary="Deletes the product given the id",
      *     description="Deletes the product given the id.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The product id",
@@ -627,7 +673,7 @@ class ProductController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $product->update($request->all());
@@ -676,6 +722,15 @@ class ProductController extends Controller
      *     tags={"Product"},
      *     summary="Modifies the product given the id with only defined fields",
      *     description="Modifies the product given the id with only defined fields.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -854,8 +909,8 @@ class ProductController extends Controller
             $request->request->add([
                 'entity' => $productEntity->id,
                 'entity_id' => $product->id,
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             $categoryMap = CategoryMap::create($request->all());
@@ -887,8 +942,8 @@ class ProductController extends Controller
             $request->request->add([
                 'entity' => $productEntity->id,
                 'entity_id' => $product->id,
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             $statusMap = StatusMap::create($request->all());
@@ -914,8 +969,8 @@ class ProductController extends Controller
             $request->request->add([
                 'product_id' => $product->id,
                 'price' => abs($request->price_original),
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             $productPricing = ProductPricing::create($request->all());
@@ -952,8 +1007,8 @@ class ProductController extends Controller
                 'product_id' => $product->id,
                 'type' => 'fixed',
                 'amount' => abs($discountedAmount),
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             $productDiscount = ProductDiscount::create($request->all());
@@ -985,8 +1040,8 @@ class ProductController extends Controller
             $request->request->add([
                 'product_id' => $product->id,
                 'amount' => abs($request->shipping_price),
-                'created_by' => 1,
-                'updated_by' => 1,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
             ]);
 
             $productShipping = ProductShipping::create($request->all());
@@ -1006,6 +1061,15 @@ class ProductController extends Controller
      *     tags={"Product"},
      *     summary="Adds stock to product inventory given the id",
      *     description="Adds stock to product inventory given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -1111,8 +1175,8 @@ class ProductController extends Controller
             $productAttribute = $productAttribute->first();
             if (empty($productAttribute)) {
                 $request->request->add([
-                    'created_by' => 1,
-                    'updated_by' => 1,
+                    'created_by' => $request->access_token_user_id,
+                    'updated_by' => $request->access_token_user_id,
                 ]);
 
                 $productAttribute = ProductAttribute::create($request->all());
@@ -1126,8 +1190,8 @@ class ProductController extends Controller
             'product_id' => $product->id,
             'attribute_id' => $attribute['id'],
             'stock' => abs($request->stock),
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         ProductInventory::create($request->all());
@@ -1142,6 +1206,15 @@ class ProductController extends Controller
      *     tags={"Product"},
      *     summary="Removes stock to product inventory given the id",
      *     description="Adds negative record for product inventory.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -1213,8 +1286,8 @@ class ProductController extends Controller
             'product_id' => $product->id,
             'attribute_id' => $request->attribute_id,
             'stock' => abs($request->stock) * -1,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         ProductInventory::create($request->all());

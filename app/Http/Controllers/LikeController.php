@@ -11,12 +11,31 @@ use Carbon\Carbon;
 class LikeController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/newslike",
      *     operationId="newsLikeAdd",
      *     tags={"Like"},
      *     summary="Adds like to news",
      *     description="Adds like to news.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="news_id",
      *         in="query",
@@ -70,8 +89,8 @@ class LikeController extends Controller
         $request->request->add([
             'entity' => $newsEntity->id,
             'entity_id' => $news->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $like = Like::create($request->all());
@@ -88,6 +107,15 @@ class LikeController extends Controller
      *     tags={"Like"},
      *     summary="Retrieves all news likes given the news id",
      *     description="Retrieves all news likes given the news id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="news_id",
      *         in="path",
@@ -132,6 +160,15 @@ class LikeController extends Controller
      *     summary="Unfollows user to news",
      *     description="Unfollows user to news.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The news like id",
@@ -169,7 +206,7 @@ class LikeController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $like = Like::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();

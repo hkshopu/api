@@ -18,12 +18,31 @@ use Carbon\Carbon;
 class CategoryController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/productcategory",
      *     operationId="productCategoryList",
      *     tags={"Category"},
      *     summary="Retrieves all product category",
      *     description="Retrieves all product categories in hierarchial structure.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns all product category",
@@ -64,6 +83,15 @@ class CategoryController extends Controller
      *     summary="Adds product category",
      *     description="Adds product category.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="name",
      *         in="query",
      *         description="The product category name",
@@ -103,8 +131,8 @@ class CategoryController extends Controller
 
         $request->request->add([
             'entity' => $productEntity->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $category = Category::create($request->all());
@@ -127,16 +155,16 @@ class CategoryController extends Controller
         $request->request->add([
             'entity' => $categoryEntity->id,
             'entity_id' => $category->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap = StatusMap::create($request->all());
 
         $request->request->add([
             'category_id' => $category->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         if ($request->parent_category_id) {
@@ -165,8 +193,8 @@ class CategoryController extends Controller
 
         $request->request->add([
             'parent_category_id' => $request->parent_category_id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $categoryLevel = CategoryLevel::create($request->all());
@@ -184,6 +212,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves the product category given the id",
      *     description="Retrieves the product category given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -241,6 +278,15 @@ class CategoryController extends Controller
      *     summary="Modifies the product category given the id with only defined fields",
      *     description="Modifies the product category given the id with only defined fields.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The category id",
@@ -297,7 +343,7 @@ class CategoryController extends Controller
         $categoryLevel = CategoryLevel::where('category_id', $category->id)->whereNull('deleted_at')->first();
 
         $request->request->add([
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         if ($request->name) {
@@ -321,7 +367,7 @@ class CategoryController extends Controller
         $request->request->add([
             'entity' => $categoryEntity->id,
             'entity_id' => $category->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap->update($request->all());
@@ -346,7 +392,7 @@ class CategoryController extends Controller
 
         $request->request->add([
             'category_id' => $category->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $categoryLevel->update($request->all());
@@ -364,6 +410,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Deletes the product category given the id",
      *     description="Deletes the product category given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -387,7 +442,7 @@ class CategoryController extends Controller
     {
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $product = new Product();
@@ -444,6 +499,15 @@ class CategoryController extends Controller
      *     summary="Retrieves the product category root hierarchy given the id",
      *     description="Retrieves the product category root hierarchy given the id.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The product category id",
@@ -494,6 +558,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves all shop category",
      *     description="Retrieves all shop categories.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns all shop category",
@@ -528,6 +601,15 @@ class CategoryController extends Controller
      *     summary="Adds shop category",
      *     description="Adds shop category.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="name",
      *         in="query",
      *         description="The shop category name",
@@ -560,8 +642,8 @@ class CategoryController extends Controller
 
         $request->request->add([
             'entity' => $shopEntity->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $category = Category::create($request->all());
@@ -584,8 +666,8 @@ class CategoryController extends Controller
         $request->request->add([
             'entity' => $categoryEntity->id,
             'entity_id' => $category->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap = StatusMap::create($request->all());
@@ -602,6 +684,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves the shop category given the id",
      *     description="Retrieves the shop category given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -656,6 +747,15 @@ class CategoryController extends Controller
      *     summary="Modifies the shop category given the id with only defined fields",
      *     description="Modifies the shop category given the id with only defined fields.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The category id",
@@ -704,7 +804,7 @@ class CategoryController extends Controller
         $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
 
         $request->request->add([
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         if ($request->name) {
@@ -728,7 +828,7 @@ class CategoryController extends Controller
         $request->request->add([
             'entity' => $categoryEntity->id,
             'entity_id' => $category->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap->update($request->all());
@@ -745,6 +845,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Deletes the shop category given the id",
      *     description="Deletes the shop category given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -768,7 +877,7 @@ class CategoryController extends Controller
     {
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $shop = new Shop();
@@ -824,6 +933,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves all news category",
      *     description="Retrieves all news categories.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns all news category",
@@ -858,6 +976,15 @@ class CategoryController extends Controller
      *     summary="Adds news category",
      *     description="Adds news category.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="name",
      *         in="query",
      *         description="The news category name",
@@ -890,8 +1017,8 @@ class CategoryController extends Controller
 
         $request->request->add([
             'entity' => $newsEntity->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $category = Category::create($request->all());
@@ -914,8 +1041,8 @@ class CategoryController extends Controller
         $request->request->add([
             'entity' => $categoryEntity->id,
             'entity_id' => $category->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap = StatusMap::create($request->all());
@@ -932,6 +1059,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves the news category given the id",
      *     description="Retrieves the news category given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -986,6 +1122,15 @@ class CategoryController extends Controller
      *     summary="Modifies the news category given the id with only defined fields",
      *     description="Modifies the news category given the id with only defined fields.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The category id",
@@ -1034,7 +1179,7 @@ class CategoryController extends Controller
         $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
 
         $request->request->add([
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         if ($request->name) {
@@ -1058,7 +1203,7 @@ class CategoryController extends Controller
         $request->request->add([
             'entity' => $categoryEntity->id,
             'entity_id' => $category->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap->update($request->all());
@@ -1075,6 +1220,15 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Deletes the news category given the id",
      *     description="Deletes the news category given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -1098,7 +1252,7 @@ class CategoryController extends Controller
     {
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $news = new News();

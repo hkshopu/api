@@ -98,6 +98,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('newslike', ['uses' => 'LikeController@newsLikeAdd']);
     $router->get('newslike/{news_id}',  ['uses' => 'LikeController@newsLikeGet']);
     $router->delete('newslike/{id}', ['uses' => 'LikeController@newsLikeDelete']);
+    // User
+    $router->get('user',  ['uses' => 'UserController@userList']);
+    $router->post('user', ['uses' => 'UserController@userCreate']);
+    $router->post('signup', ['uses' => 'UserController@userSignup']);
+    $router->get('user/{id}', ['uses' => 'UserController@userGet']);
+    $router->post('login',  ['uses' => 'UserController@userLogin']);
+    $router->get('logout',  ['uses' => 'UserController@userLogout']);
     ///
     ///
     ///

@@ -22,12 +22,31 @@ use Carbon\Carbon;
 class NewsController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/news",
      *     operationId="newsList",
      *     tags={"News"},
      *     summary="Retrieves all news",
      *     description="Retrieves all news, filterable by news title (in English), with pagination.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="title_en",
      *         in="query",
@@ -100,6 +119,15 @@ class NewsController extends Controller
      *     tags={"News"},
      *     summary="Creates new news",
      *     description="Creates new news.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="shop_id",
      *         in="query",
@@ -230,8 +258,8 @@ class NewsController extends Controller
         }
 
         $request->request->add([
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $news = News::create($request->all());
@@ -243,16 +271,16 @@ class NewsController extends Controller
             'entity' => $newsEntity->id,
             'entity_id' => $news->id,
             'category_id' => $request->category_id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         CategoryMap::create($request->all());
 
         $request->request->add([
             'status_id' => $status->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         StatusMap::create($request->all());
@@ -267,6 +295,15 @@ class NewsController extends Controller
      *     tags={"News"},
      *     summary="Retrieves the news given the id",
      *     description="Retrieves the news given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -329,6 +366,15 @@ class NewsController extends Controller
      *     summary="Deletes the news given the id",
      *     description="Deletes the news given the id.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The news id",
@@ -359,7 +405,7 @@ class NewsController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $news->update($request->all());
@@ -388,6 +434,15 @@ class NewsController extends Controller
      *     tags={"News"},
      *     summary="Modifies the news given the id with only defined fields",
      *     description="Modifies the news given the id with only defined fields.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -573,7 +628,7 @@ class NewsController extends Controller
 
         // Update news table
         $request->request->add([
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $news->update($request->all());
@@ -582,7 +637,7 @@ class NewsController extends Controller
         if (!empty($request->category_id)) {
             $request->request->add([
                 'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-                'deleted_by' => 1,
+                'deleted_by' => $request->access_token_user_id,
             ]);
 
             $categoryMap = CategoryMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
@@ -594,7 +649,7 @@ class NewsController extends Controller
             $request->request->add([
                 'entity' => $newsEntity->id,
                 'entity_id' => $news->id,
-                'created_by' => 1,
+                'created_by' => $request->access_token_user_id,
             ]);
 
             CategoryMap::create($request->only([
@@ -610,7 +665,7 @@ class NewsController extends Controller
         if (!empty($request->status_id)) {
             $request->request->add([
                 'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-                'deleted_by' => 1,
+                'deleted_by' => $request->access_token_user_id,
             ]);
 
             $statusMap = StatusMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
@@ -622,7 +677,7 @@ class NewsController extends Controller
             $request->request->add([
                 'entity' => $newsEntity->id,
                 'entity_id' => $news->id,
-                'created_by' => 1,
+                'created_by' => $request->access_token_user_id,
             ]);
 
             StatusMap::create($request->only([

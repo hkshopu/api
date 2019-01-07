@@ -14,12 +14,31 @@ use Carbon\Carbon;
 class CommentController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/shopcomment",
      *     operationId="shopCommentAdd",
      *     tags={"Comment"},
      *     summary="Adds comment to shop",
      *     description="Adds comment to shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="shop_id",
      *         in="query",
@@ -77,8 +96,8 @@ class CommentController extends Controller
             'entity' => $shopEntity->id,
             'entity_id' => $shop->id,
             'rate' => $request->comment,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $comment = Comment::create($request->all());
@@ -88,8 +107,8 @@ class CommentController extends Controller
             'entity' => $commentEntity->id,
             'entity_id' => $comment->id,
             'status_id' => $status->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap = StatusMap::create($request->all());
@@ -107,6 +126,15 @@ class CommentController extends Controller
      *     tags={"Comment"},
      *     summary="Retrieves all shop comments given the shop id",
      *     description="Retrieves all shop comments given the shop id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="shop_id",
      *         in="path",
@@ -162,6 +190,15 @@ class CommentController extends Controller
      *     summary="Removes user comment to shop",
      *     description="Removes user comment to shop.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The shop comment id",
@@ -199,7 +236,7 @@ class CommentController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $comment = Comment::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
@@ -222,6 +259,15 @@ class CommentController extends Controller
      *     tags={"Comment"},
      *     summary="Enables user comment to shop",
      *     description="Enables user comment to shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -274,7 +320,7 @@ class CommentController extends Controller
 
         $request->request->add([
             'status_id' => $status->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap->update($request->all());
@@ -292,6 +338,15 @@ class CommentController extends Controller
      *     tags={"Comment"},
      *     summary="Disables user comment to shop",
      *     description="Disables user comment to shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -344,7 +399,7 @@ class CommentController extends Controller
 
         $request->request->add([
             'status_id' => $status->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap->update($request->all());
@@ -362,6 +417,15 @@ class CommentController extends Controller
      *     tags={"Comment"},
      *     summary="Adds comment to news",
      *     description="Adds comment to news.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="news_id",
      *         in="query",
@@ -419,8 +483,8 @@ class CommentController extends Controller
             'entity' => $newsEntity->id,
             'entity_id' => $news->id,
             'rate' => $request->comment,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $comment = Comment::create($request->all());
@@ -430,8 +494,8 @@ class CommentController extends Controller
             'entity' => $commentEntity->id,
             'entity_id' => $comment->id,
             'status_id' => $status->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap = StatusMap::create($request->all());
@@ -449,6 +513,15 @@ class CommentController extends Controller
      *     tags={"Comment"},
      *     summary="Retrieves all news comments given the news id",
      *     description="Retrieves all news comments given the news id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="news_id",
      *         in="path",
@@ -504,6 +577,15 @@ class CommentController extends Controller
      *     summary="Removes user comment to news",
      *     description="Removes user comment to news.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The news comment id",
@@ -541,7 +623,7 @@ class CommentController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $comment = Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
@@ -564,6 +646,15 @@ class CommentController extends Controller
      *     tags={"Comment"},
      *     summary="Enables user comment to news",
      *     description="Enables user comment to news.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -616,7 +707,7 @@ class CommentController extends Controller
 
         $request->request->add([
             'status_id' => $status->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap->update($request->all());
@@ -634,6 +725,15 @@ class CommentController extends Controller
      *     tags={"Comment"},
      *     summary="Disables user comment to news",
      *     description="Disables user comment to news.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -686,7 +786,7 @@ class CommentController extends Controller
 
         $request->request->add([
             'status_id' => $status->id,
-            'updated_by' => 1,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $statusMap->update($request->all());

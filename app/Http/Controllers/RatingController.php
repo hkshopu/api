@@ -11,12 +11,31 @@ use Carbon\Carbon;
 class RatingController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/shoprating",
      *     operationId="shopRatingAdd",
      *     tags={"Rating"},
      *     summary="Adds rating to shop",
      *     description="Adds rating to shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="shop_id",
      *         in="query",
@@ -85,8 +104,8 @@ class RatingController extends Controller
             'entity' => $shopEntity->id,
             'entity_id' => $shop->id,
             'rate' => $request->rating,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $rating = Rating::create($request->all());
@@ -103,6 +122,15 @@ class RatingController extends Controller
      *     tags={"Rating"},
      *     summary="Retrieves all shop ratings given the shop id",
      *     description="Retrieves all shop ratings given the shop id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="shop_id",
      *         in="path",
@@ -147,6 +175,15 @@ class RatingController extends Controller
      *     summary="Removes user rating to shop",
      *     description="Removes user rating to shop.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The shop rating id",
@@ -184,7 +221,7 @@ class RatingController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $rating = Rating::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();

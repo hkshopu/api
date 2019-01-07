@@ -15,12 +15,31 @@ use Illuminate\Http\Request;
 class StatusController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/categorystatus",
      *     operationId="categoryStatusList",
      *     tags={"Status"},
      *     summary="Retrieves all category status",
      *     description="This provides available statuses to the category for frontend dynamically.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available category status",
@@ -51,6 +70,15 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all product status",
      *     description="This provides available statuses to the product for frontend dynamically.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available product status",
@@ -81,6 +109,15 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all shop status",
      *     description="This provides available statuses to the shop for frontend dynamically.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available shop status",
@@ -111,6 +148,15 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all comment status",
      *     description="This provides available statuses to the comment for frontend dynamically.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available comment status",
@@ -141,6 +187,15 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all news status",
      *     description="This provides available statuses to the news for frontend dynamically.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available news status",

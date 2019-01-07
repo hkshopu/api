@@ -13,12 +13,31 @@ use Carbon\Carbon;
 class FollowingController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/productfollowing",
      *     operationId="productFollowingAdd",
      *     tags={"Following"},
      *     summary="Adds follower to product",
      *     description="Adds follower to product.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="product_id",
      *         in="query",
@@ -72,8 +91,8 @@ class FollowingController extends Controller
         $request->request->add([
             'entity' => $productEntity->id,
             'entity_id' => $product->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $following = Following::create($request->all());
@@ -90,6 +109,15 @@ class FollowingController extends Controller
      *     tags={"Following"},
      *     summary="Retrieves all product followers given the product id",
      *     description="Retrieves all product followers given the product id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="product_id",
      *         in="path",
@@ -134,6 +162,15 @@ class FollowingController extends Controller
      *     summary="Unfollows user to product",
      *     description="Unfollows user to product.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The product following id",
@@ -171,7 +208,7 @@ class FollowingController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $following = Following::where('id', $id)->where('entity', $productEntity->id)->whereNull('deleted_at')->first();
@@ -190,6 +227,15 @@ class FollowingController extends Controller
      *     tags={"Following"},
      *     summary="Adds follower to image",
      *     description="Adds follower to image.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="image_id",
      *         in="query",
@@ -243,8 +289,8 @@ class FollowingController extends Controller
         $request->request->add([
             'entity' => $imageEntity->id,
             'entity_id' => $image->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $following = Following::create($request->all());
@@ -261,6 +307,15 @@ class FollowingController extends Controller
      *     tags={"Following"},
      *     summary="Retrieves all image followers given the image id",
      *     description="Retrieves all image followers given the image id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="image_id",
      *         in="path",
@@ -305,6 +360,15 @@ class FollowingController extends Controller
      *     summary="Unfollows user to image",
      *     description="Unfollows user to image.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The image following id",
@@ -342,7 +406,7 @@ class FollowingController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $following = Following::where('id', $id)->where('entity', $imageEntity->id)->whereNull('deleted_at')->first();
@@ -361,6 +425,15 @@ class FollowingController extends Controller
      *     tags={"Following"},
      *     summary="Adds follower to shop",
      *     description="Adds follower to shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="shop_id",
      *         in="query",
@@ -414,8 +487,8 @@ class FollowingController extends Controller
         $request->request->add([
             'entity' => $shopEntity->id,
             'entity_id' => $shop->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $following = Following::create($request->all());
@@ -432,6 +505,15 @@ class FollowingController extends Controller
      *     tags={"Following"},
      *     summary="Retrieves all shop followers given the shop id",
      *     description="Retrieves all shop followers given the shop id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="shop_id",
      *         in="path",
@@ -476,6 +558,15 @@ class FollowingController extends Controller
      *     summary="Unfollows user to shop",
      *     description="Unfollows user to shop.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The shop following id",
@@ -513,7 +604,7 @@ class FollowingController extends Controller
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'deleted_by' => 1,
+            'deleted_by' => $request->access_token_user_id,
         ]);
 
         $following = Following::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();

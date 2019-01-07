@@ -11,12 +11,31 @@ use Illuminate\Http\Request;
 class ViewController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/productview",
      *     operationId="productViewAdd",
      *     tags={"View"},
      *     summary="Adds view to product",
      *     description="Adds view to product.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="product_id",
      *         in="query",
@@ -63,8 +82,8 @@ class ViewController extends Controller
         $request->request->add([
             'entity' => $productEntity->id,
             'entity_id' => $product->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $view = View::create($request->all());
@@ -81,6 +100,15 @@ class ViewController extends Controller
      *     tags={"View"},
      *     summary="Retrieves all product views given the product id",
      *     description="Retrieves all product views given the product id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="product_id",
      *         in="path",
@@ -127,6 +155,15 @@ class ViewController extends Controller
      *     summary="Adds view to news",
      *     description="Adds view to news.",
      *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
      *         name="news_id",
      *         in="query",
      *         description="The news id",
@@ -172,8 +209,8 @@ class ViewController extends Controller
         $request->request->add([
             'entity' => $newsEntity->id,
             'entity_id' => $news->id,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         $view = View::create($request->all());
@@ -190,6 +227,15 @@ class ViewController extends Controller
      *     tags={"View"},
      *     summary="Retrieves all news views given the news id",
      *     description="Retrieves all news views given the news id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="news_id",
      *         in="path",

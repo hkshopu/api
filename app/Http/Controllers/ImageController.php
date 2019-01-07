@@ -13,12 +13,31 @@ use Cloudder;
 class ImageController extends Controller
 {
     /**
+     * Explicit constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/productimage/{id}",
      *     operationId="productImageAdd",
      *     tags={"Image"},
      *     summary="Adds image to the product",
      *     description="Associates the image to the product using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -69,8 +88,8 @@ class ImageController extends Controller
             'entity_id' => $product->id,
             'url' => $request->image_url,
             'sort' => $sort,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         Image::create($request->all());
@@ -87,6 +106,15 @@ class ImageController extends Controller
      *     tags={"Image"},
      *     summary="Adds image to the shop",
      *     description="Associates the image to the shop using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -137,8 +165,8 @@ class ImageController extends Controller
             'entity_id' => $shop->id,
             'url' => $request->image_url,
             'sort' => $sort,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         Image::create($request->all());
@@ -155,6 +183,15 @@ class ImageController extends Controller
      *     tags={"Image"},
      *     summary="Adds image to the news",
      *     description="Associates the image to the news using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -205,8 +242,8 @@ class ImageController extends Controller
             'entity_id' => $news->id,
             'url' => $request->image_url,
             'sort' => $sort,
-            'created_by' => 1,
-            'updated_by' => 1,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
         ]);
 
         Image::create($request->all());
@@ -223,6 +260,15 @@ class ImageController extends Controller
      *     tags={"Image"},
      *     summary="Uploads an image",
      *     description="Uploads the image to the cloud server.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
      *     @OA\RequestBody(
      *         description="The image to upload",
      *         required=true,

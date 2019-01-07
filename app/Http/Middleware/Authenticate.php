@@ -45,7 +45,7 @@ class Authenticate
         }
 
         if ($request->getPathInfo() == '/api/login' || $request->getPathInfo() == '/api/signup') {
-            if ($request->header('token') != 'salarium') {
+            if ($request->header('token') != 'hkshopu') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid token',
