@@ -6,6 +6,7 @@ use App\Image;
 use App\Product;
 use App\Shop;
 use App\News;
+use App\User;
 use App\Entity;
 use Illuminate\Http\Request;
 use Cloudder;
@@ -250,6 +251,83 @@ class ImageController extends Controller
         return response()->json([
             'succcess' => true,
             'message' => 'News image added successfully',
+        ], 201);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/userimage/{id}",
+     *     operationId="userImageAdd",
+     *     tags={"Image"},
+     *     summary="Adds image to the user",
+     *     description="Associates the image to the user using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The user id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="image_url",
+     *         in="query",
+     *         description="The image url",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the user image add status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the user image add failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userImageAdd(int $id, Request $request)
+    {
+        $user = User::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user id',
+            ], 400);
+        }
+
+        $userEntity = Entity::where('name', $user->getTable())->orderBy('id', 'DESC')->first();
+
+        $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->whereNull('deleted_at')->orderBy('sort', 'DESC')->first();
+
+        $sort = 1;
+        if (!empty($image)) {
+            $sort = $image->sort + 1;
+        }
+
+        $request->request->add([
+            'entity' => $userEntity->id,
+            'entity_id' => $user->id,
+            'url' => $request->image_url,
+            'sort' => $sort,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        Image::create($request->all());
+        return response()->json([
+            'succcess' => true,
+            'message' => 'User image added successfully',
         ], 201);
     }
 

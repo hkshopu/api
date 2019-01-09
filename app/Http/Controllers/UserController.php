@@ -10,6 +10,8 @@ use App\Status;
 use App\StatusMap;
 use App\Shop;
 use App\Image;
+use App\Category;
+use App\CategoryMap;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -116,11 +118,404 @@ class UserController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/signup",
-     *     operationId="userSignup",
+     *     path="/api/user",
+     *     operationId="userCreate",
      *     tags={"User"},
-     *     summary="Registers user from the app",
-     *     description="Registers user from the app.",
+     *     summary="Creates user from the web app",
+     *     description="Creates user from the web app.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\RequestBody(
+     *         description="The user information",
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="first_name",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="last_name",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="username",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="email",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="password",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="user_type_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_name_en",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_name_tc",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_name_sc",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_category_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *             ),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the user created",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the user create failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userCreate(Request $request = null)
+    {
+        if (empty($request->username)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username required',
+            ], 400);
+        } else if (preg_match('/[^a-zA-Z0-9_]/i', $request->username)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username should only contain alphanumeric characters and underscores',
+            ], 400);
+        } else if (!empty(User::where('username', $request->username)->first())) {
+            // Explicit exclusion of the deleted_at field to avoid username duplication whether deleted or not
+            return response()->json([
+                'success' => false,
+                'message' => 'Username already in use',
+            ], 400);
+        }
+
+        if (empty($request->first_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'First name required',
+            ], 400);
+        } else if (preg_match('/[^a-zA-Z\s]/i', $request->first_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'First name should only contain alphabetical characters and spaces',
+            ], 400);
+        }
+
+        if (empty($request->last_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Last name required',
+            ], 400);
+        } else if (preg_match('/[^a-zA-Z\s]/i', $request->last_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Last name should only contain alphabetical characters and spaces',
+            ], 400);
+        }
+
+        if (empty($request->email)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email required',
+            ], 400);
+        } else if (!filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email',
+            ], 400);
+        } else if (!empty(User::where('email', $request->email)->first())) {
+            // Explicit exclusion of the deleted_at field to avoid email duplication whether deleted or not
+            return response()->json([
+                'success' => false,
+                'message' => 'Email already in use',
+            ], 400);
+        }
+
+        if (empty($request->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password required',
+            ], 400);
+        } else if (strlen($request->password) < 4) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password should be at least 4 characters',
+            ], 400);
+        }
+
+        // Set password hash
+        $salt = '$2a$12$' . bin2hex(openssl_random_pseudo_bytes(16));
+        $password = crypt($request->password, $salt);
+        $request->request->add([
+            'salt' => $salt,
+            'password' => $password,
+        ]);
+
+        $shop = new Shop();
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        $userType = UserType::where('id', $request->user_type_id)->whereNull('deleted_at')->first();
+
+        if (empty($userType)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user type id',
+            ], 400);
+        }
+
+        $request->request->add([
+            'user_type_id' => $userType->id,
+        ]);
+
+        $user = User::create($request->only([
+            'username',
+            'email',
+            'salt',
+            'password',
+            'first_name',
+            'last_name',
+            'user_type_id',
+        ]));
+
+        $request->request->add([
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $user->update($request->only([
+            'created_by',
+            'updated_by',
+        ]));
+
+        $userEntity = Entity::where('name', $user->getTable())->first();
+
+        // Setting ACTIVE status for user
+        $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+
+        $request->request->add([
+            'entity' => $userEntity->id,
+            'entity_id' => $user->id,
+            'status_id' => $status->id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $statusMap = StatusMap::create($request->only([
+            'entity',
+            'entity_id',
+            'status_id',
+            'created_by',
+            'updated_by',
+        ]));
+
+        // Getting RETAILER user type for user
+        $retailerUserType = UserType::where('name', 'Retailer')->whereNull('deleted_at')->first();
+
+        if ($request->user_type_id == $retailerUserType->id) {
+            if (empty($request->shop_name_en)) {
+                $user->delete();
+                $statusMap->delete();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Shop name (in English) required',
+                ], 400);
+            }
+
+            $request->request->add([
+                'name_en' => $request->shop_name_en,
+            ]);
+
+            if (empty($request->shop_name_tc)) {
+                $request->request->add([
+                    'name_tc' => null,
+                ]);
+            }
+
+            if (empty($request->shop_name_sc)) {
+                $request->request->add([
+                    'name_sc' => null,
+                ]);
+            }
+
+            $shop = new Shop();
+            $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+            $category = Category::where('id', $request->shop_category_id)->whereNull('deleted_at')->first();
+
+            if (empty($category)) {
+                $user->delete();
+                $statusMap->delete();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid category id',
+                ], 400);
+            } else if ($category->entity <> $shopEntity->id) {
+                $user->delete();
+                $statusMap->delete();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid category for the shop',
+                ], 400);
+            }
+
+            $request->request->add([
+                'description_en' => '',
+                'user_id' => $user->id,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+
+            $shop = Shop::create($request->only([
+                'name_en',
+                'name_tc',
+                'name_sc',
+                'description_en',
+                'user_id',
+                'created_by',
+                'updated_by',
+            ]));
+
+            $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+            // Setting ACTIVE status for shop
+            $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+
+            $request->request->add([
+                'entity' => $shopEntity->id,
+                'entity_id' => $shop->id,
+                'status_id' => $status->id,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+
+            $statusMap = StatusMap::create($request->only([
+                'entity',
+                'entity_id',
+                'status_id',
+                'created_by',
+                'updated_by',
+            ]));
+
+            $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+            $request->request->add([
+                'entity' => $shopEntity->id,
+                'entity_id' => $shop->id,
+                'category_id' => $request->shop_category_id,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+
+            $categoryMap = CategoryMap::create($request->only([
+                'entity',
+                'entity_id',
+                'category_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        return response()->json(self::userGet($user->id)->getData(), 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/user/{id}",
+     *     operationId="userGet",
+     *     tags={"User"},
+     *     summary="Retrieves the user given the id",
+     *     description="Retrieves the user given the id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The user id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the user given the id",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userGet($id)
+    {
+        $user = User::where('id', $id)->whereNull('deleted_at')->first();
+
+        if (!empty($user)) {
+            $userEntity = Entity::where('name', $user->getTable())->first();
+
+            $user['user_type'] = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+            unset($user['user_type_id']);
+
+            $statusMap = StatusMap::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($statusMap)) {
+                $user['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+            } else {
+                $user['status'] = null;
+            }
+
+            $user['shop'] = Shop::where('user_id', $user->id)->whereNull('deleted_at')->first();
+
+            $image = new Image();
+            $imageEntity = Entity::where('name', $image->getTable())->first();
+            $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+        }
+
+        return response()->json($user, 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/register",
+     *     operationId="userRegister",
+     *     tags={"User"},
+     *     summary="Registers retailer account from the web app",
+     *     description="Registers retailer account from the web app.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -131,7 +526,317 @@ class UserController extends Controller
      *         )
      *     ),
      *     @OA\RequestBody(
-     *         description="The user signup information",
+     *         description="The retailer registration information",
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="username",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="first_name",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="last_name",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="email",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="password",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_name_en",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_name_tc",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_name_sc",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shop_category_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *             ),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the retailer registered",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the retailer registration failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userRegister(Request $request = null)
+    {
+        if (empty($request->username)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username required',
+            ], 400);
+        } else if (preg_match('/[^a-zA-Z0-9_]/i', $request->username)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username should only contain alphanumeric characters and underscores',
+            ], 400);
+        } else if (!empty(User::where('username', $request->username)->first())) {
+            // Explicit exclusion of the deleted_at field to avoid username duplication whether deleted or not
+            return response()->json([
+                'success' => false,
+                'message' => 'Username already in use',
+            ], 400);
+        }
+
+        if (empty($request->first_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'First name required',
+            ], 400);
+        } else if (preg_match('/[^a-zA-Z\s]/i', $request->first_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'First name should only contain alphabetical characters and spaces',
+            ], 400);
+        }
+
+        if (empty($request->last_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Last name required',
+            ], 400);
+        } else if (preg_match('/[^a-zA-Z\s]/i', $request->last_name)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Last name should only contain alphabetical characters and spaces',
+            ], 400);
+        }
+
+        if (empty($request->email)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email required',
+            ], 400);
+        } else if (!filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email',
+            ], 400);
+        } else if (!empty(User::where('email', $request->email)->first())) {
+            // Explicit exclusion of the deleted_at field to avoid email duplication whether deleted or not
+            return response()->json([
+                'success' => false,
+                'message' => 'Email already in use',
+            ], 400);
+        }
+
+        if (empty($request->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password required',
+            ], 400);
+        } else if (strlen($request->password) < 4) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password should be at least 4 characters',
+            ], 400);
+        }
+
+        // Set password hash
+        $salt = '$2a$12$' . bin2hex(openssl_random_pseudo_bytes(16));
+        $password = crypt($request->password, $salt);
+        $request->request->add([
+            'salt' => $salt,
+            'password' => $password,
+        ]);
+
+        // Setting RETAILER user_type_id for user
+        $userType = UserType::where('name', 'Retailer')->whereNull('deleted_at')->first();
+        $request->request->add([
+            'user_type_id' => $userType->id,
+        ]);
+
+        if (empty($request->shop_name_en)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop name (in English) required',
+            ], 400);
+        }
+
+        $request->request->add([
+            'name_en' => $request->shop_name_en,
+        ]);
+
+        if (empty($request->shop_name_tc)) {
+            $request->request->add([
+                'name_tc' => null,
+            ]);
+        }
+
+        if (empty($request->shop_name_sc)) {
+            $request->request->add([
+                'name_sc' => null,
+            ]);
+        }
+
+        $shop = new Shop();
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        $category = Category::where('id', $request->shop_category_id)->whereNull('deleted_at')->first();
+
+        if (empty($category)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid category id',
+            ], 400);
+        } else if ($category->entity <> $shopEntity->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid category for the shop',
+            ], 400);
+        }
+
+        $user = User::create($request->only([
+            'username',
+            'email',
+            'salt',
+            'password',
+            'first_name',
+            'last_name',
+            'user_type_id',
+        ]));
+
+        $request->request->add([
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $user->update($request->only([
+            'created_by',
+            'updated_by',
+        ]));
+
+        $userEntity = Entity::where('name', $user->getTable())->first();
+
+        // Setting ACTIVE status for user
+        $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+
+        $request->request->add([
+            'entity' => $userEntity->id,
+            'entity_id' => $user->id,
+            'status_id' => $status->id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $statusMap = StatusMap::create($request->only([
+            'entity',
+            'entity_id',
+            'status_id',
+            'created_by',
+            'updated_by',
+        ]));
+
+        $request->request->add([
+            'description_en' => '',
+            'user_id' => $user->id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $shop = Shop::create($request->only([
+            'name_en',
+            'name_tc',
+            'name_sc',
+            'description_en',
+            'user_id',
+            'created_by',
+            'updated_by',
+        ]));
+
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        // Setting ACTIVE status for shop
+        $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
+
+        $request->request->add([
+            'entity' => $shopEntity->id,
+            'entity_id' => $shop->id,
+            'status_id' => $status->id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $statusMap = StatusMap::create($request->only([
+            'entity',
+            'entity_id',
+            'status_id',
+            'created_by',
+            'updated_by',
+        ]));
+
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        $request->request->add([
+            'entity' => $shopEntity->id,
+            'entity_id' => $shop->id,
+            'category_id' => $request->shop_category_id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $categoryMap = CategoryMap::create($request->only([
+            'entity',
+            'entity_id',
+            'category_id',
+            'created_by',
+            'updated_by',
+        ]));
+
+        return response()->json(self::userGet($user->id)->getData(), 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/signup",
+     *     operationId="userSignup",
+     *     tags={"User"},
+     *     summary="Signs up consumer account from the mobile app",
+     *     description="Signs up consumer account from the mobile app.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication (API token instead of session token, provided by system admin)",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\RequestBody(
+     *         description="The consumer signup information",
      *         required=true,
      *         @OA\MediaType(
      *             mediaType="application/json",
@@ -186,12 +891,12 @@ class UserController extends Controller
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the user signed up",
+     *         description="Returns the consumer signed up",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the user signup failure reason",
+     *         description="Returns the consumer signup failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
@@ -333,64 +1038,6 @@ class UserController extends Controller
         ]));
 
         return response()->json(self::userGet($user->id)->getData(), 200);
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/user/{id}",
-     *     operationId="userGet",
-     *     tags={"User"},
-     *     summary="Retrieves the user given the id",
-     *     description="Retrieves the user given the id.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="The user id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response="200",
-     *         description="Returns the user given the id",
-     *         @OA\JsonContent()
-     *     ),
-     * )
-     */
-    public function userGet($id)
-    {
-        $user = User::where('id', $id)->whereNull('deleted_at')->first();
-
-        if (!empty($user)) {
-            $userEntity = Entity::where('name', $user->getTable())->first();
-
-            $user['user_type'] = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
-            unset($user['user_type_id']);
-
-            $statusMap = StatusMap::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
-            if (!empty($statusMap)) {
-                $user['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
-            } else {
-                $user['status'] = null;
-            }
-
-            $user['shop'] = Shop::where('user_id', $user->id)->whereNull('deleted_at')->first();
-
-            $image = new Image();
-            $imageEntity = Entity::where('name', $image->getTable())->first();
-            $imageList = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
-            $user['image'] = $imageList;
-        }
-
-        return response()->json($user, 200);
     }
 
     /**

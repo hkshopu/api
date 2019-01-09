@@ -22,6 +22,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('shopstatus',  ['uses' => 'StatusController@shopStatusList']);
     $router->get('commentstatus',  ['uses' => 'StatusController@commentStatusList']);
     $router->get('newsstatus',  ['uses' => 'StatusController@newsStatusList']);
+    $router->get('userstatus',  ['uses' => 'StatusController@userStatusList']);
     // Following
     $router->post('productfollowing', ['uses' => 'FollowingController@productFollowingAdd']);
     $router->get('productfollowing/{product_id}',  ['uses' => 'FollowingController@productFollowingGet']);
@@ -36,6 +37,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('productimage/{id}', ['uses' => 'ImageController@productImageAdd']);
     $router->post('shopimage/{id}', ['uses' => 'ImageController@shopImageAdd']);
     $router->post('newsimage/{id}', ['uses' => 'ImageController@newsImageAdd']);
+    $router->post('userimage/{id}', ['uses' => 'ImageController@userImageAdd']);
     $router->post('uploadimage', ['uses' => 'ImageController@uploadImage']);
     // Category
     $router->get('productcategory',  ['uses' => 'CategoryController@productCategoryList']);
@@ -101,10 +103,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     // User
     $router->get('user',  ['uses' => 'UserController@userList']);
     $router->post('user', ['uses' => 'UserController@userCreate']);
-    $router->post('signup', ['uses' => 'UserController@userSignup']);
     $router->get('user/{id}', ['uses' => 'UserController@userGet']);
+    $router->post('register', ['uses' => 'UserController@userRegister']);
+    $router->post('signup', ['uses' => 'UserController@userSignup']);
     $router->post('login',  ['uses' => 'UserController@userLogin']);
     $router->get('logout',  ['uses' => 'UserController@userLogout']);
+    // User Type
+    $router->get('usertype',  ['uses' => 'UserTypeController@userTypeList']);
     ///
     ///
     ///

@@ -44,7 +44,9 @@ class Authenticate
             ], 401);
         }
 
-        if ($request->getPathInfo() == '/api/login' || $request->getPathInfo() == '/api/signup') {
+        if ($request->getPathInfo() == '/api/login'
+            || $request->getPathInfo() == '/api/register'
+            || $request->getPathInfo() == '/api/signup') {
             if ($request->header('token') != 'hkshopu') {
                 return response()->json([
                     'success' => false,

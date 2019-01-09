@@ -7,6 +7,7 @@ use App\Product;
 use App\Shop;
 use App\Comment;
 use App\News;
+use App\User;
 use App\Entity;
 use App\Status;
 use App\StatusOption;
@@ -210,6 +211,45 @@ class StatusController extends Controller
 
         $statusList = [];
         $statusOptionList = StatusOption::where('entity', $newsEntity->id)->whereNull('deleted_at')->get();
+        foreach ($statusOptionList as $statusOption) {
+            $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
+        }
+
+        $data = $statusList;
+
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/userstatus",
+     *     operationId="userStatusList",
+     *     tags={"Status"},
+     *     summary="Retrieves all user status",
+     *     description="This provides available statuses to the user for frontend dynamically.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns available user status",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userStatusList()
+    {
+        $user = new User();
+        $userEntity = Entity::where('name', $user->getTable())->first();
+
+        $statusList = [];
+        $statusOptionList = StatusOption::where('entity', $userEntity->id)->whereNull('deleted_at')->get();
         foreach ($statusOptionList as $statusOption) {
             $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
         }
