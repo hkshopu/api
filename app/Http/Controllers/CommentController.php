@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Comment;
 use App\Shop;
-use App\News;
+use App\Blog;
 use App\Entity;
 use App\Status;
 use App\StatusMap;
@@ -412,11 +412,11 @@ class CommentController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/newscomment",
-     *     operationId="newsCommentAdd",
+     *     path="/api/blogcomment",
+     *     operationId="blogCommentAdd",
      *     tags={"Comment"},
-     *     summary="Adds comment to news",
-     *     description="Adds comment to news.",
+     *     summary="Adds comment to blog",
+     *     description="Adds comment to blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -427,16 +427,16 @@ class CommentController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
-     *         name="news_id",
+     *         name="blog_id",
      *         in="query",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="content",
      *         in="query",
-     *         description="The news comment",
+     *         description="The blog comment",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
@@ -449,23 +449,23 @@ class CommentController extends Controller
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news comment create status",
+     *         description="Returns the blog comment create status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news comment create failure reason",
+     *         description="Returns the blog comment create failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCommentAdd(Request $request)
+    public function blogCommentAdd(Request $request)
     {
-        $news = News::where('id', $request->news_id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid news id',
+                'message' => 'Invalid blog id',
             ], 400);
         } else if (empty($request->user_id) || $request->user_id < 1) {
             return response()->json([
@@ -477,11 +477,11 @@ class CommentController extends Controller
         // Setting ACTIVE status for comment
         $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
 
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         $request->request->add([
-            'entity' => $newsEntity->id,
-            'entity_id' => $news->id,
+            'entity' => $blogEntity->id,
+            'entity_id' => $blog->id,
             'rate' => $request->comment,
             'created_by' => $request->access_token_user_id,
             'updated_by' => $request->access_token_user_id,
@@ -508,11 +508,11 @@ class CommentController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/newscomment/{news_id}",
-     *     operationId="newsCommentGet",
+     *     path="/api/blogcomment/{blog_id}",
+     *     operationId="blogCommentGet",
      *     tags={"Comment"},
-     *     summary="Retrieves all news comments given the news id",
-     *     description="Retrieves all news comments given the news id.",
+     *     summary="Retrieves all blog comments given the blog id",
+     *     description="Retrieves all blog comments given the blog id.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -523,40 +523,40 @@ class CommentController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
-     *         name="news_id",
+     *         name="blog_id",
      *         in="path",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns all news comment",
+     *         description="Returns all blog comment",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news comment get failure reason",
+     *         description="Returns the blog comment get failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCommentGet(int $news_id)
+    public function blogCommentGet(int $blog_id)
     {
-        $news = News::where('id', $news_id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $blog_id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid news id',
+                'message' => 'Invalid blog id',
             ], 400);
         }
 
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         $comment = new Comment();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
-        $commentList = Comment::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+        $commentList = Comment::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
         foreach ($commentList as $key => $comment) {
             $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($statusMap)) {
@@ -571,11 +571,11 @@ class CommentController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/newscomment/{id}",
-     *     operationId="newsCommentDelete",
+     *     path="/api/blogcomment/{id}",
+     *     operationId="blogCommentDelete",
      *     tags={"Comment"},
-     *     summary="Removes user comment to news",
-     *     description="Removes user comment to news.",
+     *     summary="Removes user comment to blog",
+     *     description="Removes user comment to blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -588,36 +588,36 @@ class CommentController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news comment id",
+     *         description="The blog comment id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news comment delete status",
+     *         description="Returns the blog comment delete status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news comment delete failure reason",
+     *         description="Returns the blog comment delete failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCommentDelete($id, Request $request)
+    public function blogCommentDelete($id, Request $request)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid comment id',
             ], 400);
-        } else if (empty(Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first())) {
+        } else if (empty(Comment::where('id', $id)->where('entity', $blogEntity->id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid comment id for the news',
+                'message' => 'Invalid comment id for the blog',
             ], 400);
         }
 
@@ -626,7 +626,7 @@ class CommentController extends Controller
             'deleted_by' => $request->access_token_user_id,
         ]);
 
-        $comment = Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
+        $comment = Comment::where('id', $id)->where('entity', $blogEntity->id)->whereNull('deleted_at')->first();
         $comment->update($request->all());
 
         $commentEntity = Entity::where('name', $comment->getTable())->first();
@@ -641,11 +641,11 @@ class CommentController extends Controller
 
     /**
      * @OA\Patch(
-     *     path="/api/newscommentenable/{id}",
-     *     operationId="newsCommentEnable",
+     *     path="/api/blogcommentenable/{id}",
+     *     operationId="blogCommentEnable",
      *     tags={"Comment"},
-     *     summary="Enables user comment to news",
-     *     description="Enables user comment to news.",
+     *     summary="Enables user comment to blog",
+     *     description="Enables user comment to blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -658,40 +658,40 @@ class CommentController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news comment id",
+     *         description="The blog comment id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news comment enable status",
+     *         description="Returns the blog comment enable status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news comment enable failure reason",
+     *         description="Returns the blog comment enable failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCommentEnable($id, Request $request)
+    public function blogCommentEnable($id, Request $request)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid comment id',
             ], 400);
-        } else if (empty(Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first())) {
+        } else if (empty(Comment::where('id', $id)->where('entity', $blogEntity->id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid comment id for the news',
+                'message' => 'Invalid comment id for the blog',
             ], 400);
         }
 
-        $comment = Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
+        $comment = Comment::where('id', $id)->where('entity', $blogEntity->id)->whereNull('deleted_at')->first();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
         // Setting ACTIVE status for comment
@@ -720,11 +720,11 @@ class CommentController extends Controller
 
     /**
      * @OA\Patch(
-     *     path="/api/newscommentdisable/{id}",
-     *     operationId="newsCommentDisable",
+     *     path="/api/blogcommentdisable/{id}",
+     *     operationId="blogCommentDisable",
      *     tags={"Comment"},
-     *     summary="Disables user comment to news",
-     *     description="Disables user comment to news.",
+     *     summary="Disables user comment to blog",
+     *     description="Disables user comment to blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -737,40 +737,40 @@ class CommentController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news comment id",
+     *         description="The blog comment id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news comment disable status",
+     *         description="Returns the blog comment disable status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news comment disable failure reason",
+     *         description="Returns the blog comment disable failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCommentDisable($id, Request $request)
+    public function blogCommentDisable($id, Request $request)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         if (empty(Comment::where('id', $id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid comment id',
             ], 400);
-        } else if (empty(Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first())) {
+        } else if (empty(Comment::where('id', $id)->where('entity', $blogEntity->id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid comment id for the news',
+                'message' => 'Invalid comment id for the blog',
             ], 400);
         }
 
-        $comment = Comment::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
+        $comment = Comment::where('id', $id)->where('entity', $blogEntity->id)->whereNull('deleted_at')->first();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
         // Setting ACTIVE status for comment

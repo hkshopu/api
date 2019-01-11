@@ -4,9 +4,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateRatingTable extends Migration
+class CreateLikeTable extends Migration
 {
-    const TABLE_NAME = 'rating';
+    const TABLE_NAME = 'like';
 
     /**
      * Run the migrations.
@@ -19,8 +19,6 @@ class CreateRatingTable extends Migration
             $table->increments('id');
             $table->integer('entity');
             $table->integer('entity_id');
-            $table->integer('rate');
-            $table->integer('user_id');
             
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');

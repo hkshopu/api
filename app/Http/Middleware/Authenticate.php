@@ -37,6 +37,21 @@ class Authenticate
      */
     public function handle($request, Closure $next, $guard = null)
     {
+        if (
+            "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productcategory'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productcategoryparent'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/shopcategory'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/categorystatus'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productstatus'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/shopstatus'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/commentstatus'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/blogstatus'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/userstatus'
+                || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/usertype'
+        ) {
+            return $next($request);
+        }
+
         if (empty($request->header('token'))) {
             return response()->json([
                 'success' => false,

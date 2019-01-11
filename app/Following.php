@@ -19,7 +19,6 @@ class Following extends Model
     protected $fillable = [
         'entity',
         'entity_id',
-        'user_id',
         //
         'created_by',
         'updated_by',
@@ -36,7 +35,6 @@ class Following extends Model
         'entity',
         'entity_id',
         'created_at',
-        'created_by',
         'updated_at',
         'updated_by',
         'deleted_at',

@@ -4,9 +4,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateCommentTable extends Migration
+class CreateBlogTable extends Migration
 {
-    const TABLE_NAME = 'like';
+    const TABLE_NAME = 'blog';
 
     /**
      * Run the migrations.
@@ -17,10 +17,17 @@ class CreateCommentTable extends Migration
     {
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('entity');
-            $table->integer('entity_id');
-            $table->integer('user_id');
-            
+            $table->string('title_en');
+            $table->string('title_tc');
+            $table->string('title_sc');
+            $table->text('content_en');
+            $table->text('content_tc');
+            $table->text('content_sc');
+            $table->integer('is_top');
+            $table->integer('shop_id');
+            $table->datetime('date_publish_start');
+            $table->datetime('date_publish_end');
+
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');
             $table->integer('created_by');

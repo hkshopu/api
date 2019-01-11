@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Image;
 use App\Product;
 use App\Shop;
-use App\News;
+use App\Blog;
 use App\User;
 use App\Entity;
 use Illuminate\Http\Request;
@@ -179,11 +179,11 @@ class ImageController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/newsimage/{id}",
-     *     operationId="newsImageAdd",
+     *     path="/api/blogimage/{id}",
+     *     operationId="blogImageAdd",
      *     tags={"Image"},
-     *     summary="Adds image to the news",
-     *     description="Associates the image to the news using the file_url from the image upload endpoint.",
+     *     summary="Adds image to the blog",
+     *     description="Associates the image to the blog using the file_url from the image upload endpoint.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -196,7 +196,7 @@ class ImageController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -209,29 +209,29 @@ class ImageController extends Controller
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news image add status",
+     *         description="Returns the blog image add status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news image add failure reason",
+     *         description="Returns the blog image add failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsImageAdd(int $id, Request $request)
+    public function blogImageAdd(int $id, Request $request)
     {
-        $news = News::where('id', $id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid news id',
+                'message' => 'Invalid blog id',
             ], 400);
         }
 
-        $newsEntity = Entity::where('name', $news->getTable())->orderBy('id', 'DESC')->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->orderBy('id', 'DESC')->first();
 
-        $image = Image::where('entity', $newsEntity->id)->where('entity_id', $news->id)->where('sort', '<>', 0)->whereNull('deleted_at')->orderBy('sort', 'DESC')->first();
+        $image = Image::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('sort', '<>', 0)->whereNull('deleted_at')->orderBy('sort', 'DESC')->first();
 
         $sort = 1;
         if (!empty($image)) {
@@ -239,8 +239,8 @@ class ImageController extends Controller
         }
 
         $request->request->add([
-            'entity' => $newsEntity->id,
-            'entity_id' => $news->id,
+            'entity' => $blogEntity->id,
+            'entity_id' => $blog->id,
             'url' => $request->image_url,
             'sort' => $sort,
             'created_by' => $request->access_token_user_id,
@@ -250,7 +250,7 @@ class ImageController extends Controller
         Image::create($request->all());
         return response()->json([
             'succcess' => true,
-            'message' => 'News image added successfully',
+            'message' => 'Blog image added successfully',
         ], 201);
     }
 

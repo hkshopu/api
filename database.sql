@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS `access_token` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
 
--- Dumping data for table shopu.access_token: ~8 rows (approximately)
+-- Dumping data for table shopu.access_token: ~10 rows (approximately)
 /*!40000 ALTER TABLE `access_token` DISABLE KEYS */;
 INSERT INTO `access_token` (`id`, `user_id`, `token`, `expires_at`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 1, 'INFERNO4209887463772', '2018-11-22 01:26:14', '2018-11-21 16:26:36', 1, '2019-01-06 11:06:17', 1, NULL, NULL),
@@ -42,8 +42,42 @@ INSERT INTO `access_token` (`id`, `user_id`, `token`, `expires_at`, `created_at`
 	(5, 1, 'cb81863c55c0a0ebedbfde5781c8823e6da550873507df915f67da4d2cce445c', '2019-01-08 18:03:33', '2019-01-07 18:03:33', 1, '2019-01-07 18:03:33', 1, NULL, NULL),
 	(6, 2, 'e69e71118b18e60f5beb4a7c437914b00e53385d2e40b6a3ee4582f08078d783', '2019-01-08 18:03:40', '2019-01-07 18:03:40', 2, '2019-01-07 18:03:40', 2, NULL, NULL),
 	(7, 3, '2e99b577810e7b65299676955c61df24d1954f2ae982cbbfef598580e8fd8211', '2019-01-08 18:03:55', '2019-01-07 18:03:55', 3, '2019-01-07 18:03:55', 3, NULL, NULL),
-	(8, 5, '145c0273eb115dd86d2520b99da6098c0e92829b62fa72c1806c6908bb2caf32', '2019-01-09 19:02:02', '2019-01-07 19:02:02', 5, '2019-01-08 17:45:18', 5, NULL, NULL);
+	(8, 5, '145c0273eb115dd86d2520b99da6098c0e92829b62fa72c1806c6908bb2caf32', '2019-01-09 19:02:02', '2019-01-07 19:02:02', 5, '2019-01-08 17:45:18', 5, NULL, NULL),
+	(9, 1, '4ed67b0f6fb1d13c3774896cf09a31e1cd21b010f73f87e3793f0060b60f5f1c', '2019-01-12 18:17:29', '2019-01-11 18:17:29', 1, '2019-01-11 18:17:29', 1, NULL, NULL),
+	(10, 6, '10d063d2ccc27ffb1e5a11221038616c6b035493aa306c067c8f2c2fa6f0ec7b', '2019-01-12 18:41:53', '2019-01-11 18:41:53', 6, '2019-01-11 18:41:53', 6, NULL, NULL);
 /*!40000 ALTER TABLE `access_token` ENABLE KEYS */;
+
+-- Dumping structure for table shopu.blog
+CREATE TABLE IF NOT EXISTS `blog` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title_en` varchar(255) NOT NULL,
+  `title_tc` varchar(255) DEFAULT NULL,
+  `title_sc` varchar(255) DEFAULT NULL,
+  `content_en` text NOT NULL,
+  `content_tc` text DEFAULT NULL,
+  `content_sc` text DEFAULT NULL,
+  `is_top` tinyint(2) NOT NULL DEFAULT 0,
+  `shop_id` int(11) NOT NULL,
+  `date_publish_start` datetime DEFAULT NULL,
+  `date_publish_end` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(11) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_by` int(11) DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+-- Dumping data for table shopu.blog: ~5 rows (approximately)
+/*!40000 ALTER TABLE `blog` DISABLE KEYS */;
+INSERT INTO `blog` (`id`, `title_en`, `title_tc`, `title_sc`, `content_en`, `content_tc`, `content_sc`, `is_top`, `shop_id`, `date_publish_start`, `date_publish_end`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+	(1, 'Soon To Open', '很快就要開了', '很快就要开了', 'We are happy to announce the opening of our toy collections and action figures shop!', '我們很高興地宣布開設我們的玩具收藏品和動作人物店！', '我们很高兴地宣布开设我们的玩具收藏品和动作人物店！', 0, 3, NULL, NULL, '2018-12-09 04:09:12', 1, '2018-12-09 04:09:12', 1, NULL, NULL),
+	(2, 'TNA Action Figures PROMO!', 'TNA行動人物PROMO！', 'TNA行动人物PROMO！', 'Check out for news update.', 'Chákàn xīnwén gēngxīn.', '查看新闻更新。', 0, 3, NULL, NULL, '2018-12-09 04:13:23', 1, '2018-12-09 04:13:23', 1, NULL, NULL),
+	(3, 'WWE Action Figures PROMO!', 'WWE行動人物宣傳！', 'WWE行动人物宣传！', 'Check out for news update.', 'Chákàn xīnwén gēngxīn.', '查看新闻更新。', 0, 3, NULL, NULL, '2018-12-09 04:13:57', 1, '2018-12-09 04:13:57', 1, NULL, NULL),
+	(5, '1231232', '1231', '3123132', '1231', '3213', '123213', 1, 3, '2018-01-01 00:00:00', '2020-01-01 00:00:00', '2018-12-23 09:36:25', 1, '2018-12-23 16:45:22', 1, NULL, NULL),
+	(6, '1231', '31312312', '1231231', '132131', '123213', '13213', 0, 1, NULL, NULL, '2018-12-23 09:37:08', 1, '2018-12-23 09:39:46', 1, '2018-12-23 09:39:46', 1);
+/*!40000 ALTER TABLE `blog` ENABLE KEYS */;
 
 -- Dumping structure for table shopu.category
 CREATE TABLE IF NOT EXISTS `category` (
@@ -128,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `category_level` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table shopu.category_level: ~38 rows (approximately)
+-- Dumping data for table shopu.category_level: ~36 rows (approximately)
 /*!40000 ALTER TABLE `category_level` DISABLE KEYS */;
 INSERT INTO `category_level` (`id`, `category_id`, `parent_category_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(2, 4, 2, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
@@ -184,9 +218,9 @@ CREATE TABLE IF NOT EXISTS `category_map` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=88 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table shopu.category_map: ~41 rows (approximately)
+-- Dumping data for table shopu.category_map: ~43 rows (approximately)
 /*!40000 ALTER TABLE `category_map` DISABLE KEYS */;
 INSERT INTO `category_map` (`id`, `entity`, `entity_id`, `category_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 1, 1, 6, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
@@ -273,7 +307,7 @@ CREATE TABLE IF NOT EXISTS `comment` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
--- Dumping data for table shopu.comment: ~8 rows (approximately)
+-- Dumping data for table shopu.comment: ~7 rows (approximately)
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
 INSERT INTO `comment` (`id`, `entity`, `entity_id`, `content`, `user_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 4, 1, 'Hope to have more varieties', 1101, '2018-12-02 15:49:06', 1, '2018-12-02 15:49:06', 1, NULL, NULL),
@@ -291,11 +325,11 @@ CREATE TABLE IF NOT EXISTS `entity` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` int(11) DEFAULT NULL,
+  `created_by` int(11) unsigned DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `updated_by` int(11) DEFAULT NULL,
+  `updated_by` int(11) unsigned DEFAULT NULL,
   `deleted_at` datetime DEFAULT NULL,
-  `deleted_by` int(11) DEFAULT NULL,
+  `deleted_by` int(11) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -307,7 +341,7 @@ INSERT INTO `entity` (`id`, `name`, `created_at`, `created_by`, `updated_at`, `u
 	(3, 'category', '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
 	(4, 'shop', '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
 	(5, 'comment', '2018-12-08 02:32:27', 1, '2018-12-08 02:32:32', 1, NULL, NULL),
-	(6, 'news', '2018-12-08 07:23:40', 1, '2018-12-08 07:23:44', 1, NULL, NULL),
+	(6, 'blog', '2018-12-08 07:23:40', 1, '2019-01-11 19:13:33', 1, NULL, NULL),
 	(7, 'user', '2019-01-06 05:30:47', 1, '2019-01-06 05:30:51', 1, NULL, NULL);
 /*!40000 ALTER TABLE `entity` ENABLE KEYS */;
 
@@ -316,7 +350,6 @@ CREATE TABLE IF NOT EXISTS `following` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `entity` int(11) NOT NULL,
   `entity_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -324,59 +357,75 @@ CREATE TABLE IF NOT EXISTS `following` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table shopu.following: ~48 rows (approximately)
 /*!40000 ALTER TABLE `following` DISABLE KEYS */;
-INSERT INTO `following` (`id`, `entity`, `entity_id`, `user_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-	(1, 1, 2, 1, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(2, 2, 1, 1, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(3, 2, 1, 2, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(4, 2, 1, 3, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(5, 1, 35, 7136, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(6, 1, 35, 7136, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(7, 1, 35, 312, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(8, 1, 35, 3211, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(9, 1, 35, 12, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(10, 1, 35, 1414, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(11, 1, 35, 2421, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(12, 1, 35, 231, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(13, 1, 35, 4124, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(14, 1, 29, 3214, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:27', 1, '2018-11-28 01:28:23', 1),
-	(16, 1, 29, 3215, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:26', 1, '2018-11-28 01:28:22', 1),
-	(17, 1, 29, 3216, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:25', 1, '2018-11-28 01:28:21', 1),
-	(18, 1, 29, -1, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:16', 1, '2018-11-28 01:28:12', 1),
-	(19, 1, 32, 7768, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(21, 2, 2, 1001, '2018-11-26 15:27:43', 1, '2018-11-27 15:17:40', 1, '2018-11-27 15:17:40', 1),
-	(25, 1, 65, 1001, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(26, 1, 65, 1002, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(27, 1, 65, 1003, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(28, 1, 65, 1004, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(29, 1, 65, 1005, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(30, 1, 65, 1006, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(31, 1, 65, 1007, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(32, 1, 65, 1008, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
-	(33, 1, 1, 1001, '2018-11-27 14:56:44', 1, '2018-11-27 14:57:41', 1, NULL, NULL),
-	(35, 2, 7, 1001, '2018-11-27 15:26:16', 1, '2018-11-27 15:26:16', 1, NULL, NULL),
-	(36, 2, 8, 1001, '2018-11-27 15:26:24', 1, '2018-11-27 15:26:24', 1, NULL, NULL),
-	(37, 2, 9, 1001, '2018-11-27 15:26:25', 1, '2018-11-27 15:27:02', 1, '2018-11-27 15:27:02', 1),
-	(38, 2, 12, 1301, '2018-11-27 16:28:47', 1, '2018-11-27 16:29:13', 1, '2018-11-27 16:29:13', 1),
-	(39, 2, 12, 1201, '2018-11-27 17:28:58', 1, '2018-11-27 17:29:14', 1, '2018-11-27 17:29:14', 1),
-	(40, 1, 6, 1301, '2018-11-30 13:29:28', 1, '2018-11-30 13:33:50', 1, NULL, NULL),
-	(41, 4, 1, 1100, '2018-12-02 15:01:47', 1, '2018-12-02 15:01:47', 1, NULL, NULL),
-	(42, 4, 1, 1101, '2018-12-02 15:01:54', 1, '2018-12-02 15:01:54', 1, NULL, NULL),
-	(43, 4, 1, 1102, '2018-12-02 15:01:56', 1, '2018-12-02 15:01:56', 1, NULL, NULL),
-	(44, 4, 1, 1103, '2018-12-02 15:01:58', 1, '2018-12-02 15:01:58', 1, NULL, NULL),
-	(45, 4, 1, 1104, '2018-12-02 15:01:59', 1, '2018-12-02 15:01:59', 1, NULL, NULL),
-	(46, 4, 1, 1105, '2018-12-02 15:02:01', 1, '2018-12-02 15:02:01', 1, NULL, NULL),
-	(47, 4, 1, 1106, '2018-12-02 15:02:03', 1, '2018-12-02 15:02:03', 1, NULL, NULL),
-	(48, 4, 1, 1107, '2018-12-02 15:02:05', 1, '2018-12-02 15:02:05', 1, NULL, NULL),
-	(49, 4, 1, 1108, '2018-12-02 15:02:06', 1, '2018-12-02 15:02:06', 1, NULL, NULL),
-	(50, 4, 1, 1109, '2018-12-02 15:02:08', 1, '2018-12-02 15:02:08', 1, NULL, NULL),
-	(51, 4, 1, 891, '2018-12-02 15:03:51', 1, '2018-12-02 15:03:51', 1, NULL, NULL),
-	(52, 4, 1, 892, '2018-12-02 15:03:53', 1, '2018-12-02 15:03:53', 1, NULL, NULL),
-	(53, 4, 1, 893, '2018-12-02 15:03:56', 1, '2018-12-02 15:03:56', 1, NULL, NULL),
-	(54, 4, 1, 894, '2018-12-02 15:03:59', 1, '2018-12-02 15:03:59', 1, NULL, NULL);
+INSERT INTO `following` (`id`, `entity`, `entity_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+	(1, 1, 2, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(2, 2, 1, '2018-11-26 15:27:43', 1, '2019-01-11 21:09:44', 1, '2019-01-12 05:09:40', 1),
+	(3, 2, 1, '2018-11-26 15:27:43', 1, '2019-01-11 21:09:45', 1, '2019-01-12 05:09:42', 1),
+	(4, 2, 1, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(5, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(6, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(7, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(8, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(9, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(10, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(11, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(12, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(13, 1, 35, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(14, 1, 29, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:27', 1, '2018-11-28 01:28:23', 1),
+	(16, 1, 29, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:26', 1, '2018-11-28 01:28:22', 1),
+	(17, 1, 29, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:25', 1, '2018-11-28 01:28:21', 1),
+	(18, 1, 29, '2018-11-26 15:27:43', 1, '2018-11-27 17:28:16', 1, '2018-11-28 01:28:12', 1),
+	(19, 1, 32, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(21, 2, 2, '2018-11-26 15:27:43', 1, '2018-11-27 15:17:40', 1, '2018-11-27 15:17:40', 1),
+	(25, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(26, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(27, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(28, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(29, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(30, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(31, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(32, 1, 65, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
+	(33, 1, 1, '2018-11-27 14:56:44', 1, '2018-11-27 14:57:41', 1, NULL, NULL),
+	(35, 2, 7, '2018-11-27 15:26:16', 1, '2018-11-27 15:26:16', 1, NULL, NULL),
+	(36, 2, 8, '2018-11-27 15:26:24', 1, '2018-11-27 15:26:24', 1, NULL, NULL),
+	(37, 2, 9, '2018-11-27 15:26:25', 1, '2018-11-27 15:27:02', 1, '2018-11-27 15:27:02', 1),
+	(38, 2, 12, '2018-11-27 16:28:47', 1, '2018-11-27 16:29:13', 1, '2018-11-27 16:29:13', 1),
+	(39, 2, 12, '2018-11-27 17:28:58', 1, '2018-11-27 17:29:14', 1, '2018-11-27 17:29:14', 1),
+	(40, 1, 6, '2018-11-30 13:29:28', 1, '2018-11-30 13:33:50', 1, NULL, NULL),
+	(41, 4, 1, '2018-12-02 15:01:47', 1, '2018-12-02 15:01:47', 1, NULL, NULL),
+	(42, 4, 1, '2018-12-02 15:01:54', 1, '2018-12-02 15:01:54', 1, NULL, NULL),
+	(43, 4, 1, '2018-12-02 15:01:56', 1, '2018-12-02 15:01:56', 1, NULL, NULL),
+	(44, 4, 1, '2018-12-02 15:01:58', 1, '2018-12-02 15:01:58', 1, NULL, NULL),
+	(45, 4, 1, '2018-12-02 15:01:59', 1, '2018-12-02 15:01:59', 1, NULL, NULL),
+	(46, 4, 1, '2018-12-02 15:02:01', 1, '2018-12-02 15:02:01', 1, NULL, NULL),
+	(47, 4, 1, '2018-12-02 15:02:03', 1, '2018-12-02 15:02:03', 1, NULL, NULL),
+	(48, 4, 1, '2018-12-02 15:02:05', 1, '2018-12-02 15:02:05', 1, NULL, NULL),
+	(49, 4, 1, '2018-12-02 15:02:06', 1, '2018-12-02 15:02:06', 1, NULL, NULL),
+	(50, 4, 1, '2018-12-02 15:02:08', 1, '2018-12-02 15:02:08', 1, NULL, NULL),
+	(51, 4, 1, '2018-12-02 15:03:51', 1, '2018-12-02 15:03:51', 1, NULL, NULL),
+	(52, 4, 1, '2018-12-02 15:03:53', 1, '2018-12-02 15:03:53', 1, NULL, NULL),
+	(53, 4, 1, '2018-12-02 15:03:56', 1, '2018-12-02 15:03:56', 1, NULL, NULL),
+	(54, 4, 1, '2018-12-02 15:03:59', 1, '2018-12-02 15:03:59', 1, NULL, NULL),
+	(55, 1, 1, '2019-01-11 20:33:11', 6, '2019-01-11 20:47:06', 6, '2019-01-11 20:47:06', 6),
+	(56, 1, 2, '2019-01-11 20:43:45', 6, '2019-01-11 20:47:02', 6, '2019-01-11 20:47:02', 6),
+	(57, 2, 1, '2019-01-11 20:47:15', 6, '2019-01-11 20:54:16', 6, '2019-01-11 20:54:16', 6),
+	(58, 1, 1, '2019-01-11 20:50:30', 6, '2019-01-11 20:50:30', 6, NULL, NULL),
+	(59, 1, 2, '2019-01-11 20:50:32', 6, '2019-01-11 20:50:32', 6, NULL, NULL),
+	(60, 1, 3, '2019-01-11 20:50:34', 6, '2019-01-11 20:50:34', 6, NULL, NULL),
+	(61, 1, 6, '2019-01-11 20:50:41', 6, '2019-01-11 20:50:50', 6, '2019-01-11 20:50:50', 6),
+	(62, 2, 2, '2019-01-11 20:51:03', 6, '2019-01-11 20:51:03', 6, NULL, NULL),
+	(63, 2, 3, '2019-01-11 20:51:05', 6, '2019-01-11 20:51:05', 6, NULL, NULL),
+	(64, 2, 4, '2019-01-11 20:51:07', 6, '2019-01-11 20:51:07', 6, NULL, NULL),
+	(65, 2, 5, '2019-01-11 20:51:10', 6, '2019-01-11 20:51:10', 6, NULL, NULL),
+	(66, 4, 1, '2019-01-11 20:54:55', 6, '2019-01-11 20:54:55', 6, NULL, NULL),
+	(67, 4, 3, '2019-01-11 20:54:58', 6, '2019-01-11 20:55:03', 6, '2019-01-11 20:55:03', 6),
+	(68, 4, 3, '2019-01-11 20:56:57', 6, '2019-01-11 20:57:33', 6, '2019-01-11 20:57:33', 6),
+	(69, 4, 3, '2019-01-11 20:57:41', 6, '2019-01-11 20:57:41', 6, NULL, NULL),
+	(70, 4, 3, '2019-01-11 20:58:32', 1, '2019-01-11 20:58:32', 1, NULL, NULL);
 /*!40000 ALTER TABLE `following` ENABLE KEYS */;
 
 -- Dumping structure for table shopu.image
@@ -394,9 +443,9 @@ CREATE TABLE IF NOT EXISTS `image` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table shopu.image: ~31 rows (approximately)
+-- Dumping data for table shopu.image: ~28 rows (approximately)
 /*!40000 ALTER TABLE `image` DISABLE KEYS */;
 INSERT INTO `image` (`id`, `entity`, `entity_id`, `url`, `type`, `sort`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 1, 3, 'https://static.acer.com/up/Resource/Acer/Laptops/Aspire_VX_15/Overview/20161117/Aspire-VX-15_gallery-03.png', 'primary', 0, '2018-11-26 15:27:43', 1, '2018-11-27 14:01:19', 1, NULL, NULL),
@@ -439,7 +488,6 @@ CREATE TABLE IF NOT EXISTS `like` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `entity` int(11) NOT NULL,
   `entity_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -447,14 +495,18 @@ CREATE TABLE IF NOT EXISTS `like` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
--- Dumping data for table shopu.like: ~3 rows (approximately)
+-- Dumping data for table shopu.like: ~7 rows (approximately)
 /*!40000 ALTER TABLE `like` DISABLE KEYS */;
-INSERT INTO `like` (`id`, `entity`, `entity_id`, `user_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-	(1, 6, 1, 1801, '2018-12-15 11:08:10', 1, '2018-12-15 11:08:10', 1, NULL, NULL),
-	(2, 6, 1, 1801, '2018-12-15 11:22:20', 1, '2018-12-15 11:32:57', 1, '2018-12-15 11:32:57', 1),
-	(3, 6, 1, 1802, '2018-12-15 11:22:25', 1, '2018-12-15 11:22:25', 1, NULL, NULL);
+INSERT INTO `like` (`id`, `entity`, `entity_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+	(1, 6, 1, '2018-12-15 11:08:10', 1, '2018-12-15 11:08:10', 1, NULL, NULL),
+	(2, 6, 1, '2018-12-15 11:22:20', 1, '2018-12-15 11:32:57', 1, '2018-12-15 11:32:57', 1),
+	(3, 6, 1, '2018-12-15 11:22:25', 1, '2018-12-15 11:22:25', 1, '2019-01-12 03:14:23', 1),
+	(4, 6, 1, '2019-01-11 19:14:03', 6, '2019-01-11 19:24:09', 6, '2019-01-11 19:24:09', 6),
+	(5, 6, 1, '2019-01-11 19:24:39', 6, '2019-01-11 20:39:26', 6, '2019-01-11 20:39:26', 6),
+	(6, 6, 2, '2019-01-11 19:24:41', 6, '2019-01-11 19:24:56', 6, '2019-01-11 19:24:56', 6),
+	(7, 6, 3, '2019-01-11 19:24:43', 6, '2019-01-11 19:24:58', 6, '2019-01-11 19:24:58', 6);
 /*!40000 ALTER TABLE `like` ENABLE KEYS */;
 
 -- Dumping structure for table shopu.migrations
@@ -463,7 +515,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `batch` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table shopu.migrations: ~16 rows (approximately)
+-- Dumping data for table shopu.migrations: ~14 rows (approximately)
 /*!40000 ALTER TABLE `migrations` DISABLE KEYS */;
 INSERT INTO `migrations` (`migration`, `batch`) VALUES
 	('2017_12_01_163442_create_entity_table', 1),
@@ -483,38 +535,6 @@ INSERT INTO `migrations` (`migration`, `batch`) VALUES
 	('2018_05_01_163442_create_status_table', 2),
 	('2018_05_02_163442_create_status_map_table', 3);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
-
--- Dumping structure for table shopu.news
-CREATE TABLE IF NOT EXISTS `news` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `title_en` varchar(255) NOT NULL,
-  `title_tc` varchar(255) DEFAULT NULL,
-  `title_sc` varchar(255) DEFAULT NULL,
-  `content_en` text NOT NULL,
-  `content_tc` text DEFAULT NULL,
-  `content_sc` text DEFAULT NULL,
-  `is_top` tinyint(2) NOT NULL DEFAULT 0,
-  `shop_id` int(11) NOT NULL,
-  `date_publish_start` datetime DEFAULT NULL,
-  `date_publish_end` datetime DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` int(11) DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_by` int(11) DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `deleted_by` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- Dumping data for table shopu.news: ~5 rows (approximately)
-/*!40000 ALTER TABLE `news` DISABLE KEYS */;
-INSERT INTO `news` (`id`, `title_en`, `title_tc`, `title_sc`, `content_en`, `content_tc`, `content_sc`, `is_top`, `shop_id`, `date_publish_start`, `date_publish_end`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-	(1, 'Soon To Open', '很快就要開了', '很快就要开了', 'We are happy to announce the opening of our toy collections and action figures shop!', '我們很高興地宣布開設我們的玩具收藏品和動作人物店！', '我们很高兴地宣布开设我们的玩具收藏品和动作人物店！', 0, 3, NULL, NULL, '2018-12-09 04:09:12', 1, '2018-12-09 04:09:12', 1, NULL, NULL),
-	(2, 'TNA Action Figures PROMO!', 'TNA行動人物PROMO！', 'TNA行动人物PROMO！', 'Check out for news update.', 'Chákàn xīnwén gēngxīn.', '查看新闻更新。', 0, 3, NULL, NULL, '2018-12-09 04:13:23', 1, '2018-12-09 04:13:23', 1, NULL, NULL),
-	(3, 'WWE Action Figures PROMO!', 'WWE行動人物宣傳！', 'WWE行动人物宣传！', 'Check out for news update.', 'Chákàn xīnwén gēngxīn.', '查看新闻更新。', 0, 3, NULL, NULL, '2018-12-09 04:13:57', 1, '2018-12-09 04:13:57', 1, NULL, NULL),
-	(5, '1231232', '1231', '3123132', '1231', '3213', '123213', 1, 3, '2018-01-01 00:00:00', '2020-01-01 00:00:00', '2018-12-23 09:36:25', 1, '2018-12-23 16:45:22', 1, NULL, NULL),
-	(6, '1231', '31312312', '1231231', '132131', '123213', '13213', 0, 1, NULL, NULL, '2018-12-23 09:37:08', 1, '2018-12-23 09:39:46', 1, '2018-12-23 09:39:46', 1);
-/*!40000 ALTER TABLE `news` ENABLE KEYS */;
 
 -- Dumping structure for table shopu.product
 CREATE TABLE IF NOT EXISTS `product` (
@@ -536,7 +556,7 @@ CREATE TABLE IF NOT EXISTS `product` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table shopu.product: ~19 rows (approximately)
+-- Dumping data for table shopu.product: ~18 rows (approximately)
 /*!40000 ALTER TABLE `product` DISABLE KEYS */;
 INSERT INTO `product` (`id`, `sku`, `name_en`, `name_tc`, `name_sc`, `description_en`, `description_tc`, `description_sc`, `shop_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 'IPHONE8', 'iPhone 8', NULL, NULL, 'Latest iPhone release', NULL, NULL, 1, '2018-11-24 12:43:13', 1, '2018-11-26 15:26:09', 1, NULL, NULL),
@@ -575,7 +595,7 @@ CREATE TABLE IF NOT EXISTS `product_attribute` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8;
 
--- Dumping data for table shopu.product_attribute: ~16 rows (approximately)
+-- Dumping data for table shopu.product_attribute: ~14 rows (approximately)
 /*!40000 ALTER TABLE `product_attribute` DISABLE KEYS */;
 INSERT INTO `product_attribute` (`id`, `size_id`, `color_id`, `other`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, NULL, 1, NULL, '2018-11-25 02:55:48', 1, '2018-11-25 02:55:48', 1, NULL, NULL),
@@ -611,7 +631,7 @@ CREATE TABLE IF NOT EXISTS `product_discount` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table shopu.product_discount: ~37 rows (approximately)
+-- Dumping data for table shopu.product_discount: ~35 rows (approximately)
 /*!40000 ALTER TABLE `product_discount` DISABLE KEYS */;
 INSERT INTO `product_discount` (`id`, `product_id`, `type`, `amount`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 1, 'percentage', 0.10, '2018-11-26 15:27:43', 1, '2018-11-26 15:27:43', 1, NULL, NULL),
@@ -668,7 +688,7 @@ CREATE TABLE IF NOT EXISTS `product_inventory` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table shopu.product_inventory: ~44 rows (approximately)
+-- Dumping data for table shopu.product_inventory: ~41 rows (approximately)
 /*!40000 ALTER TABLE `product_inventory` DISABLE KEYS */;
 INSERT INTO `product_inventory` (`id`, `product_id`, `attribute_id`, `stock`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 1, 1, 10, '2018-11-26 15:27:44', 1, '2018-11-26 15:27:44', 1, NULL, NULL),
@@ -774,7 +794,7 @@ CREATE TABLE IF NOT EXISTS `product_shipping` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=utf8;
 
--- Dumping data for table shopu.product_shipping: ~48 rows (approximately)
+-- Dumping data for table shopu.product_shipping: ~43 rows (approximately)
 /*!40000 ALTER TABLE `product_shipping` DISABLE KEYS */;
 INSERT INTO `product_shipping` (`id`, `product_id`, `amount`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 1, 45.00, '2018-11-24 11:25:15', 1, '2018-11-24 11:25:15', 1, NULL, NULL),
@@ -833,7 +853,6 @@ CREATE TABLE IF NOT EXISTS `rating` (
   `entity` int(11) NOT NULL,
   `entity_id` int(11) NOT NULL,
   `rate` tinyint(3) unsigned NOT NULL,
-  `user_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -841,18 +860,33 @@ CREATE TABLE IF NOT EXISTS `rating` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8;
 
--- Dumping data for table shopu.rating: ~7 rows (approximately)
+-- Dumping data for table shopu.rating: ~22 rows (approximately)
 /*!40000 ALTER TABLE `rating` DISABLE KEYS */;
-INSERT INTO `rating` (`id`, `entity`, `entity_id`, `rate`, `user_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-	(1, 4, 1, 5, 1100, '2018-12-02 15:28:00', 1, '2018-12-02 15:28:00', 1, NULL, NULL),
-	(2, 4, 1, 2, 1101, '2018-12-02 15:28:10', 1, '2018-12-02 15:28:10', 1, NULL, NULL),
-	(3, 4, 1, 2, 1102, '2018-12-02 15:28:17', 1, '2018-12-02 15:28:17', 1, NULL, NULL),
-	(4, 4, 1, 3, 1103, '2018-12-02 15:28:21', 1, '2018-12-02 15:28:21', 1, NULL, NULL),
-	(5, 4, 1, 4, 1104, '2018-12-02 15:28:24', 1, '2018-12-02 15:28:24', 1, NULL, NULL),
-	(6, 4, 1, 4, 1105, '2018-12-02 15:28:28', 1, '2018-12-02 15:28:28', 1, NULL, NULL),
-	(7, 4, 1, 4, 1106, '2018-12-02 15:28:32', 1, '2018-12-02 15:28:32', 1, NULL, NULL);
+INSERT INTO `rating` (`id`, `entity`, `entity_id`, `rate`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+	(1, 4, 1, 5, '2018-12-02 15:28:00', 1, '2019-01-11 18:35:28', 1, '2019-01-12 02:35:26', 1),
+	(2, 4, 1, 2, '2018-12-02 15:28:10', 1, '2019-01-11 18:35:29', 1, '2019-01-12 02:35:24', 1),
+	(3, 4, 1, 2, '2018-12-02 15:28:17', 1, '2019-01-11 18:35:29', 1, '2019-01-12 02:35:23', 1),
+	(4, 4, 1, 3, '2018-12-02 15:28:21', 1, '2019-01-11 18:35:30', 1, '2019-01-12 02:35:22', 1),
+	(5, 4, 1, 4, '2018-12-02 15:28:24', 1, '2019-01-11 18:35:30', 1, '2019-01-12 02:35:21', 1),
+	(6, 4, 1, 4, '2018-12-02 15:28:28', 1, '2019-01-11 18:35:31', 1, '2019-01-12 02:35:20', 1),
+	(7, 4, 1, 4, '2018-12-02 15:28:32', 1, '2019-01-11 18:35:32', 1, '2019-01-11 18:20:18', 1),
+	(8, 4, 1, 5, '2019-01-11 18:18:24', 1, '2019-01-11 18:18:30', 1, '2019-01-11 18:18:30', 1),
+	(9, 4, 1, 4, '2019-01-11 18:18:30', 1, '2019-01-11 18:18:30', 1, '2019-01-11 18:18:30', 1),
+	(10, 4, 1, 5, '2019-01-11 18:18:33', 1, '2019-01-11 18:18:36', 1, '2019-01-11 18:18:36', 1),
+	(11, 4, 1, 3, '2019-01-11 18:18:36', 1, '2019-01-11 18:18:36', 1, '2019-01-11 18:18:36', 1),
+	(12, 4, 1, 3, '2019-01-11 18:19:38', 1, '2019-01-11 18:20:18', 1, '2019-01-11 18:20:18', 1),
+	(13, 4, 1, 1, '2019-01-11 18:20:18', 1, '2019-01-11 18:20:18', 1, '2019-01-11 18:20:18', 1),
+	(14, 4, 1, 1, '2019-01-11 18:39:12', 1, '2019-01-11 18:40:06', 1, '2019-01-11 18:40:06', 1),
+	(15, 4, 1, 2, '2019-01-11 18:40:53', 1, '2019-01-11 18:40:53', 1, NULL, NULL),
+	(16, 4, 1, 2, '2019-01-11 18:42:03', 6, '2019-01-11 18:42:33', 6, '2019-01-11 18:42:33', 6),
+	(17, 4, 1, 5, '2019-01-11 18:42:33', 6, '2019-01-11 18:42:57', 6, '2019-01-11 18:42:57', 6),
+	(18, 4, 1, 4, '2019-01-11 18:42:57', 6, '2019-01-11 18:42:57', 6, NULL, NULL),
+	(19, 4, 3, 3, '2019-01-11 18:47:11', 6, '2019-01-11 18:47:16', 6, '2019-01-11 18:47:16', 6),
+	(20, 4, 3, 3, '2019-01-11 18:47:16', 6, '2019-01-11 18:47:19', 6, '2019-01-11 18:47:19', 6),
+	(21, 4, 3, 4, '2019-01-11 18:47:19', 6, '2019-01-11 18:47:21', 6, '2019-01-11 18:47:21', 6),
+	(22, 4, 3, 5, '2019-01-11 18:47:21', 6, '2019-01-11 18:47:21', 6, NULL, NULL);
 /*!40000 ALTER TABLE `rating` ENABLE KEYS */;
 
 -- Dumping structure for table shopu.shop
@@ -872,9 +906,9 @@ CREATE TABLE IF NOT EXISTS `shop` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
 
--- Dumping data for table shopu.shop: ~4 rows (approximately)
+-- Dumping data for table shopu.shop: ~6 rows (approximately)
 /*!40000 ALTER TABLE `shop` DISABLE KEYS */;
 INSERT INTO `shop` (`id`, `name_en`, `name_tc`, `name_sc`, `description_en`, `description_tc`, `description_sc`, `user_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 'Weinstein Guitars', NULL, NULL, 'Weinstein Pianos & Guitars.', NULL, NULL, 1201, '2018-12-02 14:13:09', 1, '2018-12-02 14:41:31', 1, NULL, NULL),
@@ -947,9 +981,9 @@ CREATE TABLE IF NOT EXISTS `status_map` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=163 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=170 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table shopu.status_map: ~99 rows (approximately)
+-- Dumping data for table shopu.status_map: ~104 rows (approximately)
 /*!40000 ALTER TABLE `status_map` DISABLE KEYS */;
 INSERT INTO `status_map` (`id`, `entity`, `entity_id`, `status_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 1, 1, 2, '2018-11-26 15:27:44', 1, '2018-11-26 15:27:44', 1, NULL, NULL),
@@ -1114,9 +1148,9 @@ CREATE TABLE IF NOT EXISTS `user` (
   `deleted_at` datetime DEFAULT NULL,
   `deleted_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
--- Dumping data for table shopu.user: ~8 rows (approximately)
+-- Dumping data for table shopu.user: ~11 rows (approximately)
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
 INSERT INTO `user` (`id`, `username`, `email`, `salt`, `password`, `first_name`, `middle_name`, `last_name`, `gender`, `birth_date`, `mobile_phone`, `address`, `user_type_id`, `activation_key`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(1, 'jc', 'jancarlotaylo@gmail.com', '$2a$12$0a26c90d00f82bf9bb023afed0ce8b4e', '$2a$12$0a26c90d00f82bf9bb023ObySkwVf3XBzan4MTvQHtgHvjXCaShcO', 'JC', NULL, 'Taylo', 'M', NULL, '+639954387373', NULL, 1, NULL, '2019-01-06 05:23:28', 1, '2019-01-06 05:23:28', 1, NULL, NULL),
@@ -1169,7 +1203,7 @@ CREATE TABLE IF NOT EXISTS `view` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8;
 
--- Dumping data for table shopu.view: ~51 rows (approximately)
+-- Dumping data for table shopu.view: ~47 rows (approximately)
 /*!40000 ALTER TABLE `view` DISABLE KEYS */;
 INSERT INTO `view` (`id`, `entity`, `entity_id`, `user_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 	(2, 1, 1, 2, '2018-11-16 15:33:04', 1, '2018-11-16 15:33:04', 1, NULL, NULL),

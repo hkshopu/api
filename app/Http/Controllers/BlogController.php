@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\News;
+use App\Blog;
 use App\Shop;
 use App\Product;
 use App\Entity;
@@ -19,7 +19,7 @@ use App\Comment;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
-class NewsController extends Controller
+class BlogController extends Controller
 {
     /**
      * Explicit constructor.
@@ -33,11 +33,11 @@ class NewsController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/news",
-     *     operationId="newsList",
-     *     tags={"News"},
-     *     summary="Retrieves all news",
-     *     description="Retrieves all news, filterable by news title (in English), with pagination.",
+     *     path="/api/blog",
+     *     operationId="blogList",
+     *     tags={"Blog"},
+     *     summary="Retrieves all blog",
+     *     description="Retrieves all blog, filterable by blog title (in English), with pagination.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -50,7 +50,7 @@ class NewsController extends Controller
      *     @OA\Parameter(
      *         name="title_en",
      *         in="query",
-     *         description="The news title (in English)",
+     *         description="The blog title (in English)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
@@ -70,25 +70,25 @@ class NewsController extends Controller
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns all news",
+     *         description="Returns all blog",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news list failure reason",
+     *         description="Returns the blog list failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsList(Request $request = null)
+    public function blogList(Request $request = null)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         if (!empty($request->title_en)) {
-            $newsList = News::where('title_en', 'LIKE', '%' . $request->title_en . '%')->whereNull('deleted_at')->get();
+            $blogList = Blog::where('title_en', 'LIKE', '%' . $request->title_en . '%')->whereNull('deleted_at')->get();
         } else {
-            $newsList = News::whereNull('deleted_at')->get();
+            $blogList = Blog::whereNull('deleted_at')->get();
         }
 
         $pageNumber = (empty($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
@@ -96,29 +96,29 @@ class NewsController extends Controller
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
 
-        $newsListPaginated = [];
-        foreach ($newsList as $newsKey => $news) {
-            if ($newsKey >= $pageStart && $newsKey <= $pageEnd) {
-                $newsListPaginated[] = $news;
+        $blogListPaginated = [];
+        foreach ($blogList as $blogKey => $blog) {
+            if ($blogKey >= $pageStart && $blogKey <= $pageEnd) {
+                $blogListPaginated[] = $blog;
             }
         }
 
-        $newsList = $newsListPaginated;
+        $blogList = $blogListPaginated;
 
-        foreach ($newsList as $newsKey => $news) {
-            $newsList[$newsKey] = self::newsGet($news->id)->getData();
+        foreach ($blogList as $blogKey => $blog) {
+            $blogList[$blogKey] = self::blogGet($blog->id)->getData();
         }
 
-        return response()->json($newsList, 200);
+        return response()->json($blogList, 200);
     }
 
     /**
      * @OA\Post(
-     *     path="/api/news",
-     *     operationId="newsCreate",
-     *     tags={"News"},
-     *     summary="Creates new news",
-     *     description="Creates new news.",
+     *     path="/api/blog",
+     *     operationId="blogCreate",
+     *     tags={"Blog"},
+     *     summary="Creates new blog",
+     *     description="Creates new blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -138,21 +138,21 @@ class NewsController extends Controller
      *     @OA\Parameter(
      *         name="title_en",
      *         in="query",
-     *         description="The news title (in English)",
+     *         description="The blog title (in English)",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="title_tc",
      *         in="query",
-     *         description="The news title (in Traditional Chinese)",
+     *         description="The blog title (in Traditional Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="title_sc",
      *         in="query",
-     *         description="The news title (in Simplified Chinese)",
+     *         description="The blog title (in Simplified Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
@@ -166,58 +166,58 @@ class NewsController extends Controller
      *     @OA\Parameter(
      *         name="content_en",
      *         in="query",
-     *         description="The news content (in English)",
+     *         description="The blog content (in English)",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="content_tc",
      *         in="query",
-     *         description="The news content (in Traditional Chinese)",
+     *         description="The blog content (in Traditional Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="content_sc",
      *         in="query",
-     *         description="The news content (in Simplified Chinese)",
+     *         description="The blog content (in Simplified Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="is_top",
      *         in="query",
-     *         description="The top of the news positioning",
+     *         description="The top of the blog positioning",
      *         required=false,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="date_publish_start",
      *         in="query",
-     *         description="The news publishing start date (in YYYY-MM-DD format)",
+     *         description="The blog publishing start date (in YYYY-MM-DD format)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="date_publish_end",
      *         in="query",
-     *         description="The news publishing end date (in YYYY-MM-DD format)",
+     *         description="The blog publishing end date (in YYYY-MM-DD format)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news created",
+     *         description="Returns the blog created",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news create failure reason",
+     *         description="Returns the blog create failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCreate(Request $request)
+    public function blogCreate(Request $request)
     {
         if (empty($request->shop_id) || empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
             return response()->json([
@@ -226,8 +226,8 @@ class NewsController extends Controller
             ], 400);
         }
 
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         if (empty($request->category_id)) {
             return response()->json([
@@ -243,10 +243,10 @@ class NewsController extends Controller
                 'success' => false,
                 'message' => 'Invalid category id',
             ], 400);
-        } else if ($category->entity <> $newsEntity->id) {
+        } else if ($category->entity <> $blogEntity->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid category for the news',
+                'message' => 'Invalid category for the blog',
             ], 400);
         }
 
@@ -262,14 +262,14 @@ class NewsController extends Controller
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        $news = News::create($request->all());
+        $blog = Blog::create($request->all());
 
-        // Setting DRAFT status for news
+        // Setting DRAFT status for blog
         $status = Status::where('name', 'draft')->whereNull('deleted_at')->first();
 
         $request->request->add([
-            'entity' => $newsEntity->id,
-            'entity_id' => $news->id,
+            'entity' => $blogEntity->id,
+            'entity_id' => $blog->id,
             'category_id' => $request->category_id,
             'created_by' => $request->access_token_user_id,
             'updated_by' => $request->access_token_user_id,
@@ -285,16 +285,16 @@ class NewsController extends Controller
 
         StatusMap::create($request->all());
 
-        return response()->json(self::newsGet($news->id)->getData(), 201);
+        return response()->json(self::blogGet($blog->id)->getData(), 201);
     }
 
     /**
      * @OA\Get(
-     *     path="/api/news/{id}",
-     *     operationId="newsGet",
-     *     tags={"News"},
-     *     summary="Retrieves the news given the id",
-     *     description="Retrieves the news given the id.",
+     *     path="/api/blog/{id}",
+     *     operationId="blogGet",
+     *     tags={"Blog"},
+     *     summary="Retrieves the blog given the id",
+     *     description="Retrieves the blog given the id.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -307,64 +307,64 @@ class NewsController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news given the id",
+     *         description="Returns the blog given the id",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsGet($id)
+    public function blogGet($id)
     {
-        $news = News::where('id', $id)->whereNull('deleted_at')->first();
+        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
 
-        if (!empty($news)) {
-            $newsEntity = Entity::where('name', $news->getTable())->first();
+        if (!empty($blog)) {
+            $blogEntity = Entity::where('name', $blog->getTable())->first();
 
-            $categoryMap = CategoryMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            $categoryMap = CategoryMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($categoryMap)) {
-                $news['category'] = Category::where('id', $categoryMap->category_id)->whereNull('deleted_at')->first();
+                $blog['category'] = Category::where('id', $categoryMap->category_id)->whereNull('deleted_at')->first();
             } else {
-                $news['category'] = null;
+                $blog['category'] = null;
             }
 
-            $statusMap = StatusMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            $statusMap = StatusMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($statusMap)) {
-                $news['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+                $blog['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
             } else {
-                $news['status'] = null;
+                $blog['status'] = null;
             }
 
             $image = new Image();
             $imageEntity = Entity::where('name', $image->getTable())->first();
-            $imageList = Image::where('entity', $newsEntity->id)->where('entity_id', $news->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
-            $news['image'] = $imageList;
+            $imageList = Image::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
+            $blog['image'] = $imageList;
 
-            $newsViewList = View::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->get();
-            $news['views'] = count($newsViewList);
+            $blogViewList = View::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();
+            $blog['views'] = count($blogViewList);
 
-            $newsLikeList = Like::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->get();
-            $news['likes'] = count($newsLikeList);
+            $blogLikeList = Like::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();
+            $blog['likes'] = count($blogLikeList);
 
-            $newsCommentList = Comment::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->get();
-            $news['comments'] = count($newsCommentList);
+            $blogCommentList = Comment::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();
+            $blog['comments'] = count($blogCommentList);
             
         }
 
-        return response()->json($news, 200);
+        return response()->json($blog, 200);
     }
 
     /**
      * @OA\Delete(
-     *     path="/api/news/{id}",
-     *     operationId="newsDelete",
-     *     tags={"News"},
-     *     summary="Deletes the news given the id",
-     *     description="Deletes the news given the id.",
+     *     path="/api/blog/{id}",
+     *     operationId="blogDelete",
+     *     tags={"Blog"},
+     *     summary="Deletes the blog given the id",
+     *     description="Deletes the blog given the id.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -377,26 +377,26 @@ class NewsController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news delete status",
+     *         description="Returns the blog delete status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news delete failure reason",
+     *         description="Returns the blog delete failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsDelete($id, Request $request)
+    public function blogDelete($id, Request $request)
     {
-        $news = News::where('id', $id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid id',
@@ -408,15 +408,15 @@ class NewsController extends Controller
             'deleted_by' => $request->access_token_user_id,
         ]);
 
-        $news->update($request->all());
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog->update($request->all());
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
-        $categoryMap = CategoryMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->first();
+        $categoryMap = CategoryMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->first();
         if (!empty($categoryMap)) {
             $categoryMap->update($request->all());
         }
 
-        $statusMap = StatusMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->first();
+        $statusMap = StatusMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->first();
         if (!empty($statusMap)) {
             $statusMap->update($request->all());
         }
@@ -429,11 +429,11 @@ class NewsController extends Controller
 
     /**
      * @OA\Patch(
-     *     path="/api/news/{id}",
-     *     operationId="newsModify",
-     *     tags={"News"},
-     *     summary="Modifies the news given the id with only defined fields",
-     *     description="Modifies the news given the id with only defined fields.",
+     *     path="/api/blog/{id}",
+     *     operationId="blogModify",
+     *     tags={"Blog"},
+     *     summary="Modifies the blog given the id with only defined fields",
+     *     description="Modifies the blog given the id with only defined fields.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -446,7 +446,7 @@ class NewsController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -460,97 +460,97 @@ class NewsController extends Controller
      *     @OA\Parameter(
      *         name="title_en",
      *         in="query",
-     *         description="The news title (in English)",
+     *         description="The blog title (in English)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="title_tc",
      *         in="query",
-     *         description="The news title (in Traditional Chinese)",
+     *         description="The blog title (in Traditional Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="title_sc",
      *         in="query",
-     *         description="The news title (in Simplified Chinese)",
+     *         description="The blog title (in Simplified Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="category_id",
      *         in="query",
-     *         description="The news category id",
+     *         description="The blog category id",
      *         required=false,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="status_id",
      *         in="query",
-     *         description="The news status id",
+     *         description="The blog status id",
      *         required=false,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="content_en",
      *         in="query",
-     *         description="The news content (in English)",
+     *         description="The blog content (in English)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="content_tc",
      *         in="query",
-     *         description="The news content (in Traditional Chinese)",
+     *         description="The blog content (in Traditional Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="content_sc",
      *         in="query",
-     *         description="The news content (in Simplified Chinese)",
+     *         description="The blog content (in Simplified Chinese)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="is_top",
      *         in="query",
-     *         description="The top of the news positioning",
+     *         description="The top of the blog positioning",
      *         required=false,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="date_publish_start",
      *         in="query",
-     *         description="The news publishing start date (in YYYY-MM-DD format)",
+     *         description="The blog publishing start date (in YYYY-MM-DD format)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="date_publish_end",
      *         in="query",
-     *         description="The news publishing end date (in YYYY-MM-DD format)",
+     *         description="The blog publishing end date (in YYYY-MM-DD format)",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news updated",
+     *         description="Returns the blog updated",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news update failure reason",
+     *         description="Returns the blog update failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsModify($id, Request $request)
+    public function blogModify($id, Request $request)
     {
-        $news = News::where('id', $id)->whereNull('deleted_at')->first();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid id',
@@ -583,17 +583,17 @@ class NewsController extends Controller
                     'success' => false,
                     'message' => 'Invalid category id',
                 ], 400);
-            } else if ($category->entity <> $newsEntity->id) {
+            } else if ($category->entity <> $blogEntity->id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid category for the news',
+                    'message' => 'Invalid category for the blog',
                 ], 400);
             }
         }
 
         if (!empty($request->status_id)) {
             $status = Status::where('id', $request->status_id)->whereNull('deleted_at')->first();
-            $statusOption = StatusOption::where('entity', $newsEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first();
+            $statusOption = StatusOption::where('entity', $blogEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first();
             if (empty($status)) {
                 return response()->json([
                     'success' => false,
@@ -602,7 +602,7 @@ class NewsController extends Controller
             } else if (empty($statusOption)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid status for the news',
+                    'message' => 'Invalid status for the blog',
                 ], 400);
             }
         }
@@ -626,12 +626,12 @@ class NewsController extends Controller
             ], 400);
         }
 
-        // Update news table
+        // Update blog table
         $request->request->add([
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        $news->update($request->all());
+        $blog->update($request->all());
 
         // Update category_map table
         if (!empty($request->category_id)) {
@@ -640,15 +640,15 @@ class NewsController extends Controller
                 'deleted_by' => $request->access_token_user_id,
             ]);
 
-            $categoryMap = CategoryMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            $categoryMap = CategoryMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             $categoryMap->update($request->only([
                 'deleted_at',
                 'deleted_by',
             ]));
 
             $request->request->add([
-                'entity' => $newsEntity->id,
-                'entity_id' => $news->id,
+                'entity' => $blogEntity->id,
+                'entity_id' => $blog->id,
                 'created_by' => $request->access_token_user_id,
             ]);
 
@@ -668,15 +668,15 @@ class NewsController extends Controller
                 'deleted_by' => $request->access_token_user_id,
             ]);
 
-            $statusMap = StatusMap::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            $statusMap = StatusMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             $statusMap->update($request->only([
                 'deleted_at',
                 'deleted_by',
             ]));
 
             $request->request->add([
-                'entity' => $newsEntity->id,
-                'entity_id' => $news->id,
+                'entity' => $blogEntity->id,
+                'entity_id' => $blog->id,
                 'created_by' => $request->access_token_user_id,
             ]);
 
@@ -689,7 +689,7 @@ class NewsController extends Controller
             ]));
         }
 
-        $news = self::newsGet($id)->getData();
-        return response()->json($news, 201);
+        $blog = self::blogGet($id)->getData();
+        return response()->json($blog, 201);
     }
 }

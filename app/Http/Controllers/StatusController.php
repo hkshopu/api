@@ -6,7 +6,7 @@ use App\Category;
 use App\Product;
 use App\Shop;
 use App\Comment;
-use App\News;
+use App\Blog;
 use App\User;
 use App\Entity;
 use App\Status;
@@ -32,15 +32,6 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all category status",
      *     description="This provides available statuses to the category for frontend dynamically.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available category status",
@@ -71,15 +62,6 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all product status",
      *     description="This provides available statuses to the product for frontend dynamically.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available product status",
@@ -110,15 +92,6 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all shop status",
      *     description="This provides available statuses to the shop for frontend dynamically.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available shop status",
@@ -149,15 +122,6 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all comment status",
      *     description="This provides available statuses to the comment for frontend dynamically.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available comment status",
@@ -183,34 +147,25 @@ class StatusController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/newsstatus",
-     *     operationId="newsStatusList",
+     *     path="/api/blogstatus",
+     *     operationId="blogStatusList",
      *     tags={"Status"},
-     *     summary="Retrieves all news status",
-     *     description="This provides available statuses to the news for frontend dynamically.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
+     *     summary="Retrieves all blog status",
+     *     description="This provides available statuses to the blog for frontend dynamically.",
      *     @OA\Response(
      *         response="200",
-     *         description="Returns available news status",
+     *         description="Returns available blog status",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsStatusList()
+    public function blogStatusList()
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         $statusList = [];
-        $statusOptionList = StatusOption::where('entity', $newsEntity->id)->whereNull('deleted_at')->get();
+        $statusOptionList = StatusOption::where('entity', $blogEntity->id)->whereNull('deleted_at')->get();
         foreach ($statusOptionList as $statusOption) {
             $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
         }
@@ -227,15 +182,6 @@ class StatusController extends Controller
      *     tags={"Status"},
      *     summary="Retrieves all user status",
      *     description="This provides available statuses to the user for frontend dynamically.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns available user status",

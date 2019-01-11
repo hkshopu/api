@@ -20,7 +20,6 @@ class Rating extends Model
         'entity',
         'entity_id',
         'rate',
-        'user_id',
         //
         'created_by',
         'updated_by',

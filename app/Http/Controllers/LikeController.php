@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Like;
-use App\News;
+use App\Blog;
 use App\Entity;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -22,11 +22,11 @@ class LikeController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/newslike",
-     *     operationId="newsLikeAdd",
+     *     path="/api/bloglike",
+     *     operationId="blogLikeAdd",
      *     tags={"Like"},
-     *     summary="Adds like to news",
-     *     description="Adds like to news.",
+     *     summary="Likes user to blog",
+     *     description="Likes user to blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -37,76 +37,71 @@ class LikeController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
-     *         name="news_id",
+     *         name="blog_id",
      *         in="query",
-     *         description="The news id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="query",
-     *         description="The user id (Just enter any random integer, yah as in random ;)",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news like create status",
+     *         description="Returns the blog like create status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news like create failure reason",
+     *         description="Returns the blog like create failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsLikeAdd(Request $request)
+    public function blogLikeAdd(Request $request)
     {
-        $news = News::where('id', $request->news_id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid news id',
-            ], 400);
-        } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid user id',
+                'message' => 'Invalid blog id',
             ], 400);
         }
 
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
+        $like = Like::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();
 
-        if (!empty(Like::where('entity', $newsEntity->id)->where('entity_id', $news->id)->where('user_id', $request->user_id)->whereNull('deleted_at')->first())) {
+        if (!empty($like)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Like already exists',
+                'message' => 'Blog already liked',
             ], 400);
         }
 
         $request->request->add([
-            'entity' => $newsEntity->id,
-            'entity_id' => $news->id,
+            'entity' => $blogEntity->id,
+            'entity_id' => $blog->id,
             'created_by' => $request->access_token_user_id,
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        $like = Like::create($request->all());
+        $like = Like::create($request->only([
+            'entity',
+            'entity_id',
+            'created_by',
+            'updated_by',
+        ]));
+
         return response()->json([
             'success' => true,
-            'message' => 'Like added',
+            'message' => 'Blog liked',
         ], 201);
     }
 
     /**
      * @OA\Get(
-     *     path="/api/newslike/{news_id}",
-     *     operationId="newsLikeGet",
+     *     path="/api/bloglike/{blog_id}",
+     *     operationId="blogLikeGet",
      *     tags={"Like"},
-     *     summary="Retrieves all news likes given the news id",
-     *     description="Retrieves all news likes given the news id.",
+     *     summary="Retrieves all blog likes given the blog id",
+     *     description="Retrieves all blog likes given the blog id.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -117,48 +112,52 @@ class LikeController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
-     *         name="news_id",
+     *         name="blog_id",
      *         in="path",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns news like total count",
+     *         description="Returns blog like total count",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news like get failure reason",
+     *         description="Returns the blog like get failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsLikeGet(int $news_id)
+    public function blogLikeGet(int $blog_id)
     {
-        $news = News::where('id', $news_id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $blog_id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid news id',
+                'message' => 'Invalid blog id',
             ], 400);
         }
 
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
-        $likeList = Like::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->get();
+        $likeList = Like::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();
+        foreach ($likeList as $key => $like) {
+            $likeList[$key]['user_id'] = $like['created_by'];
+            unset($likeList[$key]['created_by']);
+        }
 
         return response()->json($likeList, 200);
     }
 
     /**
      * @OA\Delete(
-     *     path="/api/newslike/{id}",
-     *     operationId="newsLikeDelete",
+     *     path="/api/bloglike/{blog_id}",
+     *     operationId="blogLikeDelete",
      *     tags={"Like"},
-     *     summary="Unfollows user to news",
-     *     description="Unfollows user to news.",
+     *     summary="Unlikes user to blog",
+     *     description="Unlikes user to blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -169,38 +168,41 @@ class LikeController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
-     *         name="id",
+     *         name="blog_id",
      *         in="path",
-     *         description="The news like id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news like delete status",
+     *         description="Returns the blog like delete status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news like delete failure reason",
+     *         description="Returns the blog like delete failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsLikeDelete($id, Request $request)
+    public function blogLikeDelete($blog_id, Request $request)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
-
-        if (empty(Like::where('id', $id)->whereNull('deleted_at')->first())) {
+        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid like id',
+                'message' => 'Invalid blog id',
             ], 400);
-        } else if (empty(Like::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first())) {
+        }
+
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
+        $like = Like::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();
+
+        if (empty($like)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid like id for the news',
+                'message' => 'Nothing to unlike',
             ], 400);
         }
 
@@ -209,12 +211,14 @@ class LikeController extends Controller
             'deleted_by' => $request->access_token_user_id,
         ]);
 
-        $like = Like::where('id', $id)->where('entity', $newsEntity->id)->whereNull('deleted_at')->first();
-        $like->update($request->all());
+        $like->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
 
         return response()->json([
             'success' => true,
-            'message' => 'Like removed',
+            'message' => 'Blog unliked',
         ], 200);
     }
 }

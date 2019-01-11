@@ -7,7 +7,7 @@ use App\CategoryLevel;
 use App\CategoryMap;
 use App\Product;
 use App\Shop;
-use App\News;
+use App\Blog;
 use App\Entity;
 use App\Status;
 use App\StatusMap;
@@ -34,15 +34,6 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves all product category",
      *     description="Retrieves all product categories in hierarchial structure.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns all product category",
@@ -212,15 +203,6 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves the product category given the id",
      *     description="Retrieves the product category given the id.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -499,15 +481,6 @@ class CategoryController extends Controller
      *     summary="Retrieves the product category root hierarchy given the id",
      *     description="Retrieves the product category root hierarchy given the id.",
      *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="The product category id",
@@ -558,15 +531,6 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves all shop category",
      *     description="Retrieves all shop categories.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns all shop category",
@@ -684,15 +648,6 @@ class CategoryController extends Controller
      *     tags={"Category"},
      *     summary="Retrieves the shop category given the id",
      *     description="Retrieves the shop category given the id.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -928,35 +883,26 @@ class CategoryController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/newscategory",
-     *     operationId="newsCategoryList",
+     *     path="/api/blogcategory",
+     *     operationId="blogCategoryList",
      *     tags={"Category"},
-     *     summary="Retrieves all news category",
-     *     description="Retrieves all news categories.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
+     *     summary="Retrieves all blog category",
+     *     description="Retrieves all blog categories.",
      *     @OA\Response(
      *         response="200",
-     *         description="Returns all news category",
+     *         description="Returns all blog category",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCategoryList(Request $request)
+    public function blogCategoryList(Request $request)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
         $category = new Category();
         $categoryEntity = Entity::where('name', $category->getTable())->first();
 
-        $categoryList = Category::where('entity', $newsEntity->id)->whereNull('deleted_at')->get();
+        $categoryList = Category::where('entity', $blogEntity->id)->whereNull('deleted_at')->get();
         foreach ($categoryList as $categoryKey => $category) {
             $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
             $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
@@ -970,11 +916,11 @@ class CategoryController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/newscategory",
-     *     operationId="newsCategoryAdd",
+     *     path="/api/blogcategory",
+     *     operationId="blogCategoryAdd",
      *     tags={"Category"},
-     *     summary="Adds news category",
-     *     description="Adds news category.",
+     *     summary="Adds blog category",
+     *     description="Adds blog category.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -987,7 +933,7 @@ class CategoryController extends Controller
      *     @OA\Parameter(
      *         name="name",
      *         in="query",
-     *         description="The news category name",
+     *         description="The blog category name",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
@@ -1000,23 +946,23 @@ class CategoryController extends Controller
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news category created",
+     *         description="Returns the blog category created",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news category create failure reason",
+     *         description="Returns the blog category create failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCategoryAdd(Request $request)
+    public function blogCategoryAdd(Request $request)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         $request->request->add([
-            'entity' => $newsEntity->id,
+            'entity' => $blogEntity->id,
             'created_by' => $request->access_token_user_id,
             'updated_by' => $request->access_token_user_id,
         ]);
@@ -1054,43 +1000,34 @@ class CategoryController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/newscategory/{id}",
-     *     operationId="newsCategoryGet",
+     *     path="/api/blogcategory/{id}",
+     *     operationId="blogCategoryGet",
      *     tags={"Category"},
-     *     summary="Retrieves the news category given the id",
-     *     description="Retrieves the news category given the id.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
+     *     summary="Retrieves the blog category given the id",
+     *     description="Retrieves the blog category given the id.",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news category id",
+     *         description="The blog category id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news category",
+     *         description="Returns the blog category",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news category get failure reason",
+     *         description="Returns the blog category get failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCategoryGet(int $id)
+    public function blogCategoryGet(int $id)
     {
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         $category = Category::where('id', $id)->whereNull('deleted_at')->first();
 
@@ -1099,10 +1036,10 @@ class CategoryController extends Controller
                 'success' => false,
                 'message' => 'Invalid category id',
             ], 400);
-        } else if ($category->entity <> $newsEntity->id) {
+        } else if ($category->entity <> $blogEntity->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid category for the news',
+                'message' => 'Invalid category for the blog',
             ], 400);
         }
 
@@ -1116,11 +1053,11 @@ class CategoryController extends Controller
 
     /**
      * @OA\Patch(
-     *     path="/api/newscategory/{id}",
-     *     operationId="newsCategoryModify",
+     *     path="/api/blogcategory/{id}",
+     *     operationId="blogCategoryModify",
      *     tags={"Category"},
-     *     summary="Modifies the news category given the id with only defined fields",
-     *     description="Modifies the news category given the id with only defined fields.",
+     *     summary="Modifies the blog category given the id with only defined fields",
+     *     description="Modifies the blog category given the id with only defined fields.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -1140,7 +1077,7 @@ class CategoryController extends Controller
      *     @OA\Parameter(
      *         name="name",
      *         in="query",
-     *         description="The news category name",
+     *         description="The blog category name",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
@@ -1153,17 +1090,17 @@ class CategoryController extends Controller
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news category updated",
+     *         description="Returns the blog category updated",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news category update failure reason",
+     *         description="Returns the blog category update failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCategoryModify(int $id, Request $request)
+    public function blogCategoryModify(int $id, Request $request)
     {
         $category = Category::where('id', $id)->whereNull('deleted_at')->first();
         if (empty($category)) {
@@ -1173,8 +1110,8 @@ class CategoryController extends Controller
             ], 400);
         }
 
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
         $categoryEntity = Entity::where('name', $category->getTable())->first();
         $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
 
@@ -1215,11 +1152,11 @@ class CategoryController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/newscategory/{id}",
-     *     operationId="newsCategoryDelete",
+     *     path="/api/blogcategory/{id}",
+     *     operationId="blogCategoryDelete",
      *     tags={"Category"},
-     *     summary="Deletes the news category given the id",
-     *     description="Deletes the news category given the id.",
+     *     summary="Deletes the blog category given the id",
+     *     description="Deletes the blog category given the id.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -1232,41 +1169,41 @@ class CategoryController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="The news category id",
+     *         description="The blog category id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns the news category delete status",
+     *         description="Returns the blog category delete status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news category delete failure reason",
+     *         description="Returns the blog category delete failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsCategoryDelete($id, Request $request)
+    public function blogCategoryDelete($id, Request $request)
     {
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
             'deleted_by' => $request->access_token_user_id,
         ]);
 
-        $news = new News();
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
         $category = Category::where('id', $id)->whereNull('deleted_at')->first();
         if (empty($category)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid category id',
             ], 400);
-        } else if ($category->entity <> $newsEntity->id) {
+        } else if ($category->entity <> $blogEntity->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid category for the news',
+                'message' => 'Invalid category for the blog',
             ], 400);
         } else if (
             !empty(CategoryLevel::where('parent_category_id', $id)->whereNull('deleted_at')->first())
@@ -1280,7 +1217,7 @@ class CategoryController extends Controller
         ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Currently associated with news',
+                'message' => 'Currently associated with blog',
             ], 400);
         }
 

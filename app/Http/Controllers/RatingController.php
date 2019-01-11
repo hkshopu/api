@@ -50,13 +50,6 @@ class RatingController extends Controller
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="query",
-     *         description="The user id (Just enter any random integer, yah as in random ;)",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
      *     @OA\Response(
      *         response="201",
      *         description="Returns the shop rating create status",
@@ -77,27 +70,18 @@ class RatingController extends Controller
                 'success' => false,
                 'message' => 'Invalid shop id',
             ], 400);
-        } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid user id',
-            ], 400);
-        }
-
-        $shopEntity = Entity::where('name', $shop->getTable())->first();
-
-        if (!empty(Rating::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->where('user_id', $request->user_id)->whereNull('deleted_at')->first())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rating already exists',
-            ], 400);
-        }
-
-        if ($request->rating < 1 || $request->rating > 5) {
+        } else if ($request->rating < 1 || $request->rating > 5) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid rating',
             ], 400);
+        }
+
+        $shopEntity = Entity::where('name', $shop->getTable())->first();
+        $rating = Rating::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();
+
+        if (!empty($rating)) {
+            self::shopRatingDelete($rating->id, $request);
         }
 
         $request->request->add([
@@ -108,7 +92,14 @@ class RatingController extends Controller
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        $rating = Rating::create($request->all());
+        $rating = Rating::create($request->only([
+            'entity',
+            'entity_id',
+            'rate',
+            'created_by',
+            'updated_by',
+        ]));
+
         return response()->json([
             'success' => true,
             'message' => 'Rating added',
@@ -225,7 +216,10 @@ class RatingController extends Controller
         ]);
 
         $rating = Rating::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
-        $rating->update($request->all());
+        $rating->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
 
         return response()->json([
             'success' => true,

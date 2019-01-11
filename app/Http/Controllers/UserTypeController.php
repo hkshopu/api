@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\UserType;
 use App\Product;
 use App\Shop;
-use App\News;
+use App\Blog;
 use App\Entity;
 use App\Status;
 use App\StatusMap;
@@ -32,15 +32,6 @@ class UserTypeController extends Controller
      *     tags={"User Type"},
      *     summary="Retrieves all user type",
      *     description="Retrieves all user types.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns all user type",

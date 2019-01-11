@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\View;
 use App\Product;
-use App\News;
+use App\Blog;
 use App\Entity;
 use Illuminate\Http\Request;
 
@@ -149,11 +149,11 @@ class ViewController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/newsview",
-     *     operationId="newsViewAdd",
+     *     path="/api/blogview",
+     *     operationId="blogViewAdd",
      *     tags={"View"},
-     *     summary="Adds view to news",
-     *     description="Adds view to news.",
+     *     summary="Adds view to blog",
+     *     description="Adds view to blog.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -164,9 +164,9 @@ class ViewController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
-     *         name="news_id",
+     *         name="blog_id",
      *         in="query",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -179,23 +179,23 @@ class ViewController extends Controller
      *     ),
      *     @OA\Response(
      *         response="201",
-     *         description="Returns the news view create status",
+     *         description="Returns the blog view create status",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news view create failure reason",
+     *         description="Returns the blog view create failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsViewAdd(Request $request)
+    public function blogViewAdd(Request $request)
     {
-        $news = News::where('id', $request->news_id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid news id',
+                'message' => 'Invalid blog id',
             ], 400);
         } else if (empty($request->user_id) || $request->user_id < 1) {
             return response()->json([
@@ -204,11 +204,11 @@ class ViewController extends Controller
             ], 400);
         }
 
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         $request->request->add([
-            'entity' => $newsEntity->id,
-            'entity_id' => $news->id,
+            'entity' => $blogEntity->id,
+            'entity_id' => $blog->id,
             'created_by' => $request->access_token_user_id,
             'updated_by' => $request->access_token_user_id,
         ]);
@@ -222,11 +222,11 @@ class ViewController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/newsview/{news_id}",
-     *     operationId="newsViewGet",
+     *     path="/api/blogview/{blog_id}",
+     *     operationId="blogViewGet",
      *     tags={"View"},
-     *     summary="Retrieves all news views given the news id",
-     *     description="Retrieves all news views given the news id.",
+     *     summary="Retrieves all blog views given the blog id",
+     *     description="Retrieves all blog views given the blog id.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -237,37 +237,37 @@ class ViewController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
-     *         name="news_id",
+     *         name="blog_id",
      *         in="path",
-     *         description="The news id",
+     *         description="The blog id",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns news view total count",
+     *         description="Returns blog view total count",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the news view get failure reason",
+     *         description="Returns the blog view get failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
      */
-    public function newsViewGet(int $news_id)
+    public function blogViewGet(int $blog_id)
     {
-        $news = News::where('id', $news_id)->whereNull('deleted_at')->first();
-        if (empty($news)) {
+        $blog = Blog::where('id', $blog_id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid news id',
+                'message' => 'Invalid blog id',
             ], 400);
         }
 
-        $newsEntity = Entity::where('name', $news->getTable())->first();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
 
-        $viewList = View::where('entity', $newsEntity->id)->where('entity_id', $news->id)->whereNull('deleted_at')->get();
+        $viewList = View::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();
 
         return response()->json([
             'count' => count($viewList),

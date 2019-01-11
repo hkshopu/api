@@ -4,12 +4,12 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class News extends Model
+class Blog extends Model
 {
     /**
      * Bypass eloquent pluralization
      */
-    protected $table = 'news';
+    protected $table = 'blog';
 
     /**
      * The attributes that are mass assignable.

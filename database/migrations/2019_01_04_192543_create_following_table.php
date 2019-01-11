@@ -4,9 +4,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateEntityTable extends Migration
+class CreateFollowingTable extends Migration
 {
-    const TABLE_NAME = 'entity';
+    const TABLE_NAME = 'following';
 
     /**
      * Run the migrations.
@@ -17,8 +17,9 @@ class CreateEntityTable extends Migration
     {
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name');
-
+            $table->integer('entity');
+            $table->integer('entity_id');
+            
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');
             $table->integer('created_by');

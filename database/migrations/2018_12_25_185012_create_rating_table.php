@@ -4,9 +4,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateOptionMapTable extends Migration
+class CreateRatingTable extends Migration
 {
-    const TABLE_NAME = 'status_option';
+    const TABLE_NAME = 'rating';
 
     /**
      * Run the migrations.
@@ -18,7 +18,8 @@ class CreateOptionMapTable extends Migration
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->increments('id');
             $table->integer('entity');
-            $table->integer('status_id');
+            $table->integer('entity_id');
+            $table->integer('rate');
             
             // Always have these three datetime columns for logs
             $table->timestamp('created_at');
