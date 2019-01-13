@@ -53,10 +53,16 @@ class Authenticate
         }
 
         if (empty($request->header('token'))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 401);
+            $request->request->add([
+                'access_token_user_id' => 0,
+            ]);
+
+            return $next($request);
+
+            // return response()->json([
+            //     'success' => false,
+            //     'message' => 'Unauthorized',
+            // ], 401);
         }
 
         if ($request->getPathInfo() == '/api/login'

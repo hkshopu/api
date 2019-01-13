@@ -1122,7 +1122,7 @@ class UserController extends Controller
         $request->request->add([
             'user_id' => $user->id,
             'token' => bin2hex(openssl_random_pseudo_bytes(32)),
-            'expires_at' => Carbon::now()->addDays(1)->format('Y-m-d H:i:s'),
+            'expires_at' => Carbon::now()->addYears(1)->format('Y-m-d H:i:s'),
             'created_by' => $user->id,
             'updated_by' => $user->id,
         ]);
