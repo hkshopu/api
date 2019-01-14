@@ -181,6 +181,13 @@ class ShopController extends Controller
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
+     *     @OA\Parameter(
+     *         name="logo_url",
+     *         in="query",
+     *         description="The shop logo url",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
      *     @OA\Response(
      *         response="201",
      *         description="Returns the shop created",
@@ -470,6 +477,13 @@ class ShopController extends Controller
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
+     *     @OA\Parameter(
+     *         name="logo_url",
+     *         in="query",
+     *         description="The shop logo url",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
      *     @OA\Response(
      *         response="201",
      *         description="Returns the shop updated",
@@ -515,6 +529,10 @@ class ShopController extends Controller
 
         if (!empty($request->description_sc)) {
             $request->request->add(['description_sc' => $request->description_sc]);
+        }
+
+        if (!empty($request->logo_url)) {
+            $request->request->add(['logo_url' => $request->logo_url]);
         }
 
         $shopEntity = Entity::where('name', $shop->getTable())->first();

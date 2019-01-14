@@ -23,6 +23,7 @@ class Shop extends Model
         'description_en',
         'description_tc',
         'description_sc',
+        'logo_url',
         'user_id',
         //
         'created_by',
