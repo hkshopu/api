@@ -100,10 +100,7 @@ class RatingController extends Controller
             'updated_by',
         ]));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Rating added',
-        ], 201);
+        return response()->json(app('App\Http\Controllers\ShopController')->shopGet($shop->id, $request)->getData(), 201);
     }
 
     /**
