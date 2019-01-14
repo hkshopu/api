@@ -88,12 +88,12 @@ class Authenticate
             $dateCurrent = Carbon::now();
             $dateExpiration = new Carbon($accessToken->expires_at);
 
-            if ($dateCurrent > $dateExpiration) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Expired token',
-                ], 400);
-            }
+            // if ($dateCurrent > $dateExpiration) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Expired token',
+            //     ], 400);
+            // }
 
             $request->request->add([
                 'access_token_user_id' => $accessToken->user_id,
