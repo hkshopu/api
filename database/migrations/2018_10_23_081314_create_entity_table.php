@@ -16,30 +16,30 @@ class CreateEntityTable extends Migration
     public function up()
     {
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
-            $table->mediumInteger('id', 1)->unsinged();
-            $table->string('name', 128)->unique();
+            $table->bigInteger('id', 1)->unsigned();
+            $table->string('name', 512)->unique();
 
             // Always have these three datetime columns for logs
-            $table->nullableTimestamps();
-            $table->softDeletes();
-            // $table->timestamp('created_at');
-            $table->integer('created_by')->nullable();
-            // $table->datetime('updated_at');
-            $table->integer('updated_by')->nullable();
-            // $table->datetime('deleted_at');
-            $table->integer('deleted_by')->nullable();
+            $table->timestamp('updated_at');
+            $table->bigInteger('updated_by')->nullable()->unsigned();
+            $table->timestamp('deleted_at')->nullable();
+            $table->bigInteger('deleted_by')->nullable()->unsigned();
         });
 
-        // DB::table(self::TABLE_NAME)->insert([
-        //     ['name' => 'user', 'created_by' => 1],
-        //     ['name' => 'category', 'created_by' => 1],
-        //     ['name' => 'shop', 'created_by' => 1],
-        //     ['name' => 'product', 'created_by' => 1],
-        //     ['name' => 'blog', 'created_by' => 1],
-        //     ['name' => 'image', 'created_by' => 1],
-        //     ['name' => 'comment', 'created_by' => 1],
-        // ]);
-        exit;
+        Schema::table(self::TABLE_NAME, function($table) {
+            $table->timestamp('created_at')->nullable()->useCurrent()->after('name');
+            $table->bigInteger('created_by')->nullable()->unsigned()->after('created_at');
+        });
+
+        DB::table(self::TABLE_NAME)->insert([
+            ['name' => 'user', 'created_by' => 13, 'updated_by' => 13],
+            ['name' => 'category', 'created_by' => 13, 'updated_by' => 13],
+            ['name' => 'shop', 'created_by' => 13, 'updated_by' => 13],
+            ['name' => 'product', 'created_by' => 13, 'updated_by' => 13],
+            ['name' => 'blog', 'created_by' => 13, 'updated_by' => 13],
+            ['name' => 'image', 'created_by' => 13, 'updated_by' => 13],
+            ['name' => 'comment', 'created_by' => 13, 'updated_by' => 13],
+        ]);
     }
 
     /**

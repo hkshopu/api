@@ -16,18 +16,29 @@ class CreateSizeTable extends Migration
     public function up()
     {
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('code');
-            $table->string('name');
+            $table->bigInteger('id', 1)->unsigned();
+            $table->string('code', 512)->unique();
+            $table->string('name', 512);
 
             // Always have these three datetime columns for logs
-            $table->timestamp('created_at');
-            $table->integer('created_by');
-            $table->datetime('updated_at');
-            $table->integer('updated_by');
-            $table->datetime('deleted_at');
-            $table->integer('deleted_by');
+            $table->timestamp('updated_at');
+            $table->bigInteger('updated_by')->nullable()->unsigned();
+            $table->timestamp('deleted_at')->nullable();
+            $table->bigInteger('deleted_by')->nullable()->unsigned();
         });
+
+        Schema::table(self::TABLE_NAME, function($table) {
+            $table->timestamp('created_at')->nullable()->useCurrent()->after('name');
+            $table->bigInteger('created_by')->nullable()->unsigned()->after('created_at');
+        });
+
+        DB::table(self::TABLE_NAME)->insert([
+            ['code' => 'xs', 'name' => 'extra small', 'created_by' => 13, 'updated_by' => 13],
+            ['code' => 's', 'name' => 'small', 'created_by' => 13, 'updated_by' => 13],
+            ['code' => 'm', 'name' => 'medium', 'created_by' => 13, 'updated_by' => 13],
+            ['code' => 'l', 'name' => 'large', 'created_by' => 13, 'updated_by' => 13],
+            ['code' => 'xl', 'name' => 'extra large', 'created_by' => 13, 'updated_by' => 13],
+        ]);
     }
 
     /**
