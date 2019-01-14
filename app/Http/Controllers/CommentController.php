@@ -8,6 +8,8 @@ use App\Blog;
 use App\Entity;
 use App\Status;
 use App\StatusMap;
+use App\User;
+use App\Image;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -21,6 +23,40 @@ class CommentController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+    }
+
+    public function commentGet(int $comment_id)
+    {
+        $comment = Comment::where('id', $comment_id)->whereNull('deleted_at')->first();
+        if (empty($comment)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid comment id',
+            ], 400);
+        }
+
+        $commentEntity = Entity::where('name', $comment->getTable())->first();
+
+        $itemTemp = [];
+        $user = User::where('id', $comment['created_by'])->whereNull('deleted_at')->first();
+        $userEntity = Entity::where('name', $user->getTable())->first();
+        $userImage = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+        $postedDate = new Carbon($comment['created_at']);
+        $itemTemp['comment_id'] = $comment['id'];
+        $itemTemp['content'] = $comment['content'];
+        $itemTemp['posted_date'] = $postedDate->format('Y-m-d');
+        $itemTemp['user_name'] = $user->username;
+        $itemTemp['user_profile_image'] = !empty($userImage) ? $userImage->url : null;
+        $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+        if (!empty($statusMap)) {
+            $itemTemp['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        } else {
+            $itemTemp['status'] = null;
+        }
+
+        $comment = $itemTemp;
+
+        return response()->json($comment, 200);
     }
 
     /**
@@ -53,13 +89,6 @@ class CommentController extends Controller
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="query",
-     *         description="The user id (Just enter any random integer, yah as in random ;)",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
      *     @OA\Response(
      *         response="201",
      *         description="Returns the shop comment create status",
@@ -79,11 +108,6 @@ class CommentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
-            ], 400);
-        } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid user id',
             ], 400);
         }
 
@@ -113,10 +137,7 @@ class CommentController extends Controller
 
         $statusMap = StatusMap::create($request->all());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Comment added',
-        ], 201);
+        return response()->json(self::commentGet($comment->id)->getData(), 201);
     }
 
     /**
@@ -169,15 +190,13 @@ class CommentController extends Controller
         $comment = new Comment();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
-        $commentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+        $commentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->get();
+        $listTemp = [];
         foreach ($commentList as $key => $comment) {
-            $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
-            if (!empty($statusMap)) {
-                $commentList[$key]['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
-            } else {
-                $commentList[$key]['status'] = null;
-            }
+            $listTemp[$key] = self::commentGet($comment->id)->getData();
         }
+
+        $commentList = $listTemp;
 
         return response()->json($commentList, 200);
     }
@@ -440,13 +459,6 @@ class CommentController extends Controller
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="query",
-     *         description="The user id (Just enter any random integer, yah as in random ;)",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
      *     @OA\Response(
      *         response="201",
      *         description="Returns the blog comment create status",
@@ -466,11 +478,6 @@ class CommentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
-            ], 400);
-        } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid user id',
             ], 400);
         }
 
@@ -500,10 +507,7 @@ class CommentController extends Controller
 
         $statusMap = StatusMap::create($request->all());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Comment added',
-        ], 201);
+        return response()->json(self::commentGet($comment->id)->getData(), 201);
     }
 
     /**
@@ -556,15 +560,13 @@ class CommentController extends Controller
         $comment = new Comment();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
-        $commentList = Comment::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+        $commentList = Comment::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();
+        $listTemp = [];
         foreach ($commentList as $key => $comment) {
-            $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
-            if (!empty($statusMap)) {
-                $commentList[$key]['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
-            } else {
-                $commentList[$key]['status'] = null;
-            }
+            $listTemp[$key] = self::commentGet($comment->id)->getData();
         }
+
+        $commentList = $listTemp;
 
         return response()->json($commentList, 200);
     }
