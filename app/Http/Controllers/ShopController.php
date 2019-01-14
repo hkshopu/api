@@ -103,7 +103,7 @@ class ShopController extends Controller
         $shopList = $shopListPaginated;
 
         foreach ($shopList as $shopKey => $shop) {
-            $shopList[$shopKey] = self::shopGet($shop->id)->getData();
+            $shopList[$shopKey] = self::shopGet($shop->id, $request)->getData();
         }
 
         return response()->json($shopList, 200);
@@ -242,7 +242,7 @@ class ShopController extends Controller
 
         StatusMap::create($request->all());
 
-        return response()->json(self::shopGet($shop->id)->getData(), 201);
+        return response()->json(self::shopGet($shop->id, $request)->getData(), 201);
     }
 
     /**
@@ -275,7 +275,7 @@ class ShopController extends Controller
      *     ),
      * )
      */
-    public function shopGet($id)
+    public function shopGet(int $id, Request $request = null)
     {
         $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
 
@@ -314,6 +314,14 @@ class ShopController extends Controller
 
             $shopFollowingList = Following::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
             $shop['followers'] = count($shopFollowingList);
+
+            $shop['is_following'] = false;
+            foreach ($shopFollowingList as $following) {
+                if (!empty($following) && $following->created_by == $request->access_token_user_id) {
+                    $shop['is_following'] = true;
+                    break;
+                }
+            }
 
             $shop['orders'] = 0;
 
@@ -596,7 +604,7 @@ class ShopController extends Controller
         }
 
         $shop->update($request->all());
-        $shop = self::shopGet($id)->getData();
+        $shop = self::shopGet($id, $request)->getData();
         return response()->json($shop, 201);
     }
 }

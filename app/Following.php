@@ -32,6 +32,7 @@ class Following extends Model
      * @var array
      */
     protected $hidden = [
+        'id',
         'entity',
         'entity_id',
         'created_at',
