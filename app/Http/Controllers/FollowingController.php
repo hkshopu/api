@@ -91,10 +91,7 @@ class FollowingController extends Controller
             'updated_by',
         ]));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Product followed',
-        ], 201);
+        return response()->json(app('App\Http\Controllers\ProductController')->productGet($product->id, $request)->getData(), 201);
     }
 
     /**
@@ -218,10 +215,7 @@ class FollowingController extends Controller
             'deleted_by',
         ]));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Product unfollowed',
-        ], 200);
+        return response()->json(app('App\Http\Controllers\ProductController')->productGet($product->id, $request)->getData(), 201);
     }
 
     /**
@@ -495,10 +489,7 @@ class FollowingController extends Controller
             'updated_by',
         ]));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Shop followed',
-        ], 201);
+        return response()->json(app('App\Http\Controllers\ShopController')->shopGet($shop->id, $request)->getData(), 201);
     }
 
     /**
@@ -622,10 +613,7 @@ class FollowingController extends Controller
             'deleted_by',
         ]));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Shop unfollowed',
-        ], 200);
+        return response()->json(app('App\Http\Controllers\ShopController')->shopGet($shop->id, $request)->getData(), 201);
     }
 }
 

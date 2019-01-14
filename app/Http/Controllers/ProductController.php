@@ -148,7 +148,7 @@ class ProductController extends Controller
         $productList = $productListPaginated;
 
         foreach ($productList as $productKey => $product) {
-            $productList[$productKey] = self::productGet($product->id)->getData();
+            $productList[$productKey] = self::productGet($product->id, $request)->getData();
         }
 
         return response()->json($productList, 200);
@@ -478,7 +478,7 @@ class ProductController extends Controller
 
         ProductInventory::create($request->all());
 
-        return response()->json(self::productGet($product->id)->getData(), 201);
+        return response()->json(self::productGet($product->id, $request)->getData(), 201);
     }
 
     /**
@@ -511,7 +511,7 @@ class ProductController extends Controller
      *     ),
      * )
      */
-    public function productGet($id)
+    public function productGet(int $id, Request $request = null)
     {
         $product = Product::where('id', $id)->whereNull('deleted_at')->first();
 
@@ -614,6 +614,14 @@ class ProductController extends Controller
 
             $productFollowingList = Following::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
             $product['followers'] = count($productFollowingList);
+
+            $product['is_following'] = false;
+            foreach ($productFollowingList as $following) {
+                if (!empty($following) && $following->created_by == $request->access_token_user_id) {
+                    $product['is_following'] = true;
+                    break;
+                }
+            }
 
             $productViewList = View::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->get();
             $product['views'] = count($productViewList);
@@ -1050,7 +1058,7 @@ class ProductController extends Controller
         }
 
         $product->update($request->all());
-        $product = self::productGet($id)->getData();
+        $product = self::productGet($id, $request)->getData();
         return response()->json($product, 201);
     }
 
@@ -1196,7 +1204,7 @@ class ProductController extends Controller
 
         ProductInventory::create($request->all());
 
-        return response()->json(self::productGet($product->id)->getData(), 201);
+        return response()->json(self::productGet($product->id, $request)->getData(), 201);
     }
 
     /**
@@ -1292,7 +1300,7 @@ class ProductController extends Controller
 
         ProductInventory::create($request->all());
 
-        return response()->json(self::productGet($product->id)->getData(), 201);
+        return response()->json(self::productGet($product->id, $request)->getData(), 201);
     }
 }
 
