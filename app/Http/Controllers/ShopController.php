@@ -14,6 +14,8 @@ use App\StatusMap;
 use App\StatusOption;
 use App\Rating;
 use App\Comment;
+use App\PaymentMethod;
+use App\ShopPaymentMethodMap;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -281,6 +283,21 @@ class ShopController extends Controller
 
         if (!empty($shop)) {
             $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+            $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
+            foreach ($paymentMethodList as $key => $paymentMethodItem) {
+                $tempItem = [];
+                $paymentMethod = PaymentMethod::where('id', $paymentMethodItem->payment_method_id)->whereNull('deleted_at')->first();
+                $tempItem['name'] = $paymentMethod->name;
+                $tempItem['code'] = $paymentMethod->code;
+                $tempItem['account_info'] = $paymentMethodItem->account_info;
+                if ($paymentMethod->code == 'bank') {
+                    $tempItem['remarks'] = $paymentMethodItem->remarks;
+                }
+
+                $paymentMethodList[$key] = $tempItem;
+            }
+            $shop['payment_method'] = $paymentMethodList;
 
             $categoryMap = CategoryMap::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($categoryMap)) {
@@ -606,5 +623,344 @@ class ShopController extends Controller
         $shop->update($request->all());
         $shop = self::shopGet($id, $request)->getData();
         return response()->json($shop, 201);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/shoppaymentmethod",
+     *     operationId="shopPaymentMethodCreate",
+     *     tags={"Shop"},
+     *     summary="Adds payment method to the shop",
+     *     description="Adds payment method to the shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\RequestBody(
+     *         description="The payment method information",
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="shop_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="payment_method_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="account_info",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="remarks",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *             ),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the updated shop information",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the payment method add failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopPaymentMethodCreate(Request $request = null)
+    {
+        if (empty($request->shop_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop id required',
+            ], 400);
+        }
+
+        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        if (empty($request->payment_method_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method id required',
+            ], 400);
+        } else if (empty(PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid payment method id',
+            ], 400);
+        }
+
+        if (!empty(ShopPaymentMethodMap::where('shop_id', $shop->id)->where('payment_method_id', $request->payment_method_id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop with that payment method already exists',
+            ], 400);
+        }
+
+        if (empty($request->account_info)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Account info required',
+            ], 400);
+        }
+
+        if ((PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())->code != 'bank') {
+            $request->request->remove('remarks');
+        }
+
+        $request->request->add([
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        ShopPaymentMethodMap::create($request->all());
+
+        return response()->json(self::shopGet($shop->id, $request)->getData(), 201);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/shoppaymentmethod",
+     *     operationId="shopPaymentMethodDelete",
+     *     tags={"Shop"},
+     *     summary="Removes payment method to the shop",
+     *     description="Removes payment method to the shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\RequestBody(
+     *         description="The payment method information",
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="shop_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="payment_method_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *             ),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the updated shop information",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the payment method remove failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopPaymentMethodDelete(Request $request)
+    {
+        if (empty($request->shop_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop id required',
+            ], 400);
+        }
+
+        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        if (empty($request->payment_method_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method id required',
+            ], 400);
+        } else if (empty(PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid payment method id',
+            ], 400);
+        }
+
+        $shopPaymentMethodMap = ShopPaymentMethodMap::where('shop_id', $shop->id)->where('payment_method_id', $request->payment_method_id)->whereNull('deleted_at')->first();
+        if (empty($shopPaymentMethodMap)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop does not have that existing payment method',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $shopPaymentMethodMap->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        return response()->json(self::shopGet($shop->id, $request)->getData(), 201);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/shoppaymentmethod",
+     *     operationId="shopPaymentMethodModify",
+     *     tags={"Shop"},
+     *     summary="Updates payment method to the shop",
+     *     description="Updates payment method to the shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\RequestBody(
+     *         description="The payment method information",
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="shop_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="payment_method_id",
+     *                     type="integer",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="account_info",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *                 @OA\Property(
+     *                     property="remarks",
+     *                     type="string",
+     *                     example="",
+     *                 ),
+     *             ),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the updated shop information",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the payment method update failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopPaymentMethodModify(Request $request = null)
+    {
+        if (empty($request->shop_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop id required',
+            ], 400);
+        }
+
+        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        if (empty($request->payment_method_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method id required',
+            ], 400);
+        } else if (empty(PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid payment method id',
+            ], 400);
+        }
+
+        $shopPaymentMethodMap = ShopPaymentMethodMap::where('shop_id', $shop->id)->where('payment_method_id', $request->payment_method_id)->whereNull('deleted_at')->first();
+        if (empty($shopPaymentMethodMap)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop does not have that existing payment method',
+            ], 400);
+        }
+
+        if (empty($request->account_info)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Account info required',
+            ], 400);
+        }
+
+        if ((PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())->code != 'bank') {
+            $request->request->remove('remarks');
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $shopPaymentMethodMap->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        $request->request->remove('deleted_at');
+        $request->request->remove('deleted_by');
+
+        $request->request->add([
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        ShopPaymentMethodMap::create($request->all());
+
+        return response()->json(self::shopGet($shop->id, $request)->getData(), 201);
     }
 }

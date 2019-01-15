@@ -75,6 +75,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('shop/{id}', ['uses' => 'ShopController@shopGet']);
     $router->delete('shop/{id}', ['uses' => 'ShopController@shopDelete']);
     $router->patch('shop/{id}', ['uses' => 'ShopController@shopModify']);
+    $router->post('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodCreate']);
+    $router->delete('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodDelete']);
+    $router->patch('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodModify']);
     // Rating
     $router->post('shoprating', ['uses' => 'RatingController@shopRatingAdd']);
     $router->get('shoprating/{shop_id}',  ['uses' => 'RatingController@shopRatingGet']);

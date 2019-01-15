@@ -149,7 +149,7 @@ return [
     | Turn this off to remove swagger generation on production
     |--------------------------------------------------------------------------
      */
-    'generate_always' => env('SWAGGER_GENERATE_ALWAYS', false),
+    'generate_always' => env('SWAGGER_GENERATE_ALWAYS', true),
 
     /*
     |--------------------------------------------------------------------------
