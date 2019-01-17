@@ -55,6 +55,12 @@ class CategoryController extends Controller
             if (!empty($category)) {
                 $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
                 $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                if (empty($status)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Status ID Missing: ' . $statusMap->status_id,
+                    ], 500);
+                }
                 $category['status'] = $status->name;
                 $elements[$categoryLevelKey]['category'] = $category;
                 $elements[$categoryLevelKey]['parent_category_id'] = $categoryLevel->parent_category_id;
