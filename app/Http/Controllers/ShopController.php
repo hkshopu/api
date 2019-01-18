@@ -321,12 +321,17 @@ class ShopController extends Controller
 
             $shopRatingList = Rating::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
             $shopRatingTotal = 0;
+            $shopUserRating = null;
             foreach ($shopRatingList as $shopRatingItem) {
                 $shopRatingTotal += $shopRatingItem->rate;
+                if ($shopRatingItem->created_by == $request->access_token_user_id) {
+                    $shopUserRating = $shopRatingItem->rate;
+                }
             }
             $shopRating = [
                 'average' => $shopRatingTotal / (count($shopRatingList) ?: 1),
                 'count' => count($shopRatingList),
+                'user_rating' => $shopUserRating,
             ];
             $shop['rating'] = $shopRating;
 
