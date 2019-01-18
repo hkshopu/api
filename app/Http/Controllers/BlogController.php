@@ -48,6 +48,13 @@ class BlogController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
      *         name="title_en",
      *         in="query",
      *         description="The blog title (in English)",
@@ -82,14 +89,24 @@ class BlogController extends Controller
      */
     public function blogList(Request $request = null)
     {
-        $blog = new Blog();
-        $blogEntity = Entity::where('name', $blog->getTable())->first();
+        $blogFilter = Blog::whereNull('deleted_at');
 
-        if (!empty($request->title_en)) {
-            $blogList = Blog::where('title_en', 'LIKE', '%' . $request->title_en . '%')->whereNull('deleted_at')->get();
-        } else {
-            $blogList = Blog::whereNull('deleted_at')->get();
+        if (isset($request->shop_id)) {
+            if (empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid shop id',
+                ], 400);
+            } else {
+                $blogFilter->where('shop_id', $request->shop_id);
+            }
         }
+
+        if (isset($request->title_en)) {
+            $blogFilter->where('title_en', 'LIKE', '%' . $request->title_en . '%');
+        }
+
+        $blogList = $blogFilter->get();
 
         $pageNumber = (empty($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
         $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
