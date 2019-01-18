@@ -288,6 +288,7 @@ class ShopController extends Controller
             foreach ($paymentMethodList as $key => $paymentMethodItem) {
                 $tempItem = [];
                 $paymentMethod = PaymentMethod::where('id', $paymentMethodItem->payment_method_id)->whereNull('deleted_at')->first();
+                $tempItem['id'] = $paymentMethod->id;
                 $tempItem['name'] = $paymentMethod->name;
                 $tempItem['code'] = $paymentMethod->code;
                 $tempItem['account_info'] = $paymentMethodItem->account_info;
@@ -962,5 +963,40 @@ class ShopController extends Controller
         ShopPaymentMethodMap::create($request->all());
 
         return response()->json(self::shopGet($shop->id, $request)->getData(), 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/shoppaymentmethod",
+     *     operationId="shopPaymentMethodList",
+     *     tags={"Shop"},
+     *     summary="Retrieves all shop payment method",
+     *     description="Retrieves all shop payment method.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns all shop payment method",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop list failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopPaymentMethodList(Request $request = null)
+    {
+        $paymentMethodList = PaymentMethod::whereNull('deleted_at')->get();
+
+        return response()->json($paymentMethodList, 200);
     }
 }

@@ -75,6 +75,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('shop/{id}', ['uses' => 'ShopController@shopGet']);
     $router->delete('shop/{id}', ['uses' => 'ShopController@shopDelete']);
     $router->patch('shop/{id}', ['uses' => 'ShopController@shopModify']);
+    $router->get('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodList']);
     $router->post('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodCreate']);
     $router->delete('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodDelete']);
     $router->patch('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodModify']);
