@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Blog;
 use App\Shop;
-use App\Product;
 use App\Entity;
 use App\Category;
 use App\CategoryMap;
 use App\Image;
-use App\Following;
 use App\Status;
 use App\StatusMap;
 use App\StatusOption;
@@ -53,6 +51,13 @@ class BlogController extends Controller
      *         description="The shop id",
      *         required=false,
      *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         description="The category id",
+     *         required=false,
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Parameter(
      *         name="title_en",
@@ -107,6 +112,37 @@ class BlogController extends Controller
         }
 
         $blogList = $blogFilter->get();
+
+        if (isset($request->category_id)) {
+            $categoryList = Category::where('id', $request->category_id)->whereNull('deleted_at')->get();
+            if (empty($categoryList->first())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid category id',
+                ], 400);
+            }
+        } else {
+            $categoryList = Category::whereNull('deleted_at')->get();
+        }
+
+        $blog = new Blog();
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
+
+        $blogFilteredList = [];
+        foreach ($blogList as $blog) {
+            foreach ($categoryList as $category) {
+                if (!empty(CategoryMap::where('entity', $blogEntity->id)
+                        ->where('entity_id', $blog->id)
+                        ->where('category_id', $category->id)
+                        ->whereNull('deleted_at')
+                        ->orderBy('id', 'DESC')
+                        ->first())) {
+                    $blogFilteredList[] = $blog;
+                }
+            }
+        }
+
+        $blogList = $blogFilteredList;
 
         $pageNumber = (empty($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
         $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
