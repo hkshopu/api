@@ -55,6 +55,13 @@ class ProductController extends Controller
      *         )
      *     ),
      *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
      *         name="category_id",
      *         in="query",
      *         description="The category id",
@@ -96,16 +103,26 @@ class ProductController extends Controller
      */
     public function productList(Request $request = null)
     {
-        $product = new Product();
-        $productEntity = Entity::where('name', $product->getTable())->first();
+        $productFilter = Product::whereNull('deleted_at');
 
-        if (!empty($request->name_en)) {
-            $productList = Product::where('name_en', 'LIKE', '%' . $request->name_en . '%')->whereNull('deleted_at')->get();
-        } else {
-            $productList = Product::whereNull('deleted_at')->get();
+        if (isset($request->shop_id)) {
+            if (empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid shop id',
+                ], 400);
+            } else {
+                $productFilter->where('shop_id', $request->shop_id);
+            }
         }
 
-        if (!empty($request->category_id)) {
+        if (isset($request->name_en)) {
+            $productFilter->where('name_en', 'LIKE', '%' . $request->name_en . '%');
+        }
+
+        $productList = $productFilter->get();
+
+        if (isset($request->category_id)) {
             $categoryList = Category::where('id', $request->category_id)->whereNull('deleted_at')->get();
             if (empty($categoryList->first())) {
                 return response()->json([
@@ -116,6 +133,9 @@ class ProductController extends Controller
         } else {
             $categoryList = Category::whereNull('deleted_at')->get();
         }
+
+        $product = new Product();
+        $productEntity = Entity::where('name', $product->getTable())->first();
 
         $productFilteredList = [];
         foreach ($productList as $product) {
@@ -559,7 +579,8 @@ class ProductController extends Controller
 
             $statusMap = StatusMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($statusMap)) {
-                $product['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+                $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                $product['status'] = (!empty($status)) ? $status->name : null;
             } else {
                 $product['status'] = null;
             }

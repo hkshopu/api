@@ -494,7 +494,8 @@ class UserController extends Controller
 
             $statusMap = StatusMap::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($statusMap)) {
-                $user['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+                $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                $user['status'] = (!empty($status)) ? $status->name : null;
             } else {
                 $user['status'] = null;
             }

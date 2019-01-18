@@ -196,7 +196,8 @@ class CategoryController extends Controller
 
         $categoryLevel = CategoryLevel::create($request->all());
 
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
         $category['parent_category_id'] = $categoryLevel->parent_category_id == 0 ? 0 : Category::where('id', $categoryLevel->parent_category_id)->whereNull('deleted_at')->first();
 
         return response()->json($category, 201);
@@ -250,7 +251,8 @@ class CategoryController extends Controller
         $categoryEntity = Entity::where('name', $category->getTable())->first();
 
         $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
 
         $categoryLevel = CategoryLevel::where('category_id', $category->id)->whereNull('deleted_at')->first();
         $category['parent_category_id'] = $categoryLevel->parent_category_id == 0 ? 0 : Category::where('id', $categoryLevel->parent_category_id)->whereNull('deleted_at')->first();
@@ -385,7 +387,8 @@ class CategoryController extends Controller
 
         $categoryLevel->update($request->all());
 
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
         $category['parent_category_id'] = $categoryLevel->parent_category_id == 0 ? 0 : Category::where('id', $categoryLevel->parent_category_id)->whereNull('deleted_at')->first();
 
         return response()->json($category, 201);
@@ -642,7 +645,8 @@ class CategoryController extends Controller
 
         $statusMap = StatusMap::create($request->all());
 
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
 
         return response()->json($category, 201);
     }
@@ -695,7 +699,8 @@ class CategoryController extends Controller
         $categoryEntity = Entity::where('name', $category->getTable())->first();
 
         $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
 
         return response()->json($category, 200);
     }
@@ -794,7 +799,8 @@ class CategoryController extends Controller
 
         $statusMap->update($request->all());
 
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
 
         return response()->json($category, 201);
     }
@@ -999,7 +1005,8 @@ class CategoryController extends Controller
 
         $statusMap = StatusMap::create($request->all());
 
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
 
         return response()->json($category, 201);
     }
@@ -1052,7 +1059,8 @@ class CategoryController extends Controller
         $categoryEntity = Entity::where('name', $category->getTable())->first();
 
         $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $category->id)->whereNull('deleted_at')->first();
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
 
         return response()->json($category, 200);
     }
@@ -1151,7 +1159,8 @@ class CategoryController extends Controller
 
         $statusMap->update($request->all());
 
-        $category['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $category['status'] = (!empty($status)) ? $status->name : null;
 
         return response()->json($category, 201);
     }

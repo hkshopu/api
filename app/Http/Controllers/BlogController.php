@@ -351,7 +351,8 @@ class BlogController extends Controller
 
             $statusMap = StatusMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($statusMap)) {
-                $blog['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+                $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                $blog['status'] = (!empty($status)) ? $status->name : null;
             } else {
                 $blog['status'] = null;
             }

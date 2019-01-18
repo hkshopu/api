@@ -309,7 +309,8 @@ class ShopController extends Controller
 
             $statusMap = StatusMap::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($statusMap)) {
-                $shop['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+                $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                $shop['status'] = (!empty($status)) ? $status->name : null;
             } else {
                 $shop['status'] = null;
             }

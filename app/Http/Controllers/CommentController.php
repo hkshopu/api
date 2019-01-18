@@ -49,7 +49,8 @@ class CommentController extends Controller
         $itemTemp['user_profile_image'] = !empty($userImage) ? $userImage->url : null;
         $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
         if (!empty($statusMap)) {
-            $itemTemp['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+            $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+            $itemTemp['status'] = (!empty($status)) ? $status->name : null;
         } else {
             $itemTemp['status'] = null;
         }

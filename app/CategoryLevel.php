@@ -59,7 +59,8 @@ class CategoryLevel extends Model
         $categoryEntity = Entity::where('name', $category->getTable())->first();
 
         $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $element['category']['id'])->whereNull('deleted_at')->first();
-        $element['category']['status'] = (Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first())->name;
+        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+        $element['category']['status'] = (!empty($status)) ? $status->name : null;
 
         $categoryLevel = self::where('category_id', $element['category']['id'])->whereNull('deleted_at')->first();
 
