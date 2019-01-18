@@ -113,6 +113,7 @@ class CreateStatusMapTable extends Migration
         $user9 = User::where('username', 'dean')->whereNull('deleted_at')->first();
         $user10 = User::where('username', 'seth')->whereNull('deleted_at')->first();
         $user11 = User::where('username', 'roman')->whereNull('deleted_at')->first();
+        $user12 = User::where('username', 'gadget_planet')->whereNull('deleted_at')->first();
 
         $statusActive = Status::where('name', 'active')->whereNull('deleted_at')->first();
         $statusDisable = Status::where('name', 'disable')->whereNull('deleted_at')->first();
@@ -194,6 +195,7 @@ class CreateStatusMapTable extends Migration
             ['entity' => $entityUser->id,     'entity_id' => $user9->id,      'status_id' => $statusActive->id,  'created_by' => 13, 'updated_by' => 13],
             ['entity' => $entityUser->id,     'entity_id' => $user10->id,     'status_id' => $statusActive->id,  'created_by' => 13, 'updated_by' => 13],
             ['entity' => $entityUser->id,     'entity_id' => $user11->id,     'status_id' => $statusActive->id,  'created_by' => 13, 'updated_by' => 13],
+            ['entity' => $entityUser->id,     'entity_id' => $user12->id,     'status_id' => $statusActive->id,  'created_by' => 13, 'updated_by' => 13],
         ]);
     }
 
