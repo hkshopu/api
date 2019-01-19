@@ -504,7 +504,7 @@ class UserController extends Controller
 
             $image = new Image();
             $imageEntity = Entity::where('name', $image->getTable())->first();
-            $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+            $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
         }
 
         return response()->json($user, 200);

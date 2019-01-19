@@ -23,6 +23,7 @@ use App\Status;
 use App\StatusMap;
 use App\StatusOption;
 use App\View;
+use App\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -536,6 +537,28 @@ class ProductController extends Controller
         $product = Product::where('id', $id)->whereNull('deleted_at')->first();
 
         if (!empty($product)) {
+            // Explicit exclusion of the deleted_at field to still get username who created the product
+            $createUser = User::where('id', $product->created_by)->first();
+            $product['created_by_user'] = $createUser->only([
+                'id',
+                'username',
+                'email',
+                'first_name',
+                'middle_name',
+                'last_name',
+            ]);
+
+            // Explicit exclusion of the deleted_at field to still get username who updated the product
+            $updateUser = User::where('id', $product->updated_by)->first();
+            $product['updated_by_user'] = $updateUser->only([
+                'id',
+                'username',
+                'email',
+                'first_name',
+                'middle_name',
+                'last_name',
+            ]);
+
             $productEntity = Entity::where('name', $product->getTable())->first();
 
             $categoryMap = CategoryMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
@@ -626,7 +649,7 @@ class ProductController extends Controller
 
             $image = new Image();
             $imageEntity = Entity::where('name', $image->getTable())->first();
-            $imageList = Image::where('entity', $productEntity->id)->where('entity_id', $product->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
+            $imageList = Image::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
             $product['image'] = $imageList;
             foreach ($imageList as $imageKey => $imageItem) {
                 $imageFollowingList = Following::where('entity', $imageEntity->id)->where('entity_id', $imageItem->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();

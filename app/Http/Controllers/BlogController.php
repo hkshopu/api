@@ -395,7 +395,7 @@ class BlogController extends Controller
 
             $image = new Image();
             $imageEntity = Entity::where('name', $image->getTable())->first();
-            $imageList = Image::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
+            $imageList = Image::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
             $blog['image'] = $imageList;
 
             $blogViewList = View::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();

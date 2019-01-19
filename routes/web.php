@@ -35,6 +35,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->delete('shopfollowing/{shop_id}', ['uses' => 'FollowingController@shopFollowingDelete']);
     // Image
     $router->post('productimage/{id}', ['uses' => 'ImageController@productImageAdd']);
+    $router->delete('productimage/{id}', ['uses' => 'ImageController@productImageDelete']);
     $router->post('shopimage/{id}', ['uses' => 'ImageController@shopImageAdd']);
     $router->post('blogimage/{id}', ['uses' => 'ImageController@blogImageAdd']);
     $router->post('userimage/{id}', ['uses' => 'ImageController@userImageAdd']);

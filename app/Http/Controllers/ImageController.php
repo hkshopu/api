@@ -10,6 +10,7 @@ use App\User;
 use App\Entity;
 use Illuminate\Http\Request;
 use Cloudder;
+use Carbon\Carbon;
 
 class ImageController extends Controller
 {
@@ -97,6 +98,82 @@ class ImageController extends Controller
         return response()->json([
             'succcess' => true,
             'message' => 'Product image added successfully',
+        ], 201);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/productimage/{id}",
+     *     operationId="productImageDelete",
+     *     tags={"Image"},
+     *     summary="Removes image to the product",
+     *     description="Deassociates the image to the product using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The product id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="image_url",
+     *         in="query",
+     *         description="The image url",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the product image delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the product image delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function productImageDelete(int $id, Request $request)
+    {
+        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($product)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product id',
+            ], 400);
+        }
+
+        $image = Image::where('url', $request->image_url)->whereNull('deleted_at')->first();
+        if (empty($image)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product image',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $image->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        return response()->json([
+            'succcess' => true,
+            'message' => 'Product image removed successfully',
         ], 201);
     }
 

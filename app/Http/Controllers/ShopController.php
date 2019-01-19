@@ -320,7 +320,7 @@ class ShopController extends Controller
 
             $image = new Image();
             $imageEntity = Entity::where('name', $image->getTable())->first();
-            $imageList = Image::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
+            $imageList = Image::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
             $shop['image'] = $imageList;
 
             $shopRatingList = Rating::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();

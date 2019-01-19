@@ -45,7 +45,7 @@ class CommentController extends Controller
         $user = User::where('id', $comment['created_by'])->whereNull('deleted_at')->first();
         if (!empty($user)) {
             $userEntity = Entity::where('name', $user->getTable())->first();
-            $userImage = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+            $userImage = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
             $itemTemp['user_name'] = $user->username;
             $itemTemp['user_profile_image'] = !empty($userImage) ? $userImage->url : null;
         } else {
