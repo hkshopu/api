@@ -114,6 +114,10 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('logout',  ['uses' => 'UserController@userLogout']);
     // User Type
     $router->get('usertype',  ['uses' => 'UserTypeController@userTypeList']);
+    // Size
+    $router->get('size',  ['uses' => 'SizeController@sizeList']);
+    // Color
+    $router->get('color',  ['uses' => 'ColorController@colorList']);
     ///
     ///
     ///
