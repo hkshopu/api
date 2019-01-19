@@ -38,15 +38,21 @@ class CommentController extends Controller
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
         $itemTemp = [];
-        $user = User::where('id', $comment['created_by'])->whereNull('deleted_at')->first();
-        $userEntity = Entity::where('name', $user->getTable())->first();
-        $userImage = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
         $postedDate = new Carbon($comment['created_at']);
         $itemTemp['comment_id'] = $comment['id'];
         $itemTemp['content'] = $comment['content'];
         $itemTemp['posted_date'] = $postedDate->format('Y-m-d');
-        $itemTemp['user_name'] = $user->username;
-        $itemTemp['user_profile_image'] = !empty($userImage) ? $userImage->url : null;
+        $user = User::where('id', $comment['created_by'])->whereNull('deleted_at')->first();
+        if (!empty($user)) {
+            $userEntity = Entity::where('name', $user->getTable())->first();
+            $userImage = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+            $itemTemp['user_name'] = $user->username;
+            $itemTemp['user_profile_image'] = !empty($userImage) ? $userImage->url : null;
+        } else {
+            $itemTemp['user_name'] = null;
+            $itemTemp['user_profile_image'] = null;
+        }
+
         $statusMap = StatusMap::where('entity', $commentEntity->id)->where('entity_id', $comment->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
         if (!empty($statusMap)) {
             $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
