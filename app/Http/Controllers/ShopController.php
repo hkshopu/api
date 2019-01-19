@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Shop;
+use App\User;
 use App\Product;
 use App\Entity;
 use App\Category;
@@ -282,7 +283,7 @@ class ShopController extends Controller
         $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
 
         if (!empty($shop)) {
-            $shopEntity = Entity::where('name', $shop->getTable())->first();
+            $shop['owner'] = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
 
             $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
             foreach ($paymentMethodList as $key => $paymentMethodItem) {
@@ -299,6 +300,8 @@ class ShopController extends Controller
                 $paymentMethodList[$key] = $tempItem;
             }
             $shop['payment_method'] = $paymentMethodList;
+
+            $shopEntity = Entity::where('name', $shop->getTable())->first();
 
             $categoryMap = CategoryMap::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($categoryMap)) {
