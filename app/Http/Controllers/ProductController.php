@@ -78,6 +78,13 @@ class ProductController extends Controller
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="The product sorting (Accepted values: 'popular', 'recent', 'price_lowest', 'price_highest')",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
      *         name="page_number",
      *         in="query",
      *         description="Result page number, default is 1",
@@ -153,7 +160,57 @@ class ProductController extends Controller
             }
         }
 
-        $productList = $productFilteredList;
+        $sortOrder = null;
+        if (isset($request->sort)) {
+            if ($request->sort <> 'popular' && $request->sort <> 'recent' && $request->sort <> 'price_lowest' && $request->sort <> 'price_highest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid product sort value',
+                ], 400);
+            }
+            $sortOrder = $request->sort;
+        }
+
+        $productSortIdList = [];
+        switch ($sortOrder) {
+            case 'popular';
+                foreach ($productFilteredList as $product) {
+                    $productSortIdList[$product->id] = Rating::getAverage($product);
+                }
+                arsort($productSortIdList);
+                break;
+            case 'recent';
+                foreach ($productFilteredList as $product) {
+                    $productSortIdList[$product->id] = $product->created_at;
+                }
+                arsort($productSortIdList);
+                break;
+            case 'price_lowest';
+                foreach ($productFilteredList as $product) {
+                    $productSortIdList[$product->id] = (ProductPricing::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first())->price;
+                }
+                asort($productSortIdList);
+                break;
+            case 'price_highest';
+                foreach ($productFilteredList as $product) {
+                    $productSortIdList[$product->id] = (ProductPricing::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first())->price;
+                }
+                arsort($productSortIdList);
+                break;
+            default:
+                foreach ($productFilteredList as $product) {
+                    $productSortIdList[$product->id] = $product->id;
+                }
+                break;
+        }
+
+        $productSortedList = [];
+
+        foreach ($productSortIdList as $key => $value) {
+            $productSortedList[] = Product::where('id', $key)->whereNull('deleted_at')->first();
+        }
+
+        $productList = $productSortedList;
 
         $pageNumber = (empty($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
         $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;

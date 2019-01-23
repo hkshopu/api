@@ -41,5 +41,26 @@ class Rating extends Model
         'deleted_at',
         'deleted_by',
     ];
+
+    public static function getAverage($entityObject) {
+        $entity = Entity::where('name', $entityObject->getTable())->first();
+
+        $list = self::where('entity', $entity->id)->where('entity_id', $entityObject->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+
+        $sum = 0;
+        $count = 0;
+        foreach ($list as $item) {
+            $sum += $item['rate'];
+            $count++;
+        }
+
+        if ($count == 0) {
+            $count = 1;
+        }
+
+        $average = $sum / $count;
+
+        return $average;
+    }
 }
 
