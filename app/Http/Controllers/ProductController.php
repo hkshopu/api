@@ -687,7 +687,7 @@ class ProductController extends Controller
             $productViewList = View::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->get();
             $product['views'] = count($productViewList);
 
-            $product['shop'] = Shop::where('id', $product->shop_id)->whereNull('deleted_at')->first();
+            $product['shop'] = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request)->getData();
             unset($product['shop_id']);
             
         }
