@@ -18,6 +18,7 @@ use App\Category;
 use App\CategoryMap;
 use App\CategoryLevel;
 use App\Image;
+use App\Rating;
 use App\Following;
 use App\Status;
 use App\StatusMap;
@@ -655,6 +656,22 @@ class ProductController extends Controller
                 $imageFollowingList = Following::where('entity', $imageEntity->id)->where('entity_id', $imageItem->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
                 $product['image'][$imageKey]['followers'] = count($imageFollowingList);
             }
+
+            $productRatingList = Rating::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+            $productRatingTotal = 0;
+            $productUserRating = null;
+            foreach ($productRatingList as $productRatingItem) {
+                $productRatingTotal += $productRatingItem->rate;
+                if ($productRatingItem->created_by == $request->access_token_user_id) {
+                    $productUserRating = $productRatingItem->rate;
+                }
+            }
+            $productRating = [
+                'average' => $productRatingTotal / (count($productRatingList) ?: 1),
+                'count' => count($productRatingList),
+                'user_rating' => $productUserRating,
+            ];
+            $product['rating'] = $productRating;
 
             $productFollowingList = Following::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
             $product['followers'] = count($productFollowingList);

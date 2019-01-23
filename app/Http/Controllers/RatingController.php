@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Rating;
 use App\Shop;
+use App\Product;
 use App\Entity;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -220,7 +221,211 @@ class RatingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Rating removed',
+            'message' => 'Shop rating removed',
+        ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/productrating",
+     *     operationId="productRatingAdd",
+     *     tags={"Rating"},
+     *     summary="Adds rating to product",
+     *     description="Adds rating to product.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
+     *         description="The product id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="rating",
+     *         in="query",
+     *         description="The product rating, scaling from 1 to 5 only",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the product rating create status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the product rating create failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function productRatingAdd(Request $request)
+    {
+        $product = Product::where('id', $request->product_id)->whereNull('deleted_at')->first();
+        if (empty($product)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product id',
+            ], 400);
+        } else if ($request->rating < 1 || $request->rating > 5) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid rating',
+            ], 400);
+        }
+
+        $productEntity = Entity::where('name', $product->getTable())->first();
+        $rating = Rating::where('entity', $productEntity->id)->where('entity_id', $product->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();
+
+        if (!empty($rating)) {
+            self::productRatingDelete($rating->id, $request);
+        }
+
+        $request->request->add([
+            'entity' => $productEntity->id,
+            'entity_id' => $product->id,
+            'rate' => $request->rating,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        $rating = Rating::create($request->only([
+            'entity',
+            'entity_id',
+            'rate',
+            'created_by',
+            'updated_by',
+        ]));
+
+        return response()->json(app('App\Http\Controllers\ProductController')->productGet($product->id, $request)->getData(), 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/productrating/{product_id}",
+     *     operationId="productRatingGet",
+     *     tags={"Rating"},
+     *     summary="Retrieves all product ratings given the product id",
+     *     description="Retrieves all product ratings given the product id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="path",
+     *         description="The product id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns all product rating",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the product rating get failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function productRatingGet(int $product_id)
+    {
+        $product = Product::where('id', $product_id)->whereNull('deleted_at')->first();
+        if (empty($product)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product id',
+            ], 400);
+        }
+
+        $productEntity = Entity::where('name', $product->getTable())->first();
+
+        $ratingList = Rating::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+
+        return response()->json($ratingList, 200);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/productrating/{id}",
+     *     operationId="productRatingDelete",
+     *     tags={"Rating"},
+     *     summary="Removes user rating to product",
+     *     description="Removes user rating to product.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The product rating id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the product rating delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the product rating delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function productRatingDelete($id, Request $request)
+    {
+        $product = new Product();
+        $productEntity = Entity::where('name', $product->getTable())->first();
+
+        if (empty(Rating::where('id', $id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid rating id',
+            ], 400);
+        } else if (empty(Rating::where('id', $id)->where('entity', $productEntity->id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid rating id for the product',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $rating = Rating::where('id', $id)->where('entity', $productEntity->id)->whereNull('deleted_at')->first();
+        $rating->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product rating removed',
         ], 200);
     }
 }

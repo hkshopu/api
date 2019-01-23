@@ -87,6 +87,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('shoprating', ['uses' => 'RatingController@shopRatingAdd']);
     $router->get('shoprating/{shop_id}',  ['uses' => 'RatingController@shopRatingGet']);
     $router->delete('shoprating/{id}', ['uses' => 'RatingController@shopRatingDelete']);
+    $router->post('productrating', ['uses' => 'RatingController@productRatingAdd']);
+    $router->get('productrating/{product_id}',  ['uses' => 'RatingController@productRatingGet']);
+    $router->delete('productrating/{id}', ['uses' => 'RatingController@productRatingDelete']);
     // Comment
     $router->post('shopcomment', ['uses' => 'CommentController@shopCommentAdd']);
     $router->get('shopcomment/{shop_id}',  ['uses' => 'CommentController@shopCommentGet']);
