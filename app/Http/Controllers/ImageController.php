@@ -153,7 +153,9 @@ class ImageController extends Controller
             ], 400);
         }
 
-        $image = Image::where('url', $request->image_url)->whereNull('deleted_at')->first();
+        $productEntity = Entity::where('name', $product->getTable())->orderBy('id', 'DESC')->first();
+
+        $image = Image::where('entity', $productEntity->id)->where('entity_id', $product->id)->where('url', $request->image_url)->whereNull('deleted_at')->first();
         if (empty($image)) {
             return response()->json([
                 'success' => false,
@@ -255,6 +257,84 @@ class ImageController extends Controller
     }
 
     /**
+     * @OA\Delete(
+     *     path="/api/shopimage/{id}",
+     *     operationId="shopImageDelete",
+     *     tags={"Image"},
+     *     summary="Removes image to the shop",
+     *     description="Deassociates the image to the shop using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The shop id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="image_url",
+     *         in="query",
+     *         description="The image url",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the shop image delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop image delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopImageDelete(int $id, Request $request)
+    {
+        $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $shopEntity = Entity::where('name', $shop->getTable())->orderBy('id', 'DESC')->first();
+
+        $image = Image::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->where('url', $request->image_url)->whereNull('deleted_at')->first();
+        if (empty($image)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop image',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $image->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        return response()->json([
+            'succcess' => true,
+            'message' => 'Shop image removed successfully',
+        ], 201);
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/blogimage/{id}",
      *     operationId="blogImageAdd",
@@ -332,6 +412,84 @@ class ImageController extends Controller
     }
 
     /**
+     * @OA\Delete(
+     *     path="/api/blogimage/{id}",
+     *     operationId="blogImageDelete",
+     *     tags={"Image"},
+     *     summary="Removes image to the blog",
+     *     description="Deassociates the image to the blog using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The blog id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="image_url",
+     *         in="query",
+     *         description="The image url",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the blog image delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the blog image delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function blogImageDelete(int $id, Request $request)
+    {
+        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($blog)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid blog id',
+            ], 400);
+        }
+
+        $blogEntity = Entity::where('name', $blog->getTable())->orderBy('id', 'DESC')->first();
+
+        $image = Image::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('url', $request->image_url)->whereNull('deleted_at')->first();
+        if (empty($image)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid blog image',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $image->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        return response()->json([
+            'succcess' => true,
+            'message' => 'Blog image removed successfully',
+        ], 201);
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/userimage/{id}",
      *     operationId="userImageAdd",
@@ -405,6 +563,84 @@ class ImageController extends Controller
         return response()->json([
             'succcess' => true,
             'message' => 'User image added successfully',
+        ], 201);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/userimage/{id}",
+     *     operationId="userImageDelete",
+     *     tags={"Image"},
+     *     summary="Removes image to the user",
+     *     description="Deassociates the image to the user using the file_url from the image upload endpoint.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The user id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="image_url",
+     *         in="query",
+     *         description="The image url",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the user image delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the user image delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userImageDelete(int $id, Request $request)
+    {
+        $user = User::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user id',
+            ], 400);
+        }
+
+        $userEntity = Entity::where('name', $user->getTable())->orderBy('id', 'DESC')->first();
+
+        $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->where('url', $request->image_url)->whereNull('deleted_at')->first();
+        if (empty($image)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user image',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $image->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        return response()->json([
+            'succcess' => true,
+            'message' => 'User image removed successfully',
         ], 201);
     }
 
