@@ -197,7 +197,7 @@ class CommentController extends Controller
         $comment = new Comment();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
-        $commentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->get();
+        $commentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('created_at', 'DESC')->orderBy('id', 'DESC')->get();
         $listTemp = [];
         foreach ($commentList as $key => $comment) {
             $listTemp[$key] = self::commentGet($comment->id)->getData();
@@ -567,7 +567,7 @@ class CommentController extends Controller
         $comment = new Comment();
         $commentEntity = Entity::where('name', $comment->getTable())->first();
 
-        $commentList = Comment::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->get();
+        $commentList = Comment::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('created_at', 'DESC')->orderBy('id', 'DESC')->get();
         $listTemp = [];
         foreach ($commentList as $key => $comment) {
             $listTemp[$key] = self::commentGet($comment->id)->getData();
