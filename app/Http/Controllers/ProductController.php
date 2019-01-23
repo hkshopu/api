@@ -565,9 +565,10 @@ class ProductController extends Controller
             $categoryMap = CategoryMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($categoryMap)) {
                 $product['category'] = Category::where('id', $categoryMap->category_id)->whereNull('deleted_at')->first();
-                $product['category_root'] = CategoryLevel::buildRoot([
+                $categoryRoot[] = CategoryLevel::buildRoot([
                     'category' => Category::where('id', $categoryMap->category_id)->whereNull('deleted_at')->first()->toArray(),
                 ]);
+                $product['category_root'] = $categoryRoot;
             } else {
                 $product['category'] = null;
                 $product['category_root'] = null;

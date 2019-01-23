@@ -58,10 +58,6 @@ class CategoryLevel extends Model
         $category = new Category();
         $categoryEntity = Entity::where('name', $category->getTable())->first();
 
-        $statusMap = StatusMap::where('entity', $categoryEntity->id)->where('entity_id', $element['category']['id'])->whereNull('deleted_at')->first();
-        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
-        $element['category']['status'] = (!empty($status)) ? $status->name : null;
-
         $categoryLevel = self::where('category_id', $element['category']['id'])->whereNull('deleted_at')->first();
 
         if (!empty($element['sub_category'])) {
@@ -69,10 +65,14 @@ class CategoryLevel extends Model
             unset($element['sub_category']);
         }
 
+        $element['category_id'] = $element['category']['id'];
+        $element['category'] = $element['category']['name'];
         $element['parent_category_id'] = $categoryLevel->parent_category_id;
         
         if (!empty($subcategory)) {
             $element['sub_category'] = $subcategory;
+        } else {
+            $element['sub_category'] = [];
         }
 
         while ($element['parent_category_id'] <> 0) {
