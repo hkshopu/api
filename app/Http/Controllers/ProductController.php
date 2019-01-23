@@ -687,9 +687,29 @@ class ProductController extends Controller
             $productViewList = View::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->get();
             $product['views'] = count($productViewList);
 
+            $request->request->add([
+                'product_id' => $product->id,
+            ]);
+
             $product['shop'] = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request)->getData();
             unset($product['shop_id']);
-            
+        }
+
+        return response()->json($product, 200);
+    }
+
+    public function productGetMinimal(int $id, Request $request = null)
+    {
+        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+
+        if (!empty($product)) {
+            $productEntity = Entity::where('name', $product->getTable())->first();
+
+            $image = new Image();
+            $imageEntity = Entity::where('name', $image->getTable())->first();
+            $product['image'] = Image::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+
+            unset($product['shop_id']);
         }
 
         return response()->json($product, 200);

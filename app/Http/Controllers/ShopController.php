@@ -352,6 +352,17 @@ class ShopController extends Controller
 
             $shopCommentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->get();
             $shop['comments'] = count($shopCommentList);
+
+            $featuredProductList = [];
+            $productQuery = Product::where('shop_id', $shop->id);
+            if (!empty($request->product_id)) {
+                $productQuery->where('id', '<>', $request->product_id);
+            }
+            $productList = $productQuery->whereNull('deleted_at')->inRandomOrder()->limit(5)->get();
+            foreach($productList as $product) {
+                $featuredProductList[] = app('App\Http\Controllers\ProductController')->productGetMinimal($product->id, $request)->getData();
+            }
+            $shop['featured_products'] = $featuredProductList;
         }
 
         return response()->json($shop, 200);
