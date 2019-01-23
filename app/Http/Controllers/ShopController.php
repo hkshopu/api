@@ -293,9 +293,7 @@ class ShopController extends Controller
                 $tempItem['name'] = $paymentMethod->name;
                 $tempItem['code'] = $paymentMethod->code;
                 $tempItem['account_info'] = $paymentMethodItem->account_info;
-                if ($paymentMethod->code == 'bank') {
-                    $tempItem['remarks'] = $paymentMethodItem->remarks;
-                }
+                $tempItem['remarks'] = $paymentMethodItem->remarks;
 
                 $paymentMethodList[$key] = $tempItem;
             }
