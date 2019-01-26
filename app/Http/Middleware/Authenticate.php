@@ -54,7 +54,7 @@ class Authenticate
 
         if (empty($request->header('token'))) {
             $request->request->add([
-                'access_token_user_id' => 0,
+                'access_token_user_id' => null,
             ]);
 
             return $next($request);

@@ -4,12 +4,12 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ProductInventory extends Model
+class CartItem extends Model
 {
     /**
      * Bypass eloquent pluralization
      */
-    protected $table = 'product_inventory';
+    protected $table = 'cart_item';
 
     /**
      * The attributes that are mass assignable.
@@ -17,9 +17,10 @@ class ProductInventory extends Model
      * @var array
      */
     protected $fillable = [
+        'cart_id',
         'product_id',
         'attribute_id',
-        'stock',
+        'quantity',
         //
         'created_by',
         'updated_by',
@@ -33,18 +34,12 @@ class ProductInventory extends Model
      * @var array
      */
     protected $hidden = [
+        'created_at',
+        'created_by',
+        'updated_at',
+        'updated_by',
+        'deleted_at',
+        'deleted_by',
     ];
-
-    public static function checkStock(int $productId, int $attributeId) {
-        $productInventoryList = self::where('product_id', $productId)->where('attribute_id', $attributeId)->whereNull('deleted_at')->get();
-
-        $productStock = null;
-
-        foreach ($productInventoryList as $productInventory) {
-            $productStock += $productInventory->stock;
-        }
-
-        return $productStock;
-    }
 }
 
