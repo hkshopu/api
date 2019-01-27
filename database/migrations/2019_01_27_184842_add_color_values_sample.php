@@ -4,13 +4,13 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddColorValues extends Migration
+class AddColorValuesSample extends Migration
 {
     const TABLE_NAME = 'color';
     const COLOR_LIST = [
-        ['name' => 'INDIANRED', 'code' => '#CD5C5C', 'created_by' => 13, 'updated_by' => 13],
-        ['name' => 'LIGHTCORAL', 'code' => '#F08080', 'created_by' => 13, 'updated_by' => 13],
-        ['name' => 'SALMON', 'code' => '#FA8072', 'created_by' => 13, 'updated_by' => 13],
+        ['name' => 'indian red', 'code' => '#CD5C5C', 'created_by' => 13, 'updated_by' => 13],
+        ['name' => 'light coral', 'code' => '#F08080', 'created_by' => 13, 'updated_by' => 13],
+        ['name' => 'salmon', 'code' => '#FA8072', 'created_by' => 13, 'updated_by' => 13],
     ];
 
     /**
