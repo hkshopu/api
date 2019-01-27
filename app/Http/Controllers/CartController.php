@@ -65,6 +65,13 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
      */
     public function cartGet(string $cart_id = null, Request $request = null)
     {
+        // For Sprint 1.1 demo only
+        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
+        if (empty($cart)) {
+            $cart = Cart::create();
+        }
+        $cart_id = $cart->id;
+
         if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
         } else {
@@ -77,7 +84,8 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
         }
 
         $data = [
-            'cart_id' => $cart->id ?? null,
+            // For Sprint 1.1 demo only
+            // 'cart_id' => $cart->id ?? null,
             'shop' => [],
         ];
 
@@ -221,6 +229,15 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
      */
     public function cartAdd(Request $request = null)
     {
+        // For Sprint 1.1 demo only
+        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
+        if (empty($cart)) {
+            $cart = Cart::create();
+        }
+        $request->request->add([
+            'cart_id' => $cart->id,
+        ]);
+
         if (!isset($request->access_token_user_id)) {
             if (isset($request->cart_id)) {
                 $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
@@ -376,6 +393,15 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartModify(Request $request = null)
     {
+        // For Sprint 1.1 demo only
+        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
+        if (empty($cart)) {
+            $cart = Cart::create();
+        }
+        $request->request->add([
+            'cart_id' => $cart->id,
+        ]);
+
         if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
             if (empty($cart)) {
@@ -499,6 +525,15 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartDelete(Request $request = null)
     {
+        // For Sprint 1.1 demo only
+        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
+        if (empty($cart)) {
+            $cart = Cart::create();
+        }
+        $request->request->add([
+            'cart_id' => $cart->id,
+        ]);
+
         if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
             if (empty($cart)) {

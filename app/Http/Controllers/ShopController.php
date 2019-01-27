@@ -360,7 +360,11 @@ class ShopController extends Controller
             }
             $productList = $productQuery->whereNull('deleted_at')->inRandomOrder()->limit(5)->get();
             foreach($productList as $product) {
-                $featuredProductList[] = app('App\Http\Controllers\ProductController')->productGetMinimal($product->id, $request)->getData();
+                $productInfo = app('App\Http\Controllers\ProductController')->productGetMinimal($product->id, $request)->getData();
+                $featuredProductList[] = [
+                    'id' => $productInfo->id,
+                    'image_url' => $productInfo->image->url ?? null,
+                ];
             }
             $shop['featured_products'] = $featuredProductList;
         }
