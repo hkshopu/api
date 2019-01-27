@@ -85,7 +85,7 @@ class ShopController extends Controller
     {
         $shop = new Shop();
 
-        if (!empty($request->name_en)) {
+        if (isset($request->name_en)) {
             $shopList = Shop::where('name_en', 'LIKE', '%' . $request->name_en . '%')->whereNull('deleted_at')->get();
         } else {
             $shopList = Shop::whereNull('deleted_at')->get();
@@ -205,14 +205,14 @@ class ShopController extends Controller
      */
     public function shopCreate(Request $request)
     {
-        if (empty($request->category_id) || empty(Category::where('id', $request->category_id)->whereNull('deleted_at')->first())) {
+        if (!isset($request->category_id) || empty(Category::where('id', $request->category_id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid category id',
             ], 400);
         }
 
-        if (empty($request->status_id) || empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
+        if (!isset($request->status_id) || empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid status id',
@@ -355,7 +355,7 @@ class ShopController extends Controller
 
             $featuredProductList = [];
             $productQuery = Product::where('shop_id', $shop->id);
-            if (!empty($request->product_id)) {
+            if (isset($request->product_id)) {
                 $productQuery->where('id', '<>', $request->product_id);
             }
             $productList = $productQuery->whereNull('deleted_at')->inRandomOrder()->limit(5)->get();
@@ -551,37 +551,37 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if (!empty($request->name_en)) {
+        if (isset($request->name_en)) {
             $request->request->add(['name_en' => $request->name_en]);
         }
 
-        if (!empty($request->name_tc)) {
+        if (isset($request->name_tc)) {
             $request->request->add(['name_tc' => $request->name_tc]);
         }
 
-        if (!empty($request->name_sc)) {
+        if (isset($request->name_sc)) {
             $request->request->add(['name_sc' => $request->name_sc]);
         }
 
-        if (!empty($request->description_en)) {
+        if (isset($request->description_en)) {
             $request->request->add(['description_en' => $request->description_en]);
         }
 
-        if (!empty($request->description_tc)) {
+        if (isset($request->description_tc)) {
             $request->request->add(['description_tc' => $request->description_tc]);
         }
 
-        if (!empty($request->description_sc)) {
+        if (isset($request->description_sc)) {
             $request->request->add(['description_sc' => $request->description_sc]);
         }
 
-        if (!empty($request->logo_url)) {
+        if (isset($request->logo_url)) {
             $request->request->add(['logo_url' => $request->logo_url]);
         }
 
         $shopEntity = Entity::where('name', $shop->getTable())->first();
 
-        if (!empty($request->category_id) || $request->category_id === "0") {
+        if (isset($request->category_id) || $request->category_id === "0") {
             if (empty(Category::where('id', $request->category_id)->whereNull('deleted_at')->first())) {
                 return response()->json([
                     'success' => false,
@@ -606,7 +606,7 @@ class ShopController extends Controller
             $request->request->remove('updated_by');
         }
 
-        if (!empty($request->status_id)) {
+        if (isset($request->status_id)) {
             if (empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
                 if (!empty($categoryMap)) {
                     $categoryMap->delete();
@@ -660,34 +660,41 @@ class ShopController extends Controller
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The payment method information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="shop_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="payment_method_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="account_info",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="remarks",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="payment_method_id",
+     *         in="query",
+     *         description="The payment method id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="account_info",
+     *         in="query",
+     *         description="The account info",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="remarks",
+     *         in="query",
+     *         description="The remarks",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="201",
@@ -703,7 +710,7 @@ class ShopController extends Controller
      */
     public function shopPaymentMethodCreate(Request $request = null)
     {
-        if (empty($request->shop_id)) {
+        if (!isset($request->shop_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Shop id required',
@@ -718,7 +725,7 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if (empty($request->payment_method_id)) {
+        if (!isset($request->payment_method_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payment method id required',
@@ -737,7 +744,7 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if (empty($request->account_info)) {
+        if (!isset($request->account_info)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Account info required',
@@ -774,24 +781,23 @@ class ShopController extends Controller
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The payment method information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="shop_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="payment_method_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="payment_method_id",
+     *         in="query",
+     *         description="The payment method id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="201",
@@ -807,7 +813,7 @@ class ShopController extends Controller
      */
     public function shopPaymentMethodDelete(Request $request)
     {
-        if (empty($request->shop_id)) {
+        if (!isset($request->shop_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Shop id required',
@@ -822,7 +828,7 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if (empty($request->payment_method_id)) {
+        if (!isset($request->payment_method_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payment method id required',
@@ -871,34 +877,41 @@ class ShopController extends Controller
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The payment method information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="shop_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="payment_method_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="account_info",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="remarks",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="payment_method_id",
+     *         in="query",
+     *         description="The payment method id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="account_info",
+     *         in="query",
+     *         description="The account info",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="remarks",
+     *         in="query",
+     *         description="The remarks",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="201",
@@ -914,7 +927,7 @@ class ShopController extends Controller
      */
     public function shopPaymentMethodModify(Request $request = null)
     {
-        if (empty($request->shop_id)) {
+        if (!isset($request->shop_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Shop id required',
@@ -929,7 +942,7 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if (empty($request->payment_method_id)) {
+        if (!isset($request->payment_method_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payment method id required',
@@ -949,7 +962,7 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if (empty($request->account_info)) {
+        if (!isset($request->account_info)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Account info required',

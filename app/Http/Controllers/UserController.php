@@ -87,9 +87,9 @@ class UserController extends Controller
     {
         $user = new User();
 
-        if (!empty($request->username)) {
+        if (isset($request->username)) {
             $userList = User::where('username', 'LIKE', '%' . $request->username . '%')->whereNull('deleted_at')->get();
-        } else if (!empty($request->email)) {
+        } else if (isset($request->email)) {
             $userList = User::where('email', 'LIKE', '%' . $request->email . '%')->whereNull('deleted_at')->get();
         } else {
             $userList = User::whereNull('deleted_at')->get();
@@ -132,64 +132,95 @@ class UserController extends Controller
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The user information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="first_name",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="last_name",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="username",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="email",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="password",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="user_type_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_name_en",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_name_tc",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_name_sc",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_category_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="first_name",
+     *         in="query",
+     *         description="The first name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="last_name",
+     *         in="query",
+     *         description="The last name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="username",
+     *         in="query",
+     *         description="The username",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         description="The email",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         description="The password",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_type_id",
+     *         in="query",
+     *         description="The user type id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_name_en",
+     *         in="query",
+     *         description="The shop name en",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_name_tc",
+     *         in="query",
+     *         description="The shop name tc",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_name_sc",
+     *         in="query",
+     *         description="The shop name sc",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_category_id",
+     *         in="query",
+     *         description="The shop category id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="201",
@@ -205,7 +236,7 @@ class UserController extends Controller
      */
     public function userCreate(Request $request = null)
     {
-        if (empty($request->username)) {
+        if (!isset($request->username)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Username required',
@@ -223,7 +254,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->first_name)) {
+        if (!isset($request->first_name)) {
             return response()->json([
                 'success' => false,
                 'message' => 'First name required',
@@ -235,7 +266,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->last_name)) {
+        if (!isset($request->last_name)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Last name required',
@@ -247,7 +278,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->email)) {
+        if (!isset($request->email)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email required',
@@ -265,7 +296,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->password)) {
+        if (!isset($request->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Password required',
@@ -346,7 +377,7 @@ class UserController extends Controller
         $retailerUserType = UserType::where('name', 'Retailer')->whereNull('deleted_at')->first();
 
         if ($request->user_type_id == $retailerUserType->id) {
-            if (empty($request->shop_name_en)) {
+            if (!isset($request->shop_name_en)) {
                 $user->delete();
                 $statusMap->delete();
                 return response()->json([
@@ -359,13 +390,13 @@ class UserController extends Controller
                 'name_en' => $request->shop_name_en,
             ]);
 
-            if (empty($request->shop_name_tc)) {
+            if (!isset($request->shop_name_tc)) {
                 $request->request->add([
                     'name_tc' => null,
                 ]);
             }
 
-            if (empty($request->shop_name_sc)) {
+            if (!isset($request->shop_name_sc)) {
                 $request->request->add([
                     'name_sc' => null,
                 ]);
@@ -526,59 +557,86 @@ class UserController extends Controller
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The retailer registration information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="username",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="first_name",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="last_name",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="email",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="password",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_name_en",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_name_tc",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_name_sc",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="shop_category_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="username",
+     *         in="query",
+     *         description="The username",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="first_name",
+     *         in="query",
+     *         description="The first_name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="last_name",
+     *         in="query",
+     *         description="The last_name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         description="The email",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         description="The password",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_name_en",
+     *         in="query",
+     *         description="The shop_name_en",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_name_tc",
+     *         in="query",
+     *         description="The shop_name_tc",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_name_sc",
+     *         in="query",
+     *         description="The shop_name_sc",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_category_id",
+     *         in="query",
+     *         description="The shop_category_id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="201",
@@ -594,7 +652,7 @@ class UserController extends Controller
      */
     public function userRegister(Request $request = null)
     {
-        if (empty($request->username)) {
+        if (!isset($request->username)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Username required',
@@ -612,7 +670,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->first_name)) {
+        if (!isset($request->first_name)) {
             return response()->json([
                 'success' => false,
                 'message' => 'First name required',
@@ -624,7 +682,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->last_name)) {
+        if (!isset($request->last_name)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Last name required',
@@ -636,7 +694,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->email)) {
+        if (!isset($request->email)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email required',
@@ -654,7 +712,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->password)) {
+        if (!isset($request->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Password required',
@@ -680,7 +738,7 @@ class UserController extends Controller
             'user_type_id' => $userType->id,
         ]);
 
-        if (empty($request->shop_name_en)) {
+        if (!isset($request->shop_name_en)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Shop name (in English) required',
@@ -691,13 +749,13 @@ class UserController extends Controller
             'name_en' => $request->shop_name_en,
         ]);
 
-        if (empty($request->shop_name_tc)) {
+        if (!isset($request->shop_name_tc)) {
             $request->request->add([
                 'name_tc' => null,
             ]);
         }
 
-        if (empty($request->shop_name_sc)) {
+        if (!isset($request->shop_name_sc)) {
             $request->request->add([
                 'name_sc' => null,
             ]);
@@ -836,59 +894,86 @@ class UserController extends Controller
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The consumer signup information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="username",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="email",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="password",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="first_name",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="last_name",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="gender",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="birth_date",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="mobile_phone",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="address",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="username",
+     *         in="query",
+     *         description="The username",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         description="The email",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         description="The password",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="first_name",
+     *         in="query",
+     *         description="The first name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="last_name",
+     *         in="query",
+     *         description="The last name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="gender",
+     *         in="query",
+     *         description="The gender",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="birth_date",
+     *         in="query",
+     *         description="The birth date",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="mobile_phone",
+     *         in="query",
+     *         description="The mobile phone",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="address",
+     *         in="query",
+     *         description="The address",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="201",
@@ -904,7 +989,7 @@ class UserController extends Controller
      */
     public function userSignup(Request $request = null)
     {
-        if (empty($request->username)) {
+        if (!isset($request->username)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Username required',
@@ -922,7 +1007,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->email)) {
+        if (!isset($request->email)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email required',
@@ -940,7 +1025,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (empty($request->password)) {
+        if (!isset($request->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Password required',
@@ -960,37 +1045,37 @@ class UserController extends Controller
             'password' => $password,
         ]);
 
-        if (empty($request->first_name)) {
+        if (!isset($request->first_name)) {
             $request->request->add([
                 'first_name' => null,
             ]);
         }
 
-        if (empty($request->last_name)) {
+        if (!isset($request->last_name)) {
             $request->request->add([
                 'last_name' => null,
             ]);
         }
 
-        if (empty($request->gender)) {
+        if (!isset($request->gender)) {
             $request->request->add([
                 'gender' => null,
             ]);
         }
 
-        if (empty($request->birth_date)) {
+        if (!isset($request->birth_date)) {
             $request->request->add([
                 'birth_date' => null,
             ]);
         }
 
-        if (empty($request->mobile_phone)) {
+        if (!isset($request->mobile_phone)) {
             $request->request->add([
                 'mobile_phone' => null,
             ]);
         }
 
-        if (empty($request->address)) {
+        if (!isset($request->address)) {
             $request->request->add([
                 'address' => null,
             ]);
@@ -1057,25 +1142,23 @@ class UserController extends Controller
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The user login credentials",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="login",
-     *                     description="Email/Phone/Username",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="password",
-     *                     type="string",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="login",
+     *         in="query",
+     *         description="The login credentials (Email/Phone/Username)",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         description="The password",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="200",

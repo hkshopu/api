@@ -33,7 +33,7 @@ Retrieves all cart item of the consumer/guest.
 <br /><br />
 If token is provided, the system will recognize the cart as Consumer cart, no need for a <strong>cart_id</strong>.
 <br /><br />
-If no token is provided, it will need the <strong>cart_id</strong> to retrieve the Guest cart. Otherwise will throw an error.
+If no token is provided, it will need the <strong>cart_id</strong> to retrieve the Guest cart. Otherwise will throw an empty result.
           ",
      *     @OA\Parameter(
      *         name="token",
@@ -65,22 +65,19 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
      */
     public function cartGet(string $cart_id = null, Request $request = null)
     {
-        if (empty($request->access_token_user_id)) {
+        if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
-            if (empty($cart)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid cart idxx',
-                ], 400);
-            }
         } else {
             $cart = Cart::where('user_id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         }
 
-        $cartItemList = CartItem::where('cart_id', $cart->id)->whereNull('deleted_at')->get();
+        $cartItemList = [];
+        if (!empty($cart)) {
+            $cartItemList = CartItem::where('cart_id', $cart->id)->whereNull('deleted_at')->get();
+        }
 
         $data = [
-            'cart_id' => $cart->id,
+            'cart_id' => $cart->id ?? null,
             'shop' => [],
         ];
 
@@ -174,34 +171,41 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The cart information.",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="cart_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="product_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="attribute_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="quantity",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="cart_id",
+     *         in="query",
+     *         description="The cart id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
+     *         description="The product id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="attribute_id",
+     *         in="query",
+     *         description="The attribute id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="quantity",
+     *         in="query",
+     *         description="The quantity",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -217,8 +221,8 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
      */
     public function cartAdd(Request $request = null)
     {
-        if (empty($request->access_token_user_id)) {
-            if (!empty($request->cart_id)) {
+        if (!isset($request->access_token_user_id)) {
+            if (isset($request->cart_id)) {
                 $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
                 if (empty($cart)) {
                     return response()->json([
@@ -272,6 +276,13 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
             ], 400);
         }
 
+        if ($request->quantity < 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid quantity',
+            ], 400);
+        }
+
         CartItem::create($request->only([
             'cart_id',
             'product_id',
@@ -306,39 +317,50 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The cart information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="cart_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="cart_item_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="product_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="attribute_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="quantity",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="cart_id",
+     *         in="query",
+     *         description="The cart id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="cart_item_id",
+     *         in="query",
+     *         description="The cart item id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
+     *         description="The product id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="attribute_id",
+     *         in="query",
+     *         description="The attribute id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="quantity",
+     *         in="query",
+     *         description="The quantity",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -354,7 +376,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartModify(Request $request = null)
     {
-        if (empty($request->access_token_user_id)) {
+        if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
             if (empty($cart)) {
                 return response()->json([
@@ -366,7 +388,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             $cart = Cart::where('user_id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         }
 
-        if (empty($request->cart_item_id)) {
+        if (!isset($request->cart_item_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cart item id required',
@@ -383,7 +405,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             ], 400);
         }
 
-        if (!empty($request->product_id)) {
+        if (isset($request->product_id)) {
             $productStock = ProductInventory::checkStock((int) $request->product_id, (int) $request->attribute_id);
             if ($productStock === null) {
                 return response()->json([
@@ -401,7 +423,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             $request->request->remove('attribute_id');
         }
 
-        if (!empty($request->quantity)) {
+        if (isset($request->quantity)) {
             if ($request->quantity < 1) {
                 return response()->json([
                     'success' => false,
@@ -445,24 +467,23 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The cart information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="cart_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *                 @OA\Property(
-     *                     property="cart_item_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="cart_id",
+     *         in="query",
+     *         description="The cart id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="cart_item_id",
+     *         in="query",
+     *         description="The cart item id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -478,7 +499,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartDelete(Request $request = null)
     {
-        if (empty($request->access_token_user_id)) {
+        if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
             if (empty($cart)) {
                 return response()->json([
@@ -490,7 +511,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             $cart = Cart::where('user_id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         }
 
-        if (empty($request->cart_item_id)) {
+        if (!isset($request->cart_item_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cart item id required',
@@ -537,19 +558,14 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      *             type="string",
      *         )
      *     ),
-     *     @OA\RequestBody(
-     *         description="The cart information",
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="cart_id",
-     *                     type="integer",
-     *                     example="",
-     *                 ),
-     *             ),
-     *         ),
+     *     @OA\Parameter(
+     *         name="cart_id",
+     *         in="query",
+     *         description="The cart id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -565,12 +581,12 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartAssign(Request $request = null)
     {
-        if (empty($request->access_token_user_id)) {
+        if (!isset($request->access_token_user_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Token required',
             ], 400);
-        } else if (empty($request->cart_id)) {
+        } else if (!isset($request->cart_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cart id required',
