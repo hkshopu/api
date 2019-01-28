@@ -17,6 +17,8 @@ use App\Rating;
 use App\Comment;
 use App\PaymentMethod;
 use App\ShopPaymentMethodMap;
+use App\Shipment;
+use App\ShopShipmentMap;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -298,6 +300,15 @@ class ShopController extends Controller
                 $paymentMethodList[$key] = $tempItem;
             }
             $shop['payment_method'] = $paymentMethodList;
+
+            $shop['shipment'] = null;
+            $shipmentMap = ShopShipmentMap::where('shop_id', $shop->id)->whereNull('deleted_at')->first();
+            if ($shipmentMap) {
+                $shipment = Shipment::where('id', $shipmentMap->shipment_id)->whereNull('deleted_at')->first();
+                $tempShipment = $shipment;
+                $tempShipment['amount'] = $shipmentMap->amount;
+                $shop['shipment'] = $tempShipment;
+            }
 
             $shopEntity = Entity::where('name', $shop->getTable())->first();
 
@@ -755,8 +766,11 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if ((PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())->code != 'bank') {
-            $request->request->remove('remarks');
+        // Checking BANK payment method for shop
+        if ((PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())->code <> 'bank') {
+            $request->request->add([
+                'remarks' => null,
+            ]);
         }
 
         $request->request->add([
@@ -973,8 +987,11 @@ class ShopController extends Controller
             ], 400);
         }
 
-        if ((PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())->code != 'bank') {
-            $request->request->remove('remarks');
+        // Checking BANK payment method for shop
+        if ((PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first())->code <> 'bank') {
+            $request->request->add([
+                'remarks' => null,
+            ]);
         }
 
         $request->request->add([
@@ -1023,7 +1040,7 @@ class ShopController extends Controller
      *     ),
      *     @OA\Response(
      *         response="400",
-     *         description="Returns the shop list failure reason",
+     *         description="Returns the shop payment method list failure reason",
      *         @OA\JsonContent()
      *     ),
      * )
@@ -1033,5 +1050,167 @@ class ShopController extends Controller
         $paymentMethodList = PaymentMethod::whereNull('deleted_at')->get();
 
         return response()->json($paymentMethodList, 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/shopshipment",
+     *     operationId="shopShipmentModify",
+     *     tags={"Shop"},
+     *     summary="Updates shipment to the shop",
+     *     description="Updates shipment to the shop.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shipment_id",
+     *         in="query",
+     *         description="The shipment id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="amount",
+     *         in="query",
+     *         description="The amount",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the updated shop information",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shipment update failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopShipmentModify(Request $request = null)
+    {
+        if (!isset($request->shop_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop id required',
+            ], 400);
+        }
+
+        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        if (!isset($request->shipment_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shipment id required',
+            ], 400);
+        } else if (empty(Shipment::where('id', $request->shipment_id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shipment id',
+            ], 400);
+        }
+
+        $shopShipment = ShopShipmentMap::where('shop_id', $shop->id)->whereNull('deleted_at')->first();
+
+        if (isset($request->amount)) {
+            if ($request->amount < 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid amount',
+                ], 400);
+            }
+        }
+
+        // Checking OVER shipment for shop
+        if ((Shipment::where('id', $request->shipment_id)->whereNull('deleted_at')->first())->name <> 'over') {
+            $request->request->add([
+                'amount' => null,
+            ]);
+        }
+
+        if ($shopShipment) {
+            $request->request->add([
+                'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'deleted_by' => $request->access_token_user_id,
+            ]);
+
+            $shopShipment->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
+
+            $request->request->remove('deleted_at');
+            $request->request->remove('deleted_by');
+        }
+
+        $request->request->add([
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        ShopShipmentMap::create($request->all());
+
+        return response()->json(self::shopGet($shop->id, $request)->getData(), 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/shopshipment",
+     *     operationId="shopShipmentList",
+     *     tags={"Shop"},
+     *     summary="Retrieves all shop shipment",
+     *     description="Retrieves all shop shipment.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns all shop shipment",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the shop shipment list failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function shopShipmentList(Request $request = null)
+    {
+        $shipmentList = Shipment::whereNull('deleted_at')->get();
+
+        return response()->json($shipmentList, 200);
     }
 }
