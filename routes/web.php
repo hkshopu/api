@@ -127,6 +127,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('color',  ['uses' => 'ColorController@colorList']);
     // Cart
     $router->post('cart', ['uses' => 'CartController@cartAdd']);
+    $router->post('carttest', ['uses' => 'CartController@cartAddTest']);
     $router->get('cart/{cart_id}',  ['uses' => 'CartController@cartGet']);
     $router->patch('cart',  ['uses' => 'CartController@cartModify']);
     $router->delete('cart', ['uses' => 'CartController@cartDelete']);

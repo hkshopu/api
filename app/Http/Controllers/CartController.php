@@ -313,6 +313,75 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/carttest",
+     *     operationId="cartAddTest",
+     *     tags={"Cart"},
+     *     summary="Tests cart item parameters",
+     *     description="Tests cart item parameters.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="cart_id",
+     *         in="query",
+     *         description="The cart id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
+     *         description="The product id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="attribute_id",
+     *         in="query",
+     *         description="The attribute id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="quantity",
+     *         in="query",
+     *         description="The quantity",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the post values",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the error sending post values",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function cartAddTest(Request $request = null)
+    {
+        return response()->json($request->all(), 200);
+    }
+
+    /**
      * @OA\Patch(
      *     path="/api/cart",
      *     operationId="cartModify",
