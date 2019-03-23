@@ -16,23 +16,26 @@ $router->get('/', function () use ($router) {
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
+
     // Status
-    $router->get('categorystatus',  ['uses' => 'StatusController@categoryStatusList']);
-    $router->get('productstatus',  ['uses' => 'StatusController@productStatusList']);
-    $router->get('shopstatus',  ['uses' => 'StatusController@shopStatusList']);
-    $router->get('commentstatus',  ['uses' => 'StatusController@commentStatusList']);
-    $router->get('blogstatus',  ['uses' => 'StatusController@blogStatusList']);
-    $router->get('userstatus',  ['uses' => 'StatusController@userStatusList']);
+    /* UTX */ $router->get('categorystatus',  ['uses' => 'StatusController@categoryStatusList']);
+    /* UTX */ $router->get('productstatus',  ['uses' => 'StatusController@productStatusList']);
+    /* UTX */ $router->get('shopstatus',  ['uses' => 'StatusController@shopStatusList']);
+    /* UTX */ $router->get('commentstatus',  ['uses' => 'StatusController@commentStatusList']);
+    /* UTX */ $router->get('blogstatus',  ['uses' => 'StatusController@blogStatusList']);
+    /* UTX */ $router->get('userstatus',  ['uses' => 'StatusController@userStatusList']);
+
     // Following
     $router->post('productfollowing', ['uses' => 'FollowingController@productFollowingAdd']);
-    $router->get('productfollowing/{product_id}',  ['uses' => 'FollowingController@productFollowingGet']);
+    /* UTX */ $router->get('productfollowing/{product_id}',  ['uses' => 'FollowingController@productFollowingGet']);
     $router->delete('productfollowing/{product_id}', ['uses' => 'FollowingController@productFollowingDelete']);
     $router->post('imagefollowing', ['uses' => 'FollowingController@imageFollowingAdd']);
-    $router->get('imagefollowing/{image_id}',  ['uses' => 'FollowingController@imageFollowingGet']);
+    /* UTX */ $router->get('imagefollowing/{image_id}',  ['uses' => 'FollowingController@imageFollowingGet']);
     $router->delete('imagefollowing/{image_id}', ['uses' => 'FollowingController@imageFollowingDelete']);
     $router->post('shopfollowing', ['uses' => 'FollowingController@shopFollowingAdd']);
-    $router->get('shopfollowing/{shop_id}',  ['uses' => 'FollowingController@shopFollowingGet']);
+    /* UTX */ $router->get('shopfollowing/{shop_id}',  ['uses' => 'FollowingController@shopFollowingGet']);
     $router->delete('shopfollowing/{shop_id}', ['uses' => 'FollowingController@shopFollowingDelete']);
+
     // Image
     $router->post('productimage/{id}', ['uses' => 'ImageController@productImageAdd']);
     $router->delete('productimage/{id}', ['uses' => 'ImageController@productImageDelete']);
@@ -43,48 +46,53 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('userimage/{id}', ['uses' => 'ImageController@userImageAdd']);
     $router->delete('userimage/{id}', ['uses' => 'ImageController@userImageDelete']);
     $router->post('uploadimage', ['uses' => 'ImageController@uploadImage']);
+
     // Category
-    $router->get('productcategory',  ['uses' => 'CategoryController@productCategoryList']);
+    /* UTX */ $router->get('productcategory',  ['uses' => 'CategoryController@productCategoryList']);
     $router->post('productcategory',  ['uses' => 'CategoryController@productCategoryAdd']);
     $router->get('productcategory/{id}',  ['uses' => 'CategoryController@productCategoryGet']);
     $router->patch('productcategory/{id}',  ['uses' => 'CategoryController@productCategoryModify']);
     $router->delete('productcategory/{id}',  ['uses' => 'CategoryController@productCategoryDelete']);
     $router->get('productcategoryparent/{id}',  ['uses' => 'CategoryController@productCategoryParentGet']);
-    $router->get('shopcategory',  ['uses' => 'CategoryController@shopCategoryList']);
+    /* UTX */ $router->get('shopcategory',  ['uses' => 'CategoryController@shopCategoryList']);
     $router->post('shopcategory',  ['uses' => 'CategoryController@shopCategoryAdd']);
     $router->get('shopcategory/{id}',  ['uses' => 'CategoryController@shopCategoryGet']);
     $router->patch('shopcategory/{id}',  ['uses' => 'CategoryController@shopCategoryModify']);
     $router->delete('shopcategory/{id}',  ['uses' => 'CategoryController@shopCategoryDelete']);
     $router->get('blogcategory',  ['uses' => 'CategoryController@blogCategoryList']);
-    $router->post('blogcategory',  ['uses' => 'CategoryController@blogCategoryAdd']);
+    /* UTX */ $router->post('blogcategory',  ['uses' => 'CategoryController@blogCategoryAdd']);
     $router->get('blogcategory/{id}',  ['uses' => 'CategoryController@blogCategoryGet']);
     $router->patch('blogcategory/{id}',  ['uses' => 'CategoryController@blogCategoryModify']);
     $router->delete('blogcategory/{id}',  ['uses' => 'CategoryController@blogCategoryDelete']);
+
     // Product
-    $router->get('product',  ['uses' => 'ProductController@productList']);
+    /* UTX */ $router->get('product',  ['uses' => 'ProductController@productList']);
     $router->post('product', ['uses' => 'ProductController@productCreate']);
     $router->get('product/{id}', ['uses' => 'ProductController@productGet']);
     $router->delete('product/{id}', ['uses' => 'ProductController@productDelete']);
     $router->patch('product/{id}', ['uses' => 'ProductController@productModify']);
     $router->post('productstockadd/{id}', ['uses' => 'ProductController@productStockAdd']);
     $router->post('productstockremove/{id}', ['uses' => 'ProductController@productStockRemove']);
+
     // View
     $router->post('productview', ['uses' => 'ViewController@productViewAdd']);
-    $router->get('productview/{product_id}',  ['uses' => 'ViewController@productViewGet']);
+    /* UTX */ $router->get('productview/{product_id}',  ['uses' => 'ViewController@productViewGet']);
     $router->post('blogview', ['uses' => 'ViewController@blogViewAdd']);
-    $router->get('blogview/{blog_id}',  ['uses' => 'ViewController@blogViewGet']);
+    /* UTX */ $router->get('blogview/{blog_id}',  ['uses' => 'ViewController@blogViewGet']);
+
     // Shop
-    $router->get('shop',  ['uses' => 'ShopController@shopList']);
+    /* UTX */ $router->get('shop',  ['uses' => 'ShopController@shopList']);
     $router->post('shop', ['uses' => 'ShopController@shopCreate']);
     $router->get('shop/{id}', ['uses' => 'ShopController@shopGet']);
     $router->delete('shop/{id}', ['uses' => 'ShopController@shopDelete']);
     $router->patch('shop/{id}', ['uses' => 'ShopController@shopModify']);
-    $router->get('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodList']);
+    /* UTX */ $router->get('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodList']);
     $router->post('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodCreate']);
     $router->delete('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodDelete']);
     $router->patch('shoppaymentmethod', ['uses' => 'ShopController@shopPaymentMethodModify']);
-    $router->get('shopshipment', ['uses' => 'ShopController@shopShipmentList']);
+    /* UTX */ $router->get('shopshipment', ['uses' => 'ShopController@shopShipmentList']);
     $router->patch('shopshipment', ['uses' => 'ShopController@shopShipmentModify']);
+
     // Rating
     $router->post('shoprating', ['uses' => 'RatingController@shopRatingAdd']);
     $router->get('shoprating/{shop_id}',  ['uses' => 'RatingController@shopRatingGet']);
@@ -92,6 +100,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('productrating', ['uses' => 'RatingController@productRatingAdd']);
     $router->get('productrating/{product_id}',  ['uses' => 'RatingController@productRatingGet']);
     $router->delete('productrating/{id}', ['uses' => 'RatingController@productRatingDelete']);
+
     // Comment
     $router->post('shopcomment', ['uses' => 'CommentController@shopCommentAdd']);
     $router->get('shopcomment/{shop_id}',  ['uses' => 'CommentController@shopCommentGet']);
@@ -103,30 +112,37 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->delete('blogcomment/{id}', ['uses' => 'CommentController@blogCommentDelete']);
     $router->patch('blogcommentenable/{id}', ['uses' => 'CommentController@blogCommentEnable']);
     $router->patch('blogcommentdisable/{id}', ['uses' => 'CommentController@blogCommentDisable']);
+
     // Blog
-    $router->get('blog',  ['uses' => 'BlogController@blogList']);
+    /* UTX */ $router->get('blog',  ['uses' => 'BlogController@blogList']);
     $router->post('blog', ['uses' => 'BlogController@blogCreate']);
     $router->get('blog/{id}', ['uses' => 'BlogController@blogGet']);
     $router->delete('blog/{id}', ['uses' => 'BlogController@blogDelete']);
     $router->patch('blog/{id}', ['uses' => 'BlogController@blogModify']);
+
     // Like
     $router->post('bloglike', ['uses' => 'LikeController@blogLikeAdd']);
     $router->get('bloglike/{blog_id}',  ['uses' => 'LikeController@blogLikeGet']);
     $router->delete('bloglike/{blog_id}', ['uses' => 'LikeController@blogLikeDelete']);
+
     // User
-    $router->get('user',  ['uses' => 'UserController@userList']);
+    /* UTX */ $router->get('user',  ['uses' => 'UserController@userList']);
     $router->post('user', ['uses' => 'UserController@userCreate']);
     $router->get('user/{id}', ['uses' => 'UserController@userGet']);
     $router->post('register', ['uses' => 'UserController@userRegister']);
     $router->post('signup', ['uses' => 'UserController@userSignup']);
     $router->post('login',  ['uses' => 'UserController@userLogin']);
-    $router->get('logout',  ['uses' => 'UserController@userLogout']);
+    /* UTX */ $router->get('logout',  ['uses' => 'UserController@userLogout']);
+
     // User Type
-    $router->get('usertype',  ['uses' => 'UserTypeController@userTypeList']);
+    /* UTX */ $router->get('usertype',  ['uses' => 'UserTypeController@userTypeList']);
+
     // Size
-    $router->get('size',  ['uses' => 'SizeController@sizeList']);
+    /* UTX */ $router->get('size',  ['uses' => 'SizeController@sizeList']);
+
     // Color
-    $router->get('color',  ['uses' => 'ColorController@colorList']);
+    /* UTX */ $router->get('color',  ['uses' => 'ColorController@colorList']);
+
     // Cart
     $router->post('cart', ['uses' => 'CartController@cartAdd']);
     $router->post('carttest', ['uses' => 'CartController@cartAddTest']);
@@ -134,6 +150,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->patch('cart',  ['uses' => 'CartController@cartModify']);
     $router->delete('cart', ['uses' => 'CartController@cartDelete']);
     $router->post('assigncart', ['uses' => 'CartController@cartAssign']);
+
     ///
     ///
     ///
