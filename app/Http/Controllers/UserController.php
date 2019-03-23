@@ -27,6 +27,32 @@ class UserController extends Controller
         $this->middleware('auth');
     }
 
+    public function accessTokenGet(int $id) {
+        $accessTokenDetails = [];
+        $accessToken = AccessToken::where('id', $id)->whereNull('deleted_at')->first();
+        $user = User::where('id', $accessToken->user_id)->whereNull('deleted_at')->first();
+
+        $accessTokenDetails['id'] = $accessToken->id;
+        $accessTokenDetails['access_token_id'] = $accessToken->id;
+        $accessTokenDetails['token'] = $accessToken->token;
+        $accessTokenDetails['expires_at'] = $accessToken->expires_at;
+        $accessTokenDetails['created_at'] = $accessToken->created_at->format('Y-m-d H:i:s');
+        $accessTokenDetails['user_id'] = $accessToken->user_id;
+
+        $image = new Image();
+        $imageEntity = Entity::where('name', $image->getTable())->first();
+        $userEntity = Entity::where('name', $user->getTable())->first();
+        $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+
+        $accessTokenDetails['user'] = [];
+        $accessTokenDetails['user']['id'] = $user->id;
+        $accessTokenDetails['user']['nickname'] = $user->username;
+        $accessTokenDetails['user']['image_url'] = $image->url ?? null;
+        $accessTokenDetails['user']['join_date'] = $user->created_at->format('Y-m-d H:i:s');
+
+        return $accessTokenDetails;
+    }
+
     /**
      * @OA\Get(
      *     path="/api/user",
@@ -241,10 +267,10 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Username required',
             ], 400);
-        } else if (preg_match('/[^a-zA-Z0-9_]/i', $request->username)) {
+        } else if (preg_match('/[^a-zA-Z0-9\.\-_]/i', $request->username)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Username should only contain alphanumeric characters and underscores',
+                'message' => 'Username should only contain alphanumeric characters, dots/periods, hyphens, and underscores',
             ], 400);
         } else if (!empty(User::where('username', $request->username)->first())) {
             // Explicit exclusion of the deleted_at field to avoid username duplication whether deleted or not
@@ -657,10 +683,10 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Username required',
             ], 400);
-        } else if (preg_match('/[^a-zA-Z0-9_]/i', $request->username)) {
+        } else if (preg_match('/[^a-zA-Z0-9\.\-_]/i', $request->username)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Username should only contain alphanumeric characters and underscores',
+                'message' => 'Username should only contain alphanumeric characters, dots/periods, hyphens, and underscores',
             ], 400);
         } else if (!empty(User::where('username', $request->username)->first())) {
             // Explicit exclusion of the deleted_at field to avoid username duplication whether deleted or not
@@ -994,10 +1020,10 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Username required',
             ], 400);
-        } else if (preg_match('/[^a-zA-Z0-9_]/i', $request->username)) {
+        } else if (preg_match('/[^a-zA-Z0-9\.\-_]/i', $request->username)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Username should only contain alphanumeric characters and underscores',
+                'message' => 'Username should only contain alphanumeric characters, dots/periods, hyphens, and underscores',
             ], 400);
         } else if (!empty(User::where('username', $request->username)->first())) {
             // Explicit exclusion of the deleted_at field to avoid username duplication whether deleted or not
@@ -1060,6 +1086,15 @@ class UserController extends Controller
         if (!isset($request->gender)) {
             $request->request->add([
                 'gender' => null,
+            ]);
+        } else if (preg_match('/[^mf]/i', strtolower(substr($request->gender, 0, 1)))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid gender',
+            ], 400);
+        } else {
+            $request->request->add([
+                'gender' => strtolower(substr($request->gender, 0, 1)),
             ]);
         }
 
@@ -1220,7 +1255,7 @@ class UserController extends Controller
             'updated_by',
         ]));
 
-        return response()->json($accessToken, 200);
+        return response()->json(self::accessTokenGet($accessToken->id), 200);
     }
 
     /**
@@ -1276,6 +1311,99 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Logout successful',
+        ], 200);
+    }
+
+    
+
+    /**
+     * @OA\Patch(
+     *     path="/api/updatepassword/{user_id}",
+     *     operationId="passwordUpdate",
+     *     tags={"User"},
+     *     summary="Update Password",
+     *     description="Change password via admin.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="path",
+     *         description="The user id",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         description="The new password",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the password update status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the password update failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function passwordUpdate(int $user_id, Request $request = null) {
+        $user = User::where('id', $user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user id',
+            ], 400);
+        }
+
+        if (!isset($request->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password required',
+            ], 400);
+        } else if (strlen($request->password) < 4) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password should be at least 4 characters',
+            ], 400);
+        }
+
+        // Set password hash
+        $salt = '$2a$12$' . bin2hex(openssl_random_pseudo_bytes(16));
+        $password = crypt($request->password, $salt);
+        $request->request->add([
+            'salt' => $salt,
+            'password' => $password,
+        ]);
+
+        $request->request->add([
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        $user->update($request->only([
+            'salt',
+            'password',
+            'updated_by',
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated',
         ], 200);
     }
 }

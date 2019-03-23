@@ -133,6 +133,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('signup', ['uses' => 'UserController@userSignup']);
     $router->post('login',  ['uses' => 'UserController@userLogin']);
     /* UTX */ $router->get('logout',  ['uses' => 'UserController@userLogout']);
+    $router->patch('updatepassword/{user_id}',  ['uses' => 'UserController@passwordUpdate']);
 
     // User Type
     /* UTX */ $router->get('usertype',  ['uses' => 'UserTypeController@userTypeList']);
