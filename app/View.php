@@ -19,7 +19,7 @@ class View extends Model
     protected $fillable = [
         'entity',
         'entity_id',
-        'user_id',
+        'ip_address',
         //
         'created_by',
         'updated_by',

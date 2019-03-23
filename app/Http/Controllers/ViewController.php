@@ -28,25 +28,9 @@ class ViewController extends Controller
      *     summary="Adds view to product",
      *     description="Adds view to product.",
      *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
      *         name="product_id",
      *         in="query",
      *         description="The product id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="query",
-     *         description="The user id (Just enter any random integer, yah as in random ;)",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -70,11 +54,6 @@ class ViewController extends Controller
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
-        } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid user id',
-            ], 400);
         }
 
         $productEntity = Entity::where('name', $product->getTable())->first();
@@ -82,8 +61,7 @@ class ViewController extends Controller
         $request->request->add([
             'entity' => $productEntity->id,
             'entity_id' => $product->id,
-            'created_by' => $request->access_token_user_id,
-            'updated_by' => $request->access_token_user_id,
+            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
         ]);
 
         $view = View::create($request->all());
@@ -100,15 +78,6 @@ class ViewController extends Controller
      *     tags={"View"},
      *     summary="Retrieves all product views given the product id",
      *     description="Retrieves all product views given the product id.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Parameter(
      *         name="product_id",
      *         in="path",
@@ -155,25 +124,9 @@ class ViewController extends Controller
      *     summary="Adds view to blog",
      *     description="Adds view to blog.",
      *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
      *         name="blog_id",
      *         in="query",
      *         description="The blog id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="query",
-     *         description="The user id (Just enter any random integer, yah as in random ;)",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -197,11 +150,6 @@ class ViewController extends Controller
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
-        } else if (empty($request->user_id) || $request->user_id < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid user id',
-            ], 400);
         }
 
         $blogEntity = Entity::where('name', $blog->getTable())->first();
@@ -209,8 +157,7 @@ class ViewController extends Controller
         $request->request->add([
             'entity' => $blogEntity->id,
             'entity_id' => $blog->id,
-            'created_by' => $request->access_token_user_id,
-            'updated_by' => $request->access_token_user_id,
+            'ip_address' => $_SERVER['REMOTE_ADDR'],
         ]);
 
         $view = View::create($request->all());
@@ -227,15 +174,6 @@ class ViewController extends Controller
      *     tags={"View"},
      *     summary="Retrieves all blog views given the blog id",
      *     description="Retrieves all blog views given the blog id.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
      *     @OA\Parameter(
      *         name="blog_id",
      *         in="path",
