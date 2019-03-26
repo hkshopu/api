@@ -8,6 +8,7 @@ use App\AccessToken;
 use App\Entity;
 use App\Status;
 use App\StatusMap;
+use App\StatusOption;
 use App\Shop;
 use App\Image;
 use App\Category;
@@ -539,7 +540,7 @@ class UserController extends Controller
      *     ),
      * )
      */
-    public function userGet($id)
+    public function userGet(int $id)
     {
         $user = User::where('id', $id)->whereNull('deleted_at')->first();
 
@@ -565,6 +566,305 @@ class UserController extends Controller
         }
 
         return response()->json($user, 200);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/user/{id}",
+     *     operationId="userDelete",
+     *     tags={"User"},
+     *     summary="Deletes user from the web app",
+     *     description="Deletes user from the web app.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The user id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the user delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the user delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userDelete(int $id, Request $request)
+    {
+        $user = User::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid id',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $user->update($request->all());
+        $userEntity = Entity::where('name', $user->getTable())->first();
+
+        $statusMap = StatusMap::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->first();
+        if (!empty($statusMap)) {
+            $statusMap->update($request->all());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Deleted successfully',
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/user/{id}",
+     *     operationId="userModify",
+     *     tags={"User"},
+     *     summary="Modifies user from the web app",
+     *     description="Modifies user from the web app.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The user id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="username",
+     *         in="query",
+     *         description="The username",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="first_name",
+     *         in="query",
+     *         description="The first name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="last_name",
+     *         in="query",
+     *         description="The last name",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_type_id",
+     *         in="query",
+     *         description="The user type id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="gender",
+     *         in="query",
+     *         description="The gender",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="birth_date",
+     *         in="query",
+     *         description="The birth date",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="mobile_phone",
+     *         in="query",
+     *         description="The mobile phone",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="address",
+     *         in="query",
+     *         description="The address",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="status_id",
+     *         in="query",
+     *         description="The status id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the user created",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the user create failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function userModify(int $id, Request $request = null)
+    {
+        $user = User::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid id',
+            ], 400);
+        }
+
+        if (isset($request->username)) {
+            if (preg_match('/[^a-zA-Z0-9\.\-_]/i', $request->username)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Username should only contain alphanumeric characters, dots/periods, hyphens, and underscores',
+                ], 400);
+            } else if (!empty(User::where('username', $request->username)->first())) {
+                // Explicit exclusion of the deleted_at field to avoid username duplication whether deleted or not
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Username already in use',
+                ], 400);
+            }
+        }
+
+        if (isset($request->first_name)) {
+            if (preg_match('/[^a-zA-Z\s]/i', $request->first_name)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'First name should only contain alphabetical characters and spaces',
+                ], 400);
+            }
+        }
+
+        if (isset($request->last_name)) {
+            if (preg_match('/[^a-zA-Z\s]/i', $request->last_name)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Last name should only contain alphabetical characters and spaces',
+                ], 400);
+            }
+        }
+
+        if (isset($request->user_type_id)) {
+            $userType = UserType::where('id', $request->user_type_id)->whereNull('deleted_at')->first();
+
+            if (empty($userType)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid user type id',
+                ], 400);
+            }
+        }
+
+        if (isset($request->gender)) {
+            if (preg_match('/[^mf]/i', strtolower(substr($request->gender, 0, 1)))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid gender',
+                ], 400);
+            } else {
+                $request->request->add([
+                    'gender' => strtolower(substr($request->gender, 0, 1)),
+                ]);
+            }
+        }
+
+        if (isset($request->status_id)) {
+            $userEntity = Entity::where('name', $user->getTable())->first();
+            $status = Status::where('id', $request->status_id)->whereNull('deleted_at')->first();
+            $statusOption = StatusOption::where('entity', $userEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first();
+
+            if (empty($status)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status id',
+                ], 400);
+            } else if (empty($statusOption)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status for the user',
+                ], 400);
+            }
+        }
+
+        $request->request->add([
+            'id' => $id,
+        ]);
+
+        $request->request->add([
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        $user->update($request->all());
+
+        if (isset($request->status_id)) {
+            $request->request->add([
+                'entity' => $userEntity->id,
+                'entity_id' => $id,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
+            ]);
+
+            StatusMap::create($request->only([
+                'entity',
+                'entity_id',
+                'status_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        return response()->json(self::userGet($user->id)->getData(), 200);
     }
 
     /**
