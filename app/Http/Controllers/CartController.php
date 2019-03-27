@@ -7,6 +7,11 @@ use App\CartItem;
 use App\Shop;
 use App\Product;
 use App\ProductInventory;
+use App\ProductAttribute;
+use App\Size;
+use App\Color;
+use App\PaymentMethod;
+use App\ShopPaymentMethodMap;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -65,13 +70,6 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
      */
     public function cartGet(string $cart_id = null, Request $request = null)
     {
-        // For Sprint 1.1 demo only
-        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
-        if (empty($cart)) {
-            $cart = Cart::create();
-        }
-        $cart_id = $cart->id;
-
         if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
         } else {
@@ -84,8 +82,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
         }
 
         $data = [
-            // For Sprint 1.1 demo only
-            // 'cart_id' => $cart->id ?? null,
+            'cart_id' => $cart->id ?? null,
             'shop' => [],
         ];
 
@@ -103,54 +100,135 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
         foreach ($productGroupList as $shopId => $productGroup) {
             $shop = app('App\Http\Controllers\ShopController')->shopGet($shopId, $request)->getData();
             if (!empty($shop)) {
+                $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
+                foreach ($paymentMethodList as $key => $paymentMethodItem) {
+                    $tempItem = [];
+                    $paymentMethod = PaymentMethod::where('id', $paymentMethodItem->payment_method_id)->whereNull('deleted_at')->first();
+                    $tempItem['id'] = $paymentMethod->id;
+                    $tempItem['name'] = $paymentMethod->name;
+                    $tempItem['code'] = $paymentMethod->code;
+                    $tempItem['account_info'] = $paymentMethodItem->account_info;
+                    $tempItem['remarks'] = $paymentMethodItem->remarks;
+
+                    $paymentMethodList[$key] = $tempItem;
+                }
+
                 $data['shop'][$shopCtr] = [
                     'shop_id' => $shop->id,
                     'logo_url' => $shop->logo_url,
                     'name_en' => $shop->name_en,
                     'name_tc' => $shop->name_tc,
                     'name_sc' => $shop->name_sc,
+                    'payment_method' => $paymentMethodList,
                     'cart_date' => '',
                     'shop_date' => $shop->created_at,
                     'total_quantity' => 0,
                     'total_amount' => 0.00,
+                    'total_amount_discounted' => 0.00,
                 ];
 
                 $productCtr = 0;
+                $data['shop'][$shopCtr]['product'] = [];
                 foreach ($productGroup as $cartItemId) {
                     $cartItem = CartItem::where('id', $cartItemId)->whereNull('deleted_at')->first();
                     if (!empty($cartItem)) {
                         $product = app('App\Http\Controllers\ProductController')->productGet($cartItem->product_id, $request)->getData();
                         if (!empty($product)) {
-                            $data['shop'][$shopCtr]['product'][$productCtr] = [
-                                'cart_item_id' => $cartItem->id,
-                                'product_id' => $cartItem->product_id,
-                                'attribute_id' => $cartItem->attribute_id,
-                                'image_url' => $product->image[0]->url ?? null,
-                                'name_en' => $product->name_en,
-                                'name_tc' => $product->name_tc,
-                                'name_sc' => $product->name_sc,
-                                'shop_name_en' => $shop->name_en,
-                                'shop_name_tc' => $shop->name_tc,
-                                'shop_name_sc' => $shop->name_sc,
-                                'description_en' => $product->description_en,
-                                'description_tc' => $product->description_tc,
-                                'description_sc' => $product->description_sc,
-                                'cart_date' => $cartItem->created_at->format('Y-m-d H:i:s'),
-                                'product_date' => $product->created_at,
-                                'price' => $product->price_discounted ?? $product->price_original,
-                                'quantity' => $cartItem->quantity,
-                                'total_price' => $cartItem->quantity * ($product->price_discounted ?? $product->price_original),
-                            ];
-                            $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
-                            $data['shop'][$shopCtr]['total_quantity'] += $data['shop'][$shopCtr]['product'][$productCtr]['quantity'];
-                            $data['shop'][$shopCtr]['total_amount'] += $data['shop'][$shopCtr]['product'][$productCtr]['total_price'];
-                            $productCtr++;
+                            $attribute = ProductAttribute::where('id', $cartItem->attribute_id)->whereNull('deleted_at')->first();
+                            $attribute['color'] = Color::where('id', $attribute->color_id)->whereNull('deleted_at')->first();
+                            $attribute['size'] = Size::where('id', $attribute->size_id)->whereNull('deleted_at')->first();
+
+                            $cartShopProductIndex = $productCtr;
+
+                            // Merge similar product and attribute in cart
+                            $isProductAndAttributeExists = false;
+                            foreach ($data['shop'][$shopCtr]['product'] as $key => $item) {
+                                if ($item['product_id'] == $cartItem->product_id
+                                    && $item['attribute_id'] == $cartItem->attribute_id) {
+                                        $isProductAndAttributeExists = true;
+                                        $cartShopProductIndex = $key;
+                                    break;
+                                }
+                            }
+
+                            $cartItemQuantity = $cartItem->quantity;
+                            if ($isProductAndAttributeExists == true) {
+                                if ($cartItem->quantity < 0) {
+                                    if (abs($cartItem->quantity) > $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity']) {
+                                        $cartItemQuantity = -1 * $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity'];
+                                    }
+                                }
+                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity'] += $cartItemQuantity;
+                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['total_price'] += ($cartItemQuantity * $product->price_original);
+                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['total_price_discounted'] += !empty($product->price_discounted) ? ($cartItemQuantity * $product->price_discounted) : null;
+
+                                $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
+                                $data['shop'][$shopCtr]['total_quantity'] += $cartItemQuantity;
+                                $data['shop'][$shopCtr]['total_amount'] += ($cartItemQuantity * $product->price_original);
+                                $data['shop'][$shopCtr]['total_amount_discounted'] += ($cartItemQuantity * $product->price_discounted);
+
+                                $productCtr++;
+                            } else {
+                                if ($cartItem->quantity > 0) {
+                                    $data['shop'][$shopCtr]['product'][$cartShopProductIndex] = [
+                                        'cart_item_id' => $cartItem->id,
+                                        'product_id' => $cartItem->product_id,
+                                        'attribute_id' => $cartItem->attribute_id,
+                                        'attribute' => $attribute,
+                                        'image_url' => $product->image[0]->url ?? null,
+                                        'name_en' => $product->name_en,
+                                        'name_tc' => $product->name_tc,
+                                        'name_sc' => $product->name_sc,
+                                        'shop_name_en' => $shop->name_en,
+                                        'shop_name_tc' => $shop->name_tc,
+                                        'shop_name_sc' => $shop->name_sc,
+                                        'description_en' => $product->description_en,
+                                        'description_tc' => $product->description_tc,
+                                        'description_sc' => $product->description_sc,
+                                        'cart_date' => $cartItem->created_at->format('Y-m-d H:i:s'),
+                                        'product_date' => $product->created_at,
+                                        'price' => $product->price_original,
+                                        'price_discounted' => $product->price_discounted,
+                                        'quantity' => $cartItemQuantity,
+                                        'total_price' => $cartItemQuantity * $product->price_original,
+                                        'total_price_discounted' => !empty($product->price_discounted) ? $cartItemQuantity * $product->price_discounted : null,
+                                    ];
+
+                                    $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
+                                    $data['shop'][$shopCtr]['total_quantity'] += $cartItemQuantity;
+                                    $data['shop'][$shopCtr]['total_amount'] += ($cartItemQuantity * $product->price_original);
+                                    $data['shop'][$shopCtr]['total_amount_discounted'] += ($cartItemQuantity * $product->price_discounted);
+
+                                    $productCtr++;
+                                }
+                            }
                         }
                     }
                 }
             }
             $shopCtr++;
         }
+
+        // Remove items with zero quantity in cart
+        $newShopData = [];
+        foreach ($data['shop'] as $shop) {
+            $newProductData = [];
+            foreach ($shop['product'] as $product) {
+                if ($product['quantity'] > 0) {
+                    if ($product['total_price_discounted'] <= 0) {
+                        $product['total_price_discounted'] = null;
+                    }
+                    $newProductData[] = $product;
+                }
+            }
+
+            if (!empty($newProductData)) {
+                $shop['product'] = $newProductData;
+                $newShopData[] = $shop;
+            }
+        }
+
+        $data['shop'] = $newShopData;
 
         return response()->json($data, 200);
     }
@@ -216,7 +294,7 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
      *         )
      *     ),
      *     @OA\Response(
-     *         response="200",
+     *         response="201",
      *         description="Returns the cart with the added item",
      *         @OA\JsonContent()
      *     ),
@@ -229,15 +307,6 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
      */
     public function cartAdd(Request $request = null)
     {
-        // For Sprint 1.1 demo only
-        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
-        if (empty($cart)) {
-            $cart = Cart::create();
-        }
-        $request->request->add([
-            'cart_id' => $cart->id,
-        ]);
-
         if (!isset($request->access_token_user_id)) {
             if (isset($request->cart_id)) {
                 $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
@@ -290,13 +359,6 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
             return response()->json([
                 'success' => false,
                 'message' => 'Product out of stock',
-            ], 400);
-        }
-
-        if ($request->quantity < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid quantity',
             ], 400);
         }
 
@@ -365,7 +427,7 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
      *         )
      *     ),
      *     @OA\Response(
-     *         response="200",
+     *         response="201",
      *         description="Returns the post values",
      *         @OA\JsonContent()
      *     ),
@@ -449,7 +511,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      *         )
      *     ),
      *     @OA\Response(
-     *         response="200",
+     *         response="201",
      *         description="Returns the cart with the updated item",
      *         @OA\JsonContent()
      *     ),
@@ -462,15 +524,6 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartModify(Request $request = null)
     {
-        // For Sprint 1.1 demo only
-        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
-        if (empty($cart)) {
-            $cart = Cart::create();
-        }
-        $request->request->add([
-            'cart_id' => $cart->id,
-        ]);
-
         if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
             if (empty($cart)) {
@@ -518,14 +571,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             $request->request->remove('attribute_id');
         }
 
-        if (isset($request->quantity)) {
-            if ($request->quantity < 1) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid quantity',
-                ], 400);
-            }
-        } else {
+        if (!isset($request->quantity)) {
             $request->request->remove('quantity');
         }
 
@@ -594,15 +640,6 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartDelete(Request $request = null)
     {
-        // For Sprint 1.1 demo only
-        $cart = Cart::whereNull('user_id')->whereNull('deleted_at')->first();
-        if (empty($cart)) {
-            $cart = Cart::create();
-        }
-        $request->request->add([
-            'cart_id' => $cart->id,
-        ]);
-
         if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
             if (empty($cart)) {

@@ -285,7 +285,16 @@ class ShopController extends Controller
         $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
 
         if (!empty($shop)) {
-            $shop['owner'] = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+            // Some shops has null owner/user
+            $shop['owner'] = null;
+
+            if (!empty($shop->user_id)) {
+                $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+                $userEntity = Entity::where('name', $user->getTable())->first();
+                $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+                $user['image_url'] = !empty($image) ? $image->url : null;
+                $shop['owner'] = $user;
+            }
 
             $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
             foreach ($paymentMethodList as $key => $paymentMethodItem) {
@@ -375,6 +384,9 @@ class ShopController extends Controller
                 $featuredProductList[] = [
                     'id' => $productInfo->id,
                     'image_url' => $productInfo->image->url ?? null,
+                    'product_name_en' => $productInfo->name_en,
+                    'product_name_tc' => $productInfo->name_tc,
+                    'product_name_sc' => $productInfo->name_sc,
                 ];
             }
             $shop['featured_products'] = $featuredProductList;

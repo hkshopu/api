@@ -28,7 +28,7 @@ class UserController extends Controller
         $this->middleware('auth');
     }
 
-    public function accessTokenGet(int $id) {
+    public function accessTokenGet(int $id, Request $request = null) {
         $accessTokenDetails = [];
         $accessToken = AccessToken::where('id', $id)->whereNull('deleted_at')->first();
         $user = User::where('id', $accessToken->user_id)->whereNull('deleted_at')->first();
@@ -40,16 +40,18 @@ class UserController extends Controller
         $accessTokenDetails['created_at'] = $accessToken->created_at->format('Y-m-d H:i:s');
         $accessTokenDetails['user_id'] = $accessToken->user_id;
 
-        $image = new Image();
-        $imageEntity = Entity::where('name', $image->getTable())->first();
         $userEntity = Entity::where('name', $user->getTable())->first();
         $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
 
-        $accessTokenDetails['user'] = [];
-        $accessTokenDetails['user']['id'] = $user->id;
-        $accessTokenDetails['user']['nickname'] = $user->username;
-        $accessTokenDetails['user']['image_url'] = $image->url ?? null;
-        $accessTokenDetails['user']['join_date'] = $user->created_at->format('Y-m-d H:i:s');
+        $user['nickname'] = $user->username;
+        $user['image_url'] = !empty($image) ? $image->url : null;
+        $user['join_date'] = $user->created_at->format('Y-m-d H:i:s');
+        $accessTokenDetails['user'] = $user;
+
+        $request->request->add([
+            'access_token_user_id' => $user->id,
+        ]);
+        $accessTokenDetails['user']['cart'] = app('App\Http\Controllers\CartController')->cartGet(null, $request)->getData();
 
         return $accessTokenDetails;
     }
@@ -540,7 +542,7 @@ class UserController extends Controller
      *     ),
      * )
      */
-    public function userGet(int $id)
+    public function userGet(int $id, Request $request = null)
     {
         $user = User::where('id', $id)->whereNull('deleted_at')->first();
 
@@ -560,8 +562,6 @@ class UserController extends Controller
 
             $user['shop'] = Shop::where('user_id', $user->id)->whereNull('deleted_at')->first();
 
-            $image = new Image();
-            $imageEntity = Entity::where('name', $image->getTable())->first();
             $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
         }
 
@@ -1497,7 +1497,7 @@ class UserController extends Controller
      *     ),
      *     @OA\Response(
      *         response="200",
-     *         description="Returns access token",
+     *         description="Returns access token, with the current user cart",
      *         @OA\JsonContent()
      *     ),
      *     @OA\Response(
@@ -1541,7 +1541,6 @@ class UserController extends Controller
         $request->request->add([
             'user_id' => $user->id,
             'token' => bin2hex(openssl_random_pseudo_bytes(32)),
-            // 'expires_at' => Carbon::now()->addYears(1)->format('Y-m-d H:i:s'),
             'expires_at' => Carbon::now()->addDays(1)->format('Y-m-d H:i:s'),
             'created_by' => $user->id,
             'updated_by' => $user->id,
@@ -1555,7 +1554,7 @@ class UserController extends Controller
             'updated_by',
         ]));
 
-        return response()->json(self::accessTokenGet($accessToken->id), 200);
+        return response()->json(self::accessTokenGet($accessToken->id, $request), 200);
     }
 
     /**
