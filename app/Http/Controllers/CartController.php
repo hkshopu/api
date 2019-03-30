@@ -96,6 +96,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             }
         }
 
+//SAVE.THIS        echo "=== Raw Version: \r\n\r\n";
         $shopCtr = 0;
         foreach ($productGroupList as $shopId => $productGroup) {
             $shop = app('App\Http\Controllers\ShopController')->shopGet($shopId, $request)->getData();
@@ -150,6 +151,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                     break;
                                 }
                             }
+//SAVE.THIS                            echo "Cart: {$cartItem->cart_id}, Product: {$cartItem->product_id}, Attribute: {$cartItem->attribute_id}, Quantity: {$cartItem->quantity} \r\n";
 
                             $cartItemQuantity = $cartItem->quantity;
                             if ($isProductAndAttributeExists == true) {
@@ -208,12 +210,14 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             }
             $shopCtr++;
         }
-
+//SAVE.THIS        echo "\r\n";
+//SAVE.THIS        echo "=== Simplified Version: \r\n\r\n";
         // Remove items with zero quantity in cart
         $newShopData = [];
         foreach ($data['shop'] as $shop) {
             $newProductData = [];
             foreach ($shop['product'] as $product) {
+//SAVE.THIS                echo "Cart: {$data['cart_id']}, Product: {$product['product_id']}, Attribute: {$product['attribute_id']}, Quantity: {$product['quantity']} \r\n";
                 if ($product['quantity'] > 0) {
                     if ($product['total_price_discounted'] <= 0) {
                         $product['total_price_discounted'] = null;

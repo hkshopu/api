@@ -73,6 +73,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->patch('product/{id}', ['uses' => 'ProductController@productModify']);
     $router->post('productstockadd/{id}', ['uses' => 'ProductController@productStockAdd']);
     $router->post('productstockremove/{id}', ['uses' => 'ProductController@productStockRemove']);
+    $router->post('productattribute', ['uses' => 'ProductController@productAttributeAdd']);
+    $router->delete('productattribute/{attribute_id}', ['uses' => 'ProductController@productAttributeDelete']);
+    $router->patch('productattribute/{attribute_id}', ['uses' => 'ProductController@productAttributeModify']);
 
     // View
     $router->post('productview', ['uses' => 'ViewController@productViewAdd']);
