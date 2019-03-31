@@ -1620,8 +1620,8 @@ class UserController extends Controller
      *     path="/api/updatepassword/{user_id}",
      *     operationId="passwordUpdate",
      *     tags={"User"},
-     *     summary="Update Password",
-     *     description="Change password via admin.",
+     *     summary="Updates shop user password via Profile Settings",
+     *     description="Updates shop user password with validation.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -1638,6 +1638,15 @@ class UserController extends Controller
      *         required=true,
      *         @OA\Schema(
      *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="current_password",
+     *         in="query",
+     *         description="The current password",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="string",
      *         )
      *     ),
      *     @OA\Parameter(
@@ -1670,15 +1679,27 @@ class UserController extends Controller
             ], 400);
         }
 
+        if (!isset($request->current_password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password required',
+            ], 400);
+        } else if (crypt($request->current_password, $user->salt) <> $user->password) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incorrect current password',
+            ], 400);
+        }
+
         if (!isset($request->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Password required',
+                'message' => 'New password required',
             ], 400);
         } else if (strlen($request->password) < 4) {
             return response()->json([
                 'success' => false,
-                'message' => 'Password should be at least 4 characters',
+                'message' => 'New password should be at least 4 characters',
             ], 400);
         }
 
