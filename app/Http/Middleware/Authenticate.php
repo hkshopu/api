@@ -37,6 +37,7 @@ class Authenticate
      */
     public function handle($request, Closure $next, $guard = null)
     {
+        // Bypass token authentication for guest account browsing
         if (
             "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productcategory'
                 || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productcategoryparent'
@@ -52,19 +53,25 @@ class Authenticate
             return $next($request);
         }
 
+        // Token authentication
         if (empty($request->header('token'))) {
-            $request->request->add([
-                'access_token_user_id' => null,
-            ]);
+            // // START Disable token authentication
+            // $request->request->add([
+            //     'access_token_user_id' => null,
+            // ]);
 
-            return $next($request);
+            // return $next($request);
+            // // END Disable token authentication
 
-            // return response()->json([
-            //     'success' => false,
-            //     'message' => 'Unauthorized',
-            // ], 401);
+            // START Enable token authentication
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+            // END Enable token authentication
         }
 
+        // Route for guest access initialization
         if ($request->getPathInfo() == '/api/login'
             || $request->getPathInfo() == '/api/register'
             || $request->getPathInfo() == '/api/signup') {
@@ -74,6 +81,7 @@ class Authenticate
                     'message' => 'Invalid token',
                 ], 400);
             }
+        // Route for logged in users authentication
         } else {
             // Route isn't for the login endpoint
             $accessToken = AccessToken::where('token', $request->header('token'))->whereNull('deleted_at')->first();
@@ -88,12 +96,14 @@ class Authenticate
             $dateCurrent = Carbon::now();
             $dateExpiration = new Carbon($accessToken->expires_at);
 
+            // // START Enable Token Expiration
             // if ($dateCurrent > $dateExpiration) {
             //     return response()->json([
             //         'success' => false,
             //         'message' => 'Expired token',
             //     ], 400);
             // }
+            // // END Enable Token Expiration
 
             $request->request->add([
                 'access_token_user_id' => $accessToken->user_id,
@@ -103,3 +113,4 @@ class Authenticate
         return $next($request);
     }
 }
+
