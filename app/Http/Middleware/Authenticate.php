@@ -53,22 +53,21 @@ class Authenticate
             return $next($request);
         }
 
-        // Token authentication
         if (empty($request->header('token'))) {
-            // // START Disable token authentication
-            // $request->request->add([
-            //     'access_token_user_id' => null,
-            // ]);
+            // Enable token authentication
+            if (env('API_AUTHENTICATION')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                ], 401);
+            // Disable token authentication
+            } else {
+                $request->request->add([
+                    'access_token_user_id' => null,
+                ]);
 
-            // return $next($request);
-            // // END Disable token authentication
-
-            // START Enable token authentication
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 401);
-            // END Enable token authentication
+                return $next($request);
+            }
         }
 
         // Route for guest access initialization
@@ -96,14 +95,14 @@ class Authenticate
             $dateCurrent = Carbon::now();
             $dateExpiration = new Carbon($accessToken->expires_at);
 
-            // // START Enable Token Expiration
-            // if ($dateCurrent > $dateExpiration) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Expired token',
-            //     ], 400);
-            // }
-            // // END Enable Token Expiration
+            if (env('TOKEN_EXPIRATION')) {
+                if ($dateCurrent > $dateExpiration) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Expired token',
+                    ], 400);
+                }
+            }
 
             $request->request->add([
                 'access_token_user_id' => $accessToken->user_id,
