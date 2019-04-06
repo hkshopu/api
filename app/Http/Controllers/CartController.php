@@ -759,10 +759,20 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
         ]);
 
         $cartItem = CartItem::where('id', $request->cart_item_id)->where('cart_id', $cart->id)->whereNull('deleted_at')->first();
-        $cartItem->update($request->only([
-            'deleted_at',
-            'deleted_by',
-        ]));
+
+        $cartItemToDeleteArray = CartItem::where('cart_id', $cartItem->cart_id)
+                            ->where('product_id', $cartItem->product_id)
+                            ->where('attribute_id', $cartItem->attribute_id)
+                            ->whereNull('order_id')
+                            ->whereNull('deleted_at')
+                            ->get();
+
+        foreach ($cartItemToDeleteArray as $cartItemToDelete) {
+            $cartItemToDelete->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
+        }
 
         return response()->json(self::cartGet($cart->id, $request)->getData(), 200);
     }
