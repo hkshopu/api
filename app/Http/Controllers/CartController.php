@@ -101,6 +101,10 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
     }
 
     public function cartItemList(Collection $cartItemList = null, Request $request = null) {
+        $data = [
+            'shop' => [],
+        ];
+
         $productGroupList = [];
         foreach ($cartItemList as $cartItem) {
             $product = Product::where('id', $cartItem->product_id)->whereNull('deleted_at')->first();
