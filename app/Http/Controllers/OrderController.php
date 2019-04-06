@@ -102,17 +102,7 @@ class OrderController extends Controller
                     $orderSimplifiedItem['total_price'] = $orderItemProduct->total_price;
                     $orderSimplifiedItem['total_price_discounted'] = $orderItemProduct->total_price_discounted;
                     $orderSimplifiedItem['payment_status'] = $orderItem->payment_status;
-
-                    $orderItemStatus = null;
-                    $orderItemEntity = Entity::where('name', 'order_item')->first();
-                    $statusMap = StatusMap::where('entity', $orderItemEntity->id)->where('entity_id', $orderItemProduct->cart_item_id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
-                    if (!empty($statusMap)) {
-                        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
-                        if (!empty($status)) {
-                            $orderItemStatus = $status->name;
-                        }
-                    }
-                    $orderSimplifiedItem['order_item_status'] = $orderItemStatus;
+                    $orderSimplifiedItem['order_item_status'] = $orderItemProduct->order_item_status;
 
                     $orderListSimplified[] = $orderSimplifiedItem;
                 }
@@ -288,6 +278,7 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
         foreach ($shopOrder->product as $productItem) {
             $cartItemToUpdateArray[] = [
                 'cart_id' => $cart->id,
+                'cart_item_id' => $productItem->cart_item_id,
                 'product_id' => $productItem->product_id,
                 'attribute_id' => $productItem->attribute_id,
             ];
@@ -297,21 +288,6 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             'order_id' => $order->id,
             'updated_by' => $request->access_token_user_id,
         ]);
-
-        // Mass update cart items
-        foreach ($cartItemToUpdateArray as $cartItemToUpdateItem) {
-            $cartItemToUpdateObjectArray = CartItem::where('cart_id', $cart->id)
-                                                    ->where('product_id', $cartItemToUpdateItem['product_id'])
-                                                    ->where('attribute_id', $cartItemToUpdateItem['attribute_id'])
-                                                    ->whereNull('deleted_at')
-                                                    ->get();
-            foreach ($cartItemToUpdateObjectArray as $cartItemToUpdateObject) {
-                $cartItemToUpdateObject->update($request->only([
-                    'order_id',
-                    'updated_by',
-                ]));
-            }
-        }
 
         // Setting PROCESS status for order
         $statusOrder = Status::where('name', 'process')->whereNull('deleted_at')->first();
@@ -325,7 +301,13 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        $statusMap = StatusMap::create($request->all());
+        $statusMap = StatusMap::create($request->only([
+            'entity',
+            'entity_id',
+            'status_id',
+            'created_by',
+            'updated_by',
+        ]));
 
         // Setting WAIT FOR PAYMENT / PAID status for payment
         $statusPayment = Status::where('name', $paymentStatus)->whereNull('deleted_at')->first();
@@ -339,12 +321,49 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        $statusMap = StatusMap::create($request->all());
+        $statusMap = StatusMap::create($request->only([
+            'entity',
+            'entity_id',
+            'status_id',
+            'created_by',
+            'updated_by',
+        ]));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Order added',
-        ], 400);
+        // Mass update cart items and statuses
+        $orderItemEntity = Entity::where('name', 'order_item')->whereNull('deleted_at')->first();
+        foreach ($cartItemToUpdateArray as $cartItemToUpdateItem) {
+            $cartItemToUpdateCollection = CartItem::where('cart_id', $cart->id)
+                                            ->where('product_id', $cartItemToUpdateItem['product_id'])
+                                            ->where('attribute_id', $cartItemToUpdateItem['attribute_id'])
+                                            ->whereNull('deleted_at');
+            $cartItemToUpdateObjectArray = $cartItemToUpdateCollection->get();
+
+            foreach ($cartItemToUpdateObjectArray as $cartItemToUpdateObject) {
+                $cartItemToUpdateObject->update($request->only([
+                    'order_id',
+                    'updated_by',
+                ]));
+            }
+
+            $cartItemWithStatus = $cartItemToUpdateCollection->first();
+            $request->request->add([
+                'entity' => $orderItemEntity->id,
+                'entity_id' => $cartItemWithStatus->id,
+                'status_id' => $statusOrder->id,
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
+            ]);
+
+            $statusMap = StatusMap::create($request->only([
+                'entity',
+                'entity_id',
+                'status_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        return response()->json(self::orderList($request)->getData(), 201);
     }
 
     /**

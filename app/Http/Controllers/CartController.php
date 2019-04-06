@@ -15,6 +15,9 @@ use App\ShopPaymentMethodMap;
 use App\ProductShipping;
 use App\Shipment;
 use App\ShopShipmentMap;
+use App\Entity;
+use App\Status;
+use App\StatusMap;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
@@ -214,6 +217,16 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                 $productCtr++;
                             } else {
                                 if ($cartItem->quantity > 0) {
+                                    $orderItemStatus = null;
+                                    $orderItemEntity = Entity::where('name', 'order_item')->first();
+                                    $statusMap = StatusMap::where('entity', $orderItemEntity->id)->where('entity_id', $cartItem->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+                                    if (!empty($statusMap)) {
+                                        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                                        if (!empty($status)) {
+                                            $orderItemStatus = $status->name;
+                                        }
+                                    }
+
                                     $data['shop'][$shopCtr]['product'][$cartShopProductIndex] = [
                                         'cart_item_id' => $cartItem->id,
                                         'product_id' => $cartItem->product_id,
@@ -239,6 +252,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                         'total_price_discounted' => !empty($product->price_discounted) ? $cartItemQuantity * $product->price_discounted : null,
                                         'shipping_price' => $shippingPrice,
                                         'shipping_price_total' => $cartItemQuantity * $shippingPrice,
+                                        'order_item_status' => $orderItemStatus,
                                     ];
 
                                     $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
