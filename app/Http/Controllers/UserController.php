@@ -762,7 +762,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        if (isset($request->username)) {
+        if (isset($request->username) && $request->username <> $user->username) {
             if (preg_match('/[^a-zA-Z0-9\.\-_]/i', $request->username)) {
                 return response()->json([
                     'success' => false,
