@@ -37,7 +37,7 @@ class CreateOrderTable extends Migration
         });
 
         Schema::table(self::TABLE_NAME, function($table) {
-            $table->timestamp('created_at')->nullable()->useCurrent()->after('shipment_fee');
+            $table->timestamp('created_at')->nullable()->useCurrent()->after('shipment_fee_override');
             $table->bigInteger('created_by')->nullable()->unsigned()->after('created_at');
         });
 
