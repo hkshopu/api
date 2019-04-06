@@ -93,7 +93,9 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             'shop' => [],
         ];
 
-        $data['shop'] = $this->cartItemList($cartItemList, $request)->getData();
+        if (!empty($cartItemList)) {
+            $data['shop'] = $this->cartItemList($cartItemList, $request)->getData();
+        }
 
         return response()->json($data, 200);
     }
