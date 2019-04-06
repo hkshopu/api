@@ -157,6 +157,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->delete('cart', ['uses' => 'CartController@cartDelete']);
     $router->post('assigncart', ['uses' => 'CartController@cartAssign']);
 
+    // Order
+    $router->get('order', ['uses' => 'OrderController@orderList']);
+    $router->post('order', ['uses' => 'OrderController@orderAdd']);
     ///
     ///
     ///

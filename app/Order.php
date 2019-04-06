@@ -4,12 +4,12 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CartItem extends Model
+class Order extends Model
 {
     /**
      * Bypass eloquent pluralization
      */
-    protected $table = 'cart_item';
+    protected $table = 'order';
 
     /**
      * The attributes that are mass assignable.
@@ -18,10 +18,11 @@ class CartItem extends Model
      */
     protected $fillable = [
         'cart_id',
-        'product_id',
-        'attribute_id',
-        'quantity',
-        'order_id',
+        'shop_id',
+        'shop_payment_method_id',
+        'shipment_receiver',
+        'shipment_address',
+        'shipment_fee_override',
         //
         'created_by',
         'updated_by',
@@ -35,8 +36,6 @@ class CartItem extends Model
      * @var array
      */
     protected $hidden = [
-        'created_at',
-        'created_by',
         'updated_at',
         'updated_by',
         'deleted_at',

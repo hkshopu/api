@@ -12,7 +12,11 @@ use App\Size;
 use App\Color;
 use App\PaymentMethod;
 use App\ShopPaymentMethodMap;
+use App\ProductShipping;
+use App\Shipment;
+use App\ShopShipmentMap;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
 
 class CartController extends Controller
@@ -78,7 +82,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
 
         $cartItemList = [];
         if (!empty($cart)) {
-            $cartItemList = CartItem::where('cart_id', $cart->id)->whereNull('deleted_at')->get();
+            $cartItemList = CartItem::where('cart_id', $cart->id)->whereNull('order_id')->whereNull('deleted_at')->get();
         }
 
         $data = [
@@ -86,6 +90,12 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             'shop' => [],
         ];
 
+        $data['shop'] = $this->cartItemList($cartItemList, $request)->getData();
+
+        return response()->json($data, 200);
+    }
+
+    public function cartItemList(Collection $cartItemList = null, Request $request = null) {
         $productGroupList = [];
         foreach ($cartItemList as $cartItem) {
             $product = Product::where('id', $cartItem->product_id)->whereNull('deleted_at')->first();
@@ -114,6 +124,22 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                     $paymentMethodList[$key] = $tempItem;
                 }
 
+                $shipmentId = null;
+                $shipmentType = null;
+                $shipmentLabel = null;
+                $shipmentQuota = null;
+
+                $shopShipmentMap = ShopShipmentMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+                if (!empty($shopShipmentMap)) {
+                    $shipment = Shipment::where('id', $shopShipmentMap->shipment_id)->whereNull('deleted_at')->first();
+                    if (!empty($shipment)) {
+                        $shipmentId = $shipment->id;
+                        $shipmentType = $shipment->name;
+                        $shipmentLabel = $shipment->label;
+                        $shipmentQuota = $shopShipmentMap->amount;
+                    }
+                }
+
                 $data['shop'][$shopCtr] = [
                     'shop_id' => $shop->id,
                     'logo_url' => $shop->logo_url,
@@ -126,6 +152,12 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                     'total_quantity' => 0,
                     'total_amount' => 0.00,
                     'total_amount_discounted' => 0.00,
+                    'shipment_id' => $shipmentId,
+                    'shipment_type' => $shipmentType,
+                    'shipment_label' => $shipmentLabel,
+                    'shipment_quota' => $shipmentQuota,
+                    'shipment_fee_computed' => 0.00,
+                    'shop_cart_total' => 0.00,
                 ];
 
                 $productCtr = 0;
@@ -135,6 +167,13 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                     if (!empty($cartItem)) {
                         $product = app('App\Http\Controllers\ProductController')->productGet($cartItem->product_id, $request)->getData();
                         if (!empty($product)) {
+                            $productShipping = ProductShipping::where('product_id', $cartItem->product_id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+                            if (!empty($productShipping)) {
+                                $shippingPrice = $productShipping->amount;
+                            } else {
+                                $shippingPrice = 0.00;
+                            }
+
                             $attribute = ProductAttribute::where('id', $cartItem->attribute_id)->whereNull('deleted_at')->first();
                             $attribute['color'] = Color::where('id', $attribute->color_id)->whereNull('deleted_at')->first();
                             $attribute['size'] = Size::where('id', $attribute->size_id)->whereNull('deleted_at')->first();
@@ -160,14 +199,17 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                         $cartItemQuantity = -1 * $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity'];
                                     }
                                 }
+                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['merge_count'] += 1;
                                 $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity'] += $cartItemQuantity;
                                 $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['total_price'] += ($cartItemQuantity * $product->price_original);
                                 $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['total_price_discounted'] += !empty($product->price_discounted) ? ($cartItemQuantity * $product->price_discounted) : null;
+                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['shipping_price_total'] += ($cartItemQuantity * $shippingPrice);
 
                                 $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
                                 $data['shop'][$shopCtr]['total_quantity'] += $cartItemQuantity;
                                 $data['shop'][$shopCtr]['total_amount'] += ($cartItemQuantity * $product->price_original);
-                                $data['shop'][$shopCtr]['total_amount_discounted'] += ($cartItemQuantity * $product->price_discounted);
+                                $data['shop'][$shopCtr]['total_amount_discounted'] += $cartItemQuantity * (!empty($product->price_discounted) ? $product->price_discounted : $product->price_original);
+                                $data['shop'][$shopCtr]['shipment_fee_computed'] += ($cartItemQuantity * $shippingPrice);
 
                                 $productCtr++;
                             } else {
@@ -187,6 +229,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                         'description_en' => $product->description_en,
                                         'description_tc' => $product->description_tc,
                                         'description_sc' => $product->description_sc,
+                                        'merge_count' => 1,
                                         'cart_date' => $cartItem->created_at->format('Y-m-d H:i:s'),
                                         'product_date' => $product->created_at,
                                         'price' => $product->price_original,
@@ -194,12 +237,15 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                         'quantity' => $cartItemQuantity,
                                         'total_price' => $cartItemQuantity * $product->price_original,
                                         'total_price_discounted' => !empty($product->price_discounted) ? $cartItemQuantity * $product->price_discounted : null,
+                                        'shipping_price' => $shippingPrice,
+                                        'shipping_price_total' => $cartItemQuantity * $shippingPrice,
                                     ];
 
                                     $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
                                     $data['shop'][$shopCtr]['total_quantity'] += $cartItemQuantity;
                                     $data['shop'][$shopCtr]['total_amount'] += ($cartItemQuantity * $product->price_original);
-                                    $data['shop'][$shopCtr]['total_amount_discounted'] += ($cartItemQuantity * $product->price_discounted);
+                                    $data['shop'][$shopCtr]['total_amount_discounted'] += $cartItemQuantity * (!empty($product->price_discounted) ? $product->price_discounted : $product->price_original);
+                                    $data['shop'][$shopCtr]['shipment_fee_computed'] += ($cartItemQuantity * $shippingPrice);
 
                                     $productCtr++;
                                 }
@@ -207,6 +253,22 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                         }
                     }
                 }
+
+                switch ($shipmentType) {
+                    case 'normal':
+                        
+                    break;
+                    case 'all':
+                        $data['shop'][$shopCtr]['shipment_fee_computed'] = 0.00;
+                    break;
+                    case 'over':
+                        if ($data['shop'][$shopCtr]['total_amount_discounted'] > $data['shop'][$shopCtr]['shipment_quota']) {
+                            $data['shop'][$shopCtr]['shipment_fee_computed'] = 0.00;
+                        }
+                    break;
+                }
+
+                $data['shop'][$shopCtr]['shop_cart_total'] = $data['shop'][$shopCtr]['total_amount_discounted'] + $data['shop'][$shopCtr]['shipment_fee_computed'];
             }
             $shopCtr++;
         }
@@ -232,9 +294,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             }
         }
 
-        $data['shop'] = $newShopData;
-
-        return response()->json($data, 200);
+        return response()->json($newShopData, 200);
     }
 
     /**
