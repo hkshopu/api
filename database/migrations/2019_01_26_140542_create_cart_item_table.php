@@ -36,7 +36,7 @@ class CreateCartItemTable extends Migration
             $table->bigInteger('created_by')->nullable()->unsigned()->after('created_at');
         });
 
-        $tableIncrement = 3011820000000;
+        $tableIncrement = 10000000;
         DB::table(self::TABLE_NAME)->insert([
             [
                 'id' => $tableIncrement,

@@ -83,7 +83,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             $cart = Cart::where('user_id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         }
 
-        $cartItemList = [];
+        $cartItemList = null;
         if (!empty($cart)) {
             $cartItemList = CartItem::where('cart_id', $cart->id)->whereNull('order_id')->whereNull('deleted_at')->get();
         }
