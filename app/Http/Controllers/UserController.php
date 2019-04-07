@@ -48,10 +48,28 @@ class UserController extends Controller
         $user['join_date'] = $user->created_at->format('Y-m-d H:i:s');
         $accessTokenDetails['user'] = $user;
 
+        $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+
         $request->request->add([
             'access_token_user_id' => $user->id,
         ]);
-        $accessTokenDetails['user']['cart'] = app('App\Http\Controllers\CartController')->cartGet(null, $request)->getData();
+
+        if ($userType->name == 'consumer') {
+            $cart = app('App\Http\Controllers\CartController')->cartGet(null, $request)->getData();
+            $cartItemCount = 0;
+
+            foreach ($cart->shop as $cartShop) {
+                if (!empty($cartShop->product)) {
+                    foreach ($cartShop->product as $cartShopProduct) {
+                        if (!empty($cartShopProduct->cart_item_id)) {
+                            $cartItemCount++;
+                        }
+                    }
+                }
+            }
+
+            $accessTokenDetails['user']['cart_items'] = $cartItemCount;
+        }
 
         return $accessTokenDetails;
     }
