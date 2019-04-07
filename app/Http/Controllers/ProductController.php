@@ -253,7 +253,7 @@ class ProductController extends Controller
      *         name="sku",
      *         in="query",
      *         description="The product sku",
-     *         required=true,
+     *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
