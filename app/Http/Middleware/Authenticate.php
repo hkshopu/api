@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use App\AccessToken;
+use App\User;
 use Carbon\Carbon;
 
 class Authenticate
@@ -77,8 +78,6 @@ class Authenticate
 
                 return $next($request);
             }
-        } else {
-            
         }
 
         // Route for guest access initialization
@@ -100,6 +99,15 @@ class Authenticate
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid token',
+                ], 400);
+            }
+
+            $user = User::where('id', $accessToken->user_id)->whereNull('deleted_at')->first();
+
+            if (empty($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User for that token is already deleted',
                 ], 400);
             }
 
