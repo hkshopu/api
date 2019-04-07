@@ -547,6 +547,24 @@ class UserController extends Controller
         $user = User::where('id', $id)->whereNull('deleted_at')->first();
 
         if (!empty($user)) {
+            $birthDate = $user->birth_date;
+            $mobilePhone = $user->mobile_phone;
+            $address = $user->address;
+            $activationKey = $user->activation_key;
+            $createdAt = $user->created_at;
+            unset($user->birth_date);
+            unset($user->mobile_phone);
+            unset($user->address);
+            unset($user->activation_key);
+            unset($user->created_at);
+
+            $user['gender_full'] = (!empty($user->gender)) ? ($user->gender == 'm' ? 'Male' : 'Female') : null;
+            $user['birth_date'] = $birthDate;
+            $user['mobile_phone'] = $mobilePhone;
+            $user['address'] = $address;
+            $user['activation_key'] = $activationKey;
+            $user['created_at'] = $createdAt;
+
             $userEntity = Entity::where('name', $user->getTable())->first();
 
             $user['user_type'] = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
@@ -707,7 +725,7 @@ class UserController extends Controller
      *     @OA\Parameter(
      *         name="birth_date",
      *         in="query",
-     *         description="The birth date",
+     *         description="The birth date (YYYY-MM-DD)",
      *         required=false,
      *         @OA\Schema(
      *             type="string",
@@ -1277,7 +1295,7 @@ class UserController extends Controller
      *     @OA\Parameter(
      *         name="birth_date",
      *         in="query",
-     *         description="The birth date",
+     *         description="The birth date (YYYY-MM-DD)",
      *         required=false,
      *         @OA\Schema(
      *             type="string",

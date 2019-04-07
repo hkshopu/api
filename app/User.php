@@ -32,7 +32,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         'last_name',
         'gender',
         'birth_date',
-        'mobie_phone',
+        'mobile_phone',
         'address',
         'user_type_id',
         'activation_key',
