@@ -682,6 +682,8 @@ Removes a cart item for the consumer/guest.
 If token is provided, the system will recognize the cart as Consumer cart, no need for a <strong>cart_id</strong>.
 <br /><br />
 If no token is provided, it will need the <strong>cart_id</strong> to update the Guest cart. Otherwise will throw an error.
+<br /><br />
+<span style='font-weight:bold;color:red'>JUST ADDED:</span> Items can be removed via cart item id or the entire items from a shop id.
            ",
      *     @OA\Parameter(
      *         name="token",
@@ -696,6 +698,15 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      *         name="cart_id",
      *         in="query",
      *         description="The cart id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
      *         required=false,
      *         @OA\Schema(
      *             type="integer",
@@ -736,20 +747,31 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             $cart = Cart::where('user_id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         }
 
-        if (!isset($request->cart_item_id)) {
+        if (!isset($request->cart_item_id) && !isset($request->shop_id)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cart item id required',
+                'message' => 'Cart item id or shop id required',
             ], 400);
-        } else if (empty(CartItem::where('id', $request->cart_item_id)->whereNull('deleted_at')->first())) {
+        }
+
+        if (isset($request->cart_item_id) && empty(CartItem::where('id', $request->cart_item_id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid cart item id',
             ], 400);
-        } else if (empty(CartItem::where('id', $request->cart_item_id)->where('cart_id', $cart->id)->whereNull('deleted_at')->first())) {
+        }
+
+        if (isset($request->cart_item_id) && empty(CartItem::where('id', $request->cart_item_id)->where('cart_id', $cart->id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Item belongs to other cart',
+            ], 400);
+        }
+
+        if (isset($request->shop_id) && empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
             ], 400);
         }
 
@@ -758,20 +780,41 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             'deleted_by' => $request->access_token_user_id,
         ]);
 
-        $cartItem = CartItem::where('id', $request->cart_item_id)->where('cart_id', $cart->id)->whereNull('deleted_at')->first();
+        // DELETE via cart_item_id
+        if (isset($request->cart_item_id)) {
+            $cartItem = CartItem::where('id', $request->cart_item_id)->where('cart_id', $cart->id)->whereNull('deleted_at')->first();
 
-        $cartItemToDeleteArray = CartItem::where('cart_id', $cartItem->cart_id)
-                            ->where('product_id', $cartItem->product_id)
-                            ->where('attribute_id', $cartItem->attribute_id)
-                            ->whereNull('order_id')
-                            ->whereNull('deleted_at')
-                            ->get();
+            $cartItemToDeleteArray = CartItem::where('cart_id', $cartItem->cart_id)
+                                            ->where('product_id', $cartItem->product_id)
+                                            ->where('attribute_id', $cartItem->attribute_id)
+                                            ->whereNull('order_id')
+                                            ->whereNull('deleted_at')
+                                            ->get();
 
-        foreach ($cartItemToDeleteArray as $cartItemToDelete) {
-            $cartItemToDelete->update($request->only([
-                'deleted_at',
-                'deleted_by',
-            ]));
+            foreach ($cartItemToDeleteArray as $cartItemToDelete) {
+                $cartItemToDelete->update($request->only([
+                    'deleted_at',
+                    'deleted_by',
+                ]));
+            }
+        }
+
+        // DELETE via shop_id
+        if (isset($request->shop_id)) {
+            $cartItemList = CartItem::where('cart_id', $cart->id)
+                                        ->whereNull('order_id')
+                                        ->whereNull('deleted_at')
+                                        ->get();
+
+            foreach ($cartItemList as $cartItem) {
+                $product = Product::where('id', $cartItem->product_id)->whereNull('deleted_at')->first();
+                if ($request->shop_id == $product->shop_id) {
+                    $cartItem->update($request->only([
+                        'deleted_at',
+                        'deleted_by',
+                    ]));
+                }
+            }
         }
 
         return response()->json(self::cartGet($cart->id, $request)->getData(), 200);
