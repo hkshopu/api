@@ -71,7 +71,17 @@ class RatingController extends Controller
                 'success' => false,
                 'message' => 'Invalid shop id',
             ], 400);
-        } else if ($request->rating < 1 || $request->rating > 5) {
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
+            ], 400);
+        }
+
+        if ($request->rating < 1 || $request->rating > 5) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid rating',
@@ -146,6 +156,14 @@ class RatingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
             ], 400);
         }
 

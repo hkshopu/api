@@ -465,6 +465,14 @@ class FollowingController extends Controller
             ], 400);
         }
 
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
+            ], 400);
+        }
+
         $shopEntity = Entity::where('name', $shop->getTable())->first();
         $following = Following::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();
 
@@ -537,6 +545,14 @@ class FollowingController extends Controller
             ], 400);
         }
 
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
+            ], 400);
+        }
+
         $shopEntity = Entity::where('name', $shop->getTable())->first();
 
         $followingList = Following::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
@@ -590,6 +606,14 @@ class FollowingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
             ], 400);
         }
 

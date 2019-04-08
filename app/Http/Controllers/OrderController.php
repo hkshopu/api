@@ -86,29 +86,36 @@ class OrderController extends Controller
 
         if ($isConsumer == true) {
             $orderListSimplified = [];
-            foreach ($orderList as $orderItem) {
-                foreach ($orderItem->shop_order->product as $orderItemProduct) {
-                    $orderSimplifiedItem['order_id'] = $orderItem->id;
-                    $orderSimplifiedItem['product_id'] = $orderItemProduct->product_id;
-                    $orderSimplifiedItem['product_image'] = $orderItemProduct->image_url;
-                    $orderSimplifiedItem['product_name_en'] = $orderItemProduct->name_en;
-                    $orderSimplifiedItem['product_name_tc'] = $orderItemProduct->name_tc;
-                    $orderSimplifiedItem['product_name_sc'] = $orderItemProduct->name_sc;
-                    $orderSimplifiedItem['shop_name_en'] = $orderItem->shop->name_en;
-                    $orderSimplifiedItem['shop_name_tc'] = $orderItem->shop->name_tc;
-                    $orderSimplifiedItem['shop_name_sc'] = $orderItem->shop->name_sc;
-                    $orderSimplifiedItem['cart_item_id'] = $orderItemProduct->cart_item_id;
-                    $orderSimplifiedItem['order_date'] = $orderItem->order_date;
-                    $orderSimplifiedItem['total_price'] = $orderItemProduct->total_price;
-                    $orderSimplifiedItem['total_price_discounted'] = $orderItemProduct->total_price_discounted;
-                    $orderSimplifiedItem['payment_status'] = $orderItem->payment_status;
-                    $orderSimplifiedItem['order_item_status'] = $orderItemProduct->order_item_status;
-
-                    $orderListSimplified[] = $orderSimplifiedItem;
+            foreach ($orderList as $order) {
+                foreach ($order->shop_order->product as $orderItem) {
+                    $orderSimplifiedItem['product_id'] = $orderItem->product_id;
+                    $orderSimplifiedItem['product_image'] = $orderItem->image_url;
+                    $orderSimplifiedItem['product_name_en'] = $orderItem->name_en;
+                    $orderSimplifiedItem['product_name_tc'] = $orderItem->name_tc;
+                    $orderSimplifiedItem['product_name_sc'] = $orderItem->name_sc;
+                    $orderSimplifiedItem['shop_name_en'] = $order->shop->name_en;
+                    $orderSimplifiedItem['shop_name_tc'] = $order->shop->name_tc;
+                    $orderSimplifiedItem['shop_name_sc'] = $order->shop->name_sc;
+                    $orderSimplifiedItem['cart_item_id'] = $orderItem->cart_item_id;
+                    $orderSimplifiedItem['order_date'] = $order->order_date;
+                    $orderSimplifiedItem['total_price'] = $orderItem->total_price;
+                    $orderSimplifiedItem['total_price_discounted'] = $orderItem->total_price_discounted;
+                    $orderSimplifiedItem['payment_status'] = $order->payment_status;
+                    $orderSimplifiedItem['order_item_status'] = $orderItem->order_item_status;
+                    $orderItem = $orderSimplifiedItem;
+                    $orderListSimplified[$order->id][] = $orderItem;
                 }
             }
 
-            $orderList = $orderListSimplified;
+            $orderListGrouped = [];
+            $orderGroupCounter = 0;
+            foreach ($orderListSimplified as $orderId => $orderProductArray) {
+                $orderListGrouped[$orderGroupCounter]['order_id'] = $orderId;
+                $orderListGrouped[$orderGroupCounter]['product_list'] = $orderProductArray;
+                $orderGroupCounter++;
+            }
+
+            $orderList = $orderListGrouped;
         }
 
         return response()->json($orderList, 200);
@@ -210,6 +217,14 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
             ], 400);
         }
 

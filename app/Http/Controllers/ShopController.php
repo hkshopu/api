@@ -285,18 +285,18 @@ class ShopController extends Controller
         $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
 
         if (!empty($shop)) {
-            // Some shops has null owner/user
-            $shop['owner'] = null;
-
-            if (!empty($shop->user_id)) {
-                $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-                if (!empty($user)) {
-                    $userEntity = Entity::where('name', $user->getTable())->first();
-                    $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
-                    $user['image_url'] = !empty($image) ? $image->url : null;
-                    $shop['owner'] = $user;
-                }
+            $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+            if (empty($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Shop inactive',
+                ], 400);
             }
+
+            $userEntity = Entity::where('name', $user->getTable())->first();
+            $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+            $user['image_url'] = !empty($image) ? $image->url : null;
+            $shop['owner'] = $user;
 
             $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
             foreach ($paymentMethodList as $key => $paymentMethodItem) {
@@ -435,6 +435,7 @@ class ShopController extends Controller
     public function shopDelete($id, Request $request)
     {
         $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -754,6 +755,14 @@ class ShopController extends Controller
             ], 400);
         }
 
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
+            ], 400);
+        }
+
         if (!isset($request->payment_method_id)) {
             return response()->json([
                 'success' => false,
@@ -857,6 +866,14 @@ class ShopController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
             ], 400);
         }
 
@@ -971,6 +988,14 @@ class ShopController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
             ], 400);
         }
 
@@ -1135,6 +1160,14 @@ class ShopController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
             ], 400);
         }
 

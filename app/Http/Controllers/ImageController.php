@@ -231,6 +231,14 @@ class ImageController extends Controller
             ], 400);
         }
 
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
+            ], 400);
+        }
+
         $shopEntity = Entity::where('name', $shop->getTable())->orderBy('id', 'DESC')->first();
 
         $image = Image::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->where('sort', '<>', 0)->whereNull('deleted_at')->orderBy('sort', 'DESC')->first();
@@ -305,6 +313,14 @@ class ImageController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
             ], 400);
         }
 
