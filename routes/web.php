@@ -160,6 +160,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     // Order
     $router->get('order', ['uses' => 'OrderController@orderList']);
     $router->post('order', ['uses' => 'OrderController@orderAdd']);
+    $router->get('order/{id}', ['uses' => 'OrderController@orderGet']);
     ///
     ///
     ///
