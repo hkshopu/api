@@ -44,22 +44,63 @@ class Authenticate
             $id = (count(explode('/', $request->getPathInfo())) == 4) ? explode('/', $request->getPathInfo())[3] : '';
 
             if (
-                "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productcategory'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productcategoryparent'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/shopcategory'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/categorystatus'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/productstatus'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/shopstatus'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/commentstatus'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/blogstatus'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/userstatus'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'GET /api/usertype'
+                       "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/categorystatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productstatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shopstatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/commentstatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blogstatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/userstatus"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productfollowing/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/imagefollowing/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shopfollowing/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productcategory"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productcategory/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productcategoryparent/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shopcategory"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shopcategory/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blogcategory"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blogcategory/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/product"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/product/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productview/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blogview/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shop"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shop/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shoppaymentmethod"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shopshipment"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shoprating/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productrating/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/shopcomment/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blogcomment/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blog"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blog/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/bloglike/{$id}"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/user"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/user/{$id}"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/logout"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/usertype"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/size"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/color"
+
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/cart/{$id}"
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'POST /api/cart'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'DELETE /api/cart'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'PATCH /api/cart'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'POST /api/carttest'
-                    || "{$request->getMethod()} {$request->getPathInfo()}" == 'POST /api/assigncart'
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "POST /api/cart"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "DELETE /api/cart"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "PATCH /api/cart"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "POST /api/carttest"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "POST /api/assigncart"
             ) {
                 return $next($request);
             }
