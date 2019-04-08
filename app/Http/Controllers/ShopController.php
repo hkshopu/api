@@ -290,10 +290,12 @@ class ShopController extends Controller
 
             if (!empty($shop->user_id)) {
                 $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-                $userEntity = Entity::where('name', $user->getTable())->first();
-                $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
-                $user['image_url'] = !empty($image) ? $image->url : null;
-                $shop['owner'] = $user;
+                if (!empty($user)) {
+                    $userEntity = Entity::where('name', $user->getTable())->first();
+                    $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+                    $user['image_url'] = !empty($image) ? $image->url : null;
+                    $shop['owner'] = $user;
+                }
             }
 
             $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
