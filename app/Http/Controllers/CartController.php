@@ -119,7 +119,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
         $shopCtr = 0;
         foreach ($productGroupList as $shopId => $productGroup) {
             $shop = app('App\Http\Controllers\ShopController')->shopGet($shopId, $request)->getData();
-            if (!empty($shop)) {
+            if (!empty($shop) && !empty($shop->id)) {
                 $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
                 foreach ($paymentMethodList as $key => $paymentMethodItem) {
                     $tempItem = [];

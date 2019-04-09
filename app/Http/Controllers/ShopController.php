@@ -108,7 +108,10 @@ class ShopController extends Controller
         $shopList = $shopListPaginated;
 
         foreach ($shopList as $shopKey => $shop) {
-            $shopList[$shopKey] = self::shopGet($shop->id, $request)->getData();
+            $shopInfo = self::shopGet($shop->id, $request)->getData();
+            if (!empty($shopInfo->id)) {
+                $shopList[$shopKey] = $shopInfo;
+            }
         }
 
         return response()->json($shopList, 200);
