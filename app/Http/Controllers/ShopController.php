@@ -106,13 +106,16 @@ class ShopController extends Controller
         }
 
         $shopList = $shopListPaginated;
+        $shopListActive = [];
 
         foreach ($shopList as $shopKey => $shop) {
             $shopInfo = self::shopGet($shop->id, $request)->getData();
             if (!empty($shopInfo->id)) {
-                $shopList[$shopKey] = $shopInfo;
+                $shopListActive[] = $shopInfo;
             }
         }
+
+        $shopList = $shopListActive;
 
         return response()->json($shopList, 200);
     }
@@ -283,23 +286,28 @@ class ShopController extends Controller
      *     ),
      * )
      */
-    public function shopGet(int $id, Request $request = null)
+    public function shopGet(int $id, Request $request = null, bool $filterInactive = true)
     {
         $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
 
         if (!empty($shop)) {
+            // There are shops that has deleted owner/user
+            $shop['owner'] = null;
+
             $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-            if (empty($user)) {
+            if (empty($user) && $filterInactive == true) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Shop inactive',
                 ], 400);
             }
 
-            $userEntity = Entity::where('name', $user->getTable())->first();
-            $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
-            $user['image_url'] = !empty($image) ? $image->url : null;
-            $shop['owner'] = $user;
+            if (!empty($user)) {
+                $userEntity = Entity::where('name', $user->getTable())->first();
+                $image = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+                $user['image_url'] = !empty($image) ? $image->url : null;
+                $shop['owner'] = $user;
+            }
 
             $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
             foreach ($paymentMethodList as $key => $paymentMethodItem) {

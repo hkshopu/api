@@ -6,6 +6,7 @@ use App\Following;
 use App\Product;
 use App\Image;
 use App\Shop;
+use App\User;
 use App\Entity;
 use Illuminate\Http\Request;
 use Carbon\Carbon;

@@ -749,7 +749,7 @@ class ProductController extends Controller
                 'product_id' => $product->id,
             ]);
 
-            $shopInfo = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request)->getData();
+            $shopInfo = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request, false)->getData();
             if (!empty($shopInfo->id)) {
                 $product['shop'] = $shopInfo;
                 unset($product['shop_id']);

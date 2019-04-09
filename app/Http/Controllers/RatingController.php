@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Rating;
 use App\Shop;
+use App\User;
 use App\Product;
 use App\Entity;
 use Illuminate\Http\Request;
@@ -226,12 +227,29 @@ class RatingController extends Controller
             ], 400);
         }
 
+        $rating = Rating::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
+
+        $shop = Shop::where('id', $rating->entity_id)->whereNull('deleted_at')->first();
+        if (empty($shop)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid shop id',
+            ], 400);
+        }
+
+        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop inactive',
+            ], 400);
+        }
+
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
             'deleted_by' => $request->access_token_user_id,
         ]);
-
-        $rating = Rating::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
+        
         $rating->update($request->only([
             'deleted_at',
             'deleted_by',
