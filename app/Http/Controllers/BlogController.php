@@ -186,7 +186,7 @@ class BlogController extends Controller
         $blogList = $blogListPaginated;
 
         foreach ($blogList as $blogKey => $blog) {
-            $blogList[$blogKey] = self::blogGet($blog->id)->getData();
+            $blogList[$blogKey] = self::blogGet($blog->id, $request)->getData();
         }
 
         return response()->json($blogList, 200);
@@ -380,7 +380,7 @@ class BlogController extends Controller
 
         StatusMap::create($request->all());
 
-        return response()->json(self::blogGet($blog->id)->getData(), 201);
+        return response()->json(self::blogGet($blog->id, $request)->getData(), 201);
     }
 
     /**
@@ -677,7 +677,7 @@ class BlogController extends Controller
      *     ),
      * )
      */
-    public function blogModify($id, Request $request)
+    public function blogModify(int $id, Request $request)
     {
         $blogQuery = \DB::table('blog')
             ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
@@ -852,7 +852,8 @@ class BlogController extends Controller
             ]));
         }
 
-        $blog = self::blogGet($id)->getData();
+        $blog = self::blogGet($id, $request)->getData();
+
         return response()->json($blog, 201);
     }
 }
