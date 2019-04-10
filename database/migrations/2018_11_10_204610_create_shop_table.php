@@ -20,8 +20,8 @@ class CreateShopTable extends Migration
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->bigInteger('id', 1)->unsigned();
             $table->string('name_en', 512)->unique();
-            $table->string('name_tc')->nullable();
-            $table->string('name_sc')->nullable();
+            $table->string('name_tc', 512)->nullable();
+            $table->string('name_sc', 512)->nullable();
             $table->text('description_en');
             $table->text('description_tc')->nullable();
             $table->text('description_sc')->nullable();

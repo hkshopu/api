@@ -48,13 +48,29 @@ class ViewController extends Controller
      */
     public function productViewAdd(Request $request)
     {
-        $product = Product::where('id', $request->product_id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $request->product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         $productEntity = Entity::where('name', $product->getTable())->first();
 
@@ -97,15 +113,31 @@ class ViewController extends Controller
      *     ),
      * )
      */
-    public function productViewGet(int $product_id)
+    public function productViewGet(int $product_id, Request $request)
     {
-        $product = Product::where('id', $product_id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         $productEntity = Entity::where('name', $product->getTable())->first();
 
@@ -144,13 +176,29 @@ class ViewController extends Controller
      */
     public function blogViewAdd(Request $request)
     {
-        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $request->blog_id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->first();
 
@@ -195,13 +243,29 @@ class ViewController extends Controller
      */
     public function blogViewGet(int $blog_id)
     {
-        $blog = Blog::where('id', $blog_id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $blog_id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->first();
 

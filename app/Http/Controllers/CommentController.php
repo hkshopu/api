@@ -110,7 +110,19 @@ class CommentController extends Controller
      */
     public function shopCommentAdd(Request $request)
     {
-        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $request->shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -118,13 +130,7 @@ class CommentController extends Controller
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         // Setting ACTIVE status for comment
         $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
@@ -192,7 +198,19 @@ class CommentController extends Controller
      */
     public function shopCommentGet(int $shop_id)
     {
-        $shop = Shop::where('id', $shop_id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -200,13 +218,7 @@ class CommentController extends Controller
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $shopEntity = Entity::where('name', $shop->getTable())->first();
 
@@ -496,13 +508,29 @@ class CommentController extends Controller
      */
     public function blogCommentAdd(Request $request)
     {
-        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $request->blog_id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         // Setting ACTIVE status for comment
         $status = Status::where('name', 'active')->whereNull('deleted_at')->first();
@@ -570,13 +598,29 @@ class CommentController extends Controller
      */
     public function blogCommentGet(int $blog_id)
     {
-        $blog = Blog::where('id', $blog_id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $blog_id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->first();
 

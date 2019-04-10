@@ -66,7 +66,19 @@ class RatingController extends Controller
      */
     public function shopRatingAdd(Request $request)
     {
-        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $request->shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -74,13 +86,7 @@ class RatingController extends Controller
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         if ($request->rating < 1 || $request->rating > 5) {
             return response()->json([
@@ -152,7 +158,19 @@ class RatingController extends Controller
      */
     public function shopRatingGet(int $shop_id)
     {
-        $shop = Shop::where('id', $shop_id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -160,13 +178,7 @@ class RatingController extends Controller
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $shopEntity = Entity::where('name', $shop->getTable())->first();
 
@@ -229,7 +241,19 @@ class RatingController extends Controller
 
         $rating = Rating::where('id', $id)->where('entity', $shopEntity->id)->whereNull('deleted_at')->first();
 
-        $shop = Shop::where('id', $rating->entity_id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $rating->entity_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -237,13 +261,7 @@ class RatingController extends Controller
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
@@ -305,13 +323,31 @@ class RatingController extends Controller
      */
     public function productRatingAdd(Request $request)
     {
-        $product = Product::where('id', $request->product_id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $request->product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
-        } else if ($request->rating < 1 || $request->rating > 5) {
+        }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
+
+        if ($request->rating < 1 || $request->rating > 5) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid rating',
@@ -381,13 +417,29 @@ class RatingController extends Controller
      */
     public function productRatingGet(int $product_id)
     {
-        $product = Product::where('id', $product_id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         $productEntity = Entity::where('name', $product->getTable())->first();
 

@@ -57,13 +57,29 @@ class LikeController extends Controller
      */
     public function blogLikeAdd(Request $request)
     {
-        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $request->blog_id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->first();
         $like = Like::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();
@@ -132,13 +148,29 @@ class LikeController extends Controller
      */
     public function blogLikeGet(int $blog_id)
     {
-        $blog = Blog::where('id', $blog_id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $blog_id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->first();
 
@@ -188,13 +220,29 @@ class LikeController extends Controller
      */
     public function blogLikeDelete($blog_id, Request $request)
     {
-        $blog = Blog::where('id', $request->blog_id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $request->blog_id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->first();
         $like = Like::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();

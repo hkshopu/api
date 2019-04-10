@@ -139,6 +139,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('login',  ['uses' => 'UserController@userLogin']);
     /* UTX */ $router->get('logout',  ['uses' => 'UserController@userLogout']);
     $router->patch('updatepassword/{user_id}',  ['uses' => 'UserController@passwordUpdate']);
+    $router->patch('changelanguage',  ['uses' => 'UserController@languageChange']);
 
     // User Type
     /* UTX */ $router->get('usertype',  ['uses' => 'UserTypeController@userTypeList']);
@@ -161,6 +162,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('order', ['uses' => 'OrderController@orderList']);
     $router->post('order', ['uses' => 'OrderController@orderAdd']);
     $router->get('order/{id}', ['uses' => 'OrderController@orderGet']);
+    $router->patch('order/{id}',  ['uses' => 'OrderController@orderModify']);
+    $router->patch('orderhold/{id}',  ['uses' => 'OrderController@orderHold']);
+
+    // Language
+    $router->get('language',  ['uses' => 'LanguageController@languageList']);
     ///
     ///
     ///

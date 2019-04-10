@@ -14,6 +14,7 @@ use App\Entity;
 use App\User;
 use App\UserType;
 use App\Image;
+use App\Language;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -61,6 +62,7 @@ class OrderController extends Controller
         $user = User::where('id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
 
+        $orderList = null;
         $isConsumer = false;
         switch ($userType->name) {
             case 'system administrator':
@@ -68,8 +70,23 @@ class OrderController extends Controller
                 $orderList = Order::whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
             break;
             case 'retailer':
-                $shop = Shop::where('user_id', $user->id)->whereNull('deleted_at')->first();
-                $orderList = Order::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
+                $shopQuery = \DB::table('shop')
+                    ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                    ->select('shop.*')
+                    ->where('shop.user_id', $user->id)
+                    ->whereNull('shop.deleted_at');
+
+                if ($request->filter_inactive == true) {
+                    $shopQuery
+                        ->whereNull('user.deleted_at');
+                }
+
+                $shop = $shopQuery->first();
+
+                if (!empty($shop)) {
+                    $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+                    $orderList = Order::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
+                }
             break;
             case 'consumer':
                 $isConsumer = true;
@@ -90,9 +107,11 @@ class OrderController extends Controller
                 foreach ($order->shop_order->product as $orderItem) {
                     $orderSimplifiedItem['product_id'] = $orderItem->product_id;
                     $orderSimplifiedItem['product_image'] = $orderItem->image_url;
+                    $orderSimplifiedItem['product_name'] = $orderItem->name;
                     $orderSimplifiedItem['product_name_en'] = $orderItem->name_en;
                     $orderSimplifiedItem['product_name_tc'] = $orderItem->name_tc;
                     $orderSimplifiedItem['product_name_sc'] = $orderItem->name_sc;
+                    $orderSimplifiedItem['shop_name'] = $order->shop->name;
                     $orderSimplifiedItem['shop_name_en'] = $order->shop->name_en;
                     $orderSimplifiedItem['shop_name_tc'] = $order->shop->name_tc;
                     $orderSimplifiedItem['shop_name_sc'] = $order->shop->name_sc;
@@ -212,7 +231,19 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             ], 400);
         }
 
-        $shop = Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $request->shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -220,13 +251,7 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $cartItemArray = app('App\Http\Controllers\CartController')->cartGet($cart->id, $request)->getData();
         $shopArray = $cartItemArray->shop;
@@ -442,8 +467,26 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
 
             $order['shop'] = null;
             if (!empty($order->shop_id)) {
-                $shop = Shop::where('id', $order->shop_id)->whereNull('deleted_at')->first();
+                $shopQuery = \DB::table('shop')
+                    ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                    ->select('shop.*')
+                    ->where('shop.id', $order->shop_id)
+                    ->whereNull('shop.deleted_at');
+
+                if ($request->filter_inactive == true) {
+                    $shopQuery
+                        ->whereNull('user.deleted_at');
+                }
+
+                $shop = $shopQuery->first();
+
                 if (!empty($shop)) {
+                    $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+
+                    // LANGUAGE Translation
+                    $shop->name = Language::translate($request, $shop, 'name');
+                    $shop->description = Language::translate($request, $shop, 'description');
+
                     $shopEntity = Entity::where('name', $shop->getTable())->first();
                     $image = Image::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
                     $shop['image_url'] = !empty($image) ? $image->url : null;
@@ -472,7 +515,7 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             $order['order_date'] = $order->created_at->format('Y-m-d H:i:s');
 
             $cartItemList = CartItem::where('order_id', $order->id)->whereNull('deleted_at')->get();
-            $shopOrderList = app('App\Http\Controllers\CartController')->cartItemList($cartItemList, $request)->getData();
+            $shopOrderList = app('App\Http\Controllers\CartController')->cartItemList($cartItemList, $request, true)->getData();
             $order['shop_order'] = current($shopOrderList);
 
             $order->shop_cart_gross = $order->shop_order->total_amount_discounted;

@@ -13,6 +13,7 @@ use App\Shop;
 use App\Image;
 use App\Category;
 use App\CategoryMap;
+use App\Language;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -46,6 +47,11 @@ class UserController extends Controller
         $user['nickname'] = $user->username;
         $user['image_url'] = !empty($image) ? $image->url : null;
         $user['join_date'] = $user->created_at->format('Y-m-d H:i:s');
+
+        $language = Language::where('id', $user->language_id)->whereNull('deleted_at')->first();
+        $user['language'] = $language->code;
+        $user['language_full'] = $language->name;
+
         $accessTokenDetails['user'] = $user;
 
         $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
@@ -569,11 +575,13 @@ class UserController extends Controller
             $mobilePhone = $user->mobile_phone;
             $address = $user->address;
             $activationKey = $user->activation_key;
+            $languageId = $user->language_id;
             $createdAt = $user->created_at;
             unset($user->birth_date);
             unset($user->mobile_phone);
             unset($user->address);
             unset($user->activation_key);
+            unset($user->language_id);
             unset($user->created_at);
 
             $user['gender_full'] = (!empty($user->gender)) ? ($user->gender == 'm' ? 'Male' : 'Female') : null;
@@ -581,6 +589,11 @@ class UserController extends Controller
             $user['mobile_phone'] = $mobilePhone;
             $user['address'] = $address;
             $user['activation_key'] = $activationKey;
+
+            $language = Language::where('id', $languageId)->whereNull('deleted_at')->first();
+            $user['language'] = $language->code;
+            $user['language_full'] = $language->name;
+
             $user['created_at'] = $createdAt;
 
             $userEntity = Entity::where('name', $user->getTable())->first();
@@ -596,7 +609,22 @@ class UserController extends Controller
                 $user['status'] = null;
             }
 
-            $user['shop'] = Shop::where('user_id', $user->id)->whereNull('deleted_at')->first();
+            $shopQuery = \DB::table('shop')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('shop.*')
+                ->where('shop.id', $user->id)
+                ->whereNull('shop.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $shopQuery
+                    ->whereNull('user.deleted_at');
+            }
+
+            $shop = $shopQuery->first();
+
+            $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+
+            $user['shop'] = $shop;
 
             $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
         }
@@ -647,7 +675,7 @@ class UserController extends Controller
         if (empty($user)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid user id',
             ], 400);
         }
 
@@ -794,7 +822,7 @@ class UserController extends Controller
         if (empty($user)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid user id',
             ], 400);
         }
 
@@ -1649,8 +1677,6 @@ class UserController extends Controller
         ], 200);
     }
 
-    
-
     /**
      * @OA\Patch(
      *     path="/api/updatepassword/{user_id}",
@@ -1695,7 +1721,7 @@ class UserController extends Controller
      *         )
      *     ),
      *     @OA\Response(
-     *         response="200",
+     *         response="201",
      *         description="Returns the password update status",
      *         @OA\JsonContent()
      *     ),
@@ -1760,7 +1786,76 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Password updated',
-        ], 200);
+        ], 201);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/changelanguage",
+     *     operationId="languageChange",
+     *     tags={"User"},
+     *     summary="Changes user language",
+     *     description="Changes user language. Token is required to identify w/c user needs to change its language.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="language_id",
+     *         in="query",
+     *         description="The language id",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the language change status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the language change failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function languageChange(Request $request = null) {
+        $user = User::where('id', $request->access_token_user_id)->whereNull('deleted_at')->first();
+        if (empty($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user id',
+            ], 400);
+        }
+
+        $language = Language::where('id', $request->language_id)->whereNull('deleted_at')->first();
+        if (empty($language)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid language id',
+            ], 400);
+        }
+
+        $request->request->add([
+            'updated_by' => $request->access_token_user_id,
+        ]);
+// var_dump($request->all());exit;
+        $user->update($request->only([
+            'language_id',
+            'updated_by',
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Language changed',
+        ], 201);
     }
 }
 

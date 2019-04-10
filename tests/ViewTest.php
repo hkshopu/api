@@ -2,6 +2,7 @@
 
 use App\Product;
 use App\Blog;
+use Illuminate\Http\Request;
 
 class ViewTest extends TestCase
 {
@@ -31,21 +32,52 @@ class ViewTest extends TestCase
     //     ]);
     // }
 
-    public function testShouldGetProductView() {
-        $product = Product::whereNull('deleted_at')->inRandomOrder()->first();
-        $this->get("/api/productview/{$product->id}", []);
-        $this->seeStatusCode(200);
-        $this->seeJsonStructure([
-            'count',
-        ]);
-    }
+    // public function testShouldGetProductView(Request $request) {
+    //     $isProductActive = false;
+
+    //     // $request = new Request();
+    //     // $request->request->add([
+    //     //     'filter_inactive' => true,
+    //     //     'language' => 'en',
+    //     // ]);
+
+    //     while ($isProductActive == false) {
+    //         $product = Product::whereNull('deleted_at')->inRandomOrder()->first();
+    //         $shop = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request)->getData();
+    //         if (!empty($shop->id)) {
+    //             $isProductActive = true;
+    //         }
+    //     }
+
+    //     var_dump($request);exit;
+
+    //     $this->get("/api/productview/{$product->id}", []);
+    //     $this->seeStatusCode(200);
+    //     $this->seeJsonStructure([
+    //         'count',
+    //     ]);
+    // }
 
     public function testShouldNotGetProductViewIfInvalidProductId() {
         $invalidId = null;
         $isIdInvalid = false;
         while ($isIdInvalid == false) {
             $invalidId = rand(10000000, 99999999);
-            $product = Product::where('id', $invalidId)->whereNull('deleted_at')->inRandomOrder()->first();
+            $productQuery = \DB::table('product')
+                ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('product.*')
+                ->where('product.id', $invalidId)
+                ->whereNull('product.deleted_at');
+
+            // if ($request->filter_inactive == true) {
+                $productQuery
+                    ->whereNull('shop.deleted_at')
+                    ->whereNull('user.deleted_at');
+            // }
+
+            $product = $productQuery->inRandomOrder()->first();
+
             if (empty($product)) {
                 $isIdInvalid = true;
             }
@@ -59,7 +91,20 @@ class ViewTest extends TestCase
     }
 
     public function testShouldGetBlogView() {
-        $blog = Blog::whereNull('deleted_at')->inRandomOrder()->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->inRandomOrder()->first();
+
         $this->get("/api/blogview/{$blog->id}", []);
         $this->seeStatusCode(200);
         $this->seeJsonStructure([
@@ -72,7 +117,21 @@ class ViewTest extends TestCase
         $isIdInvalid = false;
         while ($isIdInvalid == false) {
             $invalidId = rand(10000000, 99999999);
-            $blog = Blog::where('id', $invalidId)->whereNull('deleted_at')->inRandomOrder()->first();
+            $blogQuery = \DB::table('blog')
+                ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('blog.*')
+                ->where('blog.id', $invalidId)
+                ->whereNull('blog.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $blogQuery
+                    ->whereNull('shop.deleted_at')
+                    ->whereNull('user.deleted_at');
+            }
+
+            $blog = $blogQuery->inRandomOrder()->first();
+
             if (empty($blog)) {
                 $isIdInvalid = true;
             }

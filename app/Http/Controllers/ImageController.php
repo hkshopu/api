@@ -68,13 +68,29 @@ class ImageController extends Controller
      */
     public function productImageAdd(int $id, Request $request)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         $productEntity = Entity::where('name', $product->getTable())->orderBy('id', 'DESC')->first();
 
@@ -145,13 +161,29 @@ class ImageController extends Controller
      */
     public function productImageDelete(int $id, Request $request)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         $productEntity = Entity::where('name', $product->getTable())->orderBy('id', 'DESC')->first();
 
@@ -223,7 +255,19 @@ class ImageController extends Controller
      */
     public function shopImageAdd(int $id, Request $request)
     {
-        $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -231,13 +275,7 @@ class ImageController extends Controller
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $shopEntity = Entity::where('name', $shop->getTable())->orderBy('id', 'DESC')->first();
 
@@ -308,7 +346,19 @@ class ImageController extends Controller
      */
     public function shopImageDelete(int $id, Request $request)
     {
-        $shop = Shop::where('id', $id)->whereNull('deleted_at')->first();
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
         if (empty($shop)) {
             return response()->json([
                 'success' => false,
@@ -316,13 +366,7 @@ class ImageController extends Controller
             ], 400);
         }
 
-        $user = User::where('id', $shop->user_id)->whereNull('deleted_at')->first();
-        if (empty($user)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop inactive',
-            ], 400);
-        }
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $shopEntity = Entity::where('name', $shop->getTable())->orderBy('id', 'DESC')->first();
 
@@ -394,13 +438,29 @@ class ImageController extends Controller
      */
     public function blogImageAdd(int $id, Request $request)
     {
-        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->orderBy('id', 'DESC')->first();
 
@@ -471,13 +531,29 @@ class ImageController extends Controller
      */
     public function blogImageDelete(int $id, Request $request)
     {
-        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $blogEntity = Entity::where('name', $blog->getTable())->orderBy('id', 'DESC')->first();
 

@@ -25,6 +25,7 @@ use App\StatusMap;
 use App\StatusOption;
 use App\View;
 use App\User;
+use App\Language;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -112,21 +113,46 @@ class ProductController extends Controller
      */
     public function productList(Request $request = null)
     {
-        $productFilter = Product::whereNull('deleted_at');
+        $productFilter = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productFilter
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
 
         if (isset($request->shop_id)) {
-            if (empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+            $shopQuery = \DB::table('shop')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('shop.*')
+                ->where('shop.id', $request->shop_id)
+                ->whereNull('shop.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $shopQuery
+                    ->whereNull('user.deleted_at');
+            }
+
+            $shop = $shopQuery->first();
+
+            if (empty($shop)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid shop id',
                 ], 400);
-            } else {
-                $productFilter->where('shop_id', $request->shop_id);
             }
+
+            $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+
+            $productFilter->where('product.shop_id', $request->shop_id);
         }
 
         if (isset($request->name_en)) {
-            $productFilter->where('name_en', 'LIKE', '%' . $request->name_en . '%');
+            $productFilter->where('product.name_en', 'LIKE', '%' . $request->name_en . '%');
         }
 
         $productList = $productFilter->get();
@@ -207,7 +233,23 @@ class ProductController extends Controller
         $productSortedList = [];
 
         foreach ($productSortIdList as $key => $value) {
-            $productSortedList[] = Product::where('id', $key)->whereNull('deleted_at')->first();
+            $productItemQuery = \DB::table('product')
+                ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('product.*')
+                ->where('product.id', $key)
+                ->whereNull('product.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $productItemQuery
+                    ->whereNull('shop.deleted_at')
+                    ->whereNull('user.deleted_at');
+            }
+
+            $productItem = $productItemQuery->first();
+            if (!empty($productItem)) {
+                $productSortedList[] = $productItem;
+            }
         }
 
         $productList = $productSortedList;
@@ -225,10 +267,16 @@ class ProductController extends Controller
         }
 
         $productList = $productListPaginated;
+        $productActive = [];
 
-        foreach ($productList as $productKey => $product) {
-            $productList[$productKey] = self::productGet($product->id, $request)->getData();
+        foreach ($productList as $product) {
+            $productGet = self::productGet($product->id, $request)->getData();
+            if (!empty($productGet) && !empty($productGet->id)) {
+                $productActive[] = $productGet;
+            }
         }
+
+        $productList = $productActive;
 
         return response()->json($productList, 200);
     }
@@ -260,7 +308,7 @@ class ProductController extends Controller
      *         name="name_en",
      *         in="query",
      *         description="The product name (in English)",
-     *         required=true,
+     *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
@@ -316,7 +364,7 @@ class ProductController extends Controller
      *         name="description_en",
      *         in="query",
      *         description="The product description (in English)",
-     *         required=true,
+     *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
@@ -424,12 +472,27 @@ class ProductController extends Controller
             ], 400);
         }
 
-        if (empty($request->shop_id) || empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $request->shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
+        if (empty($shop)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
             ], 400);
         }
+
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $productAttribute = ProductAttribute::whereNull('deleted_at');
         $attribute = [];
@@ -592,9 +655,28 @@ class ProductController extends Controller
      */
     public function productGet(int $id, Request $request = null)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
 
         if (!empty($product)) {
+            $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
+
+            // LANGUAGE Translation
+            $product->name = Language::translate($request, $product, 'name');
+            $product->description = Language::translate($request, $product, 'description');
+
             // Explicit exclusion of the deleted_at field to still get username who created the product
             $createUser = User::where('id', $product->created_by)->first();
             $product['created_by_user'] = $createUser->only([
@@ -749,11 +831,8 @@ class ProductController extends Controller
                 'product_id' => $product->id,
             ]);
 
-            $shopInfo = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request, false)->getData();
-            if (!empty($shopInfo->id)) {
-                $product['shop'] = $shopInfo;
-                unset($product['shop_id']);
-            }
+            $product['shop'] = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request)->getData();
+            unset($product['shop_id']);
         }
 
         return response()->json($product, 200);
@@ -761,9 +840,28 @@ class ProductController extends Controller
 
     public function productGetMinimal(int $id, Request $request = null)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
 
         if (!empty($product)) {
+            $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
+
+            // LANGUAGE Translation
+            $product->name = Language::translate($request, $product, 'name');
+            $product->description = Language::translate($request, $product, 'description');
+
             $productEntity = Entity::where('name', $product->getTable())->first();
 
             $image = new Image();
@@ -811,15 +909,31 @@ class ProductController extends Controller
      *     ),
      * )
      */
-    public function productDelete($id, Request $request)
+    public function productDelete(int $id, Request $request)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
@@ -991,16 +1105,31 @@ class ProductController extends Controller
      *     ),
      * )
      */
-    public function productModify($id, Request $request)
+    public function productModify(int $id, Request $request)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
 
         if (empty($product)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         if (!empty($request->sku)) {
             $request->request->add(['sku' => $request->sku]);
@@ -1031,12 +1160,27 @@ class ProductController extends Controller
         }
 
         if (!empty($request->shop_id)) {
-            if (empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+            $shopQuery = \DB::table('shop')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('shop.*')
+                ->where('shop.id', $request->shop_id)
+                ->whereNull('shop.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $shopQuery
+                    ->whereNull('user.deleted_at');
+            }
+
+            $shop = $shopQuery->first();
+
+            if (empty($shop)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid shop id',
                 ], 400);
             }
+
+            $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
             $request->request->add(['shop_id' => $request->shop_id]);
         }
@@ -1201,6 +1345,7 @@ class ProductController extends Controller
 
         $product->update($request->all());
         $product = self::productGet($id, $request)->getData();
+
         return response()->json($product, 201);
     }
 
@@ -1269,13 +1414,29 @@ class ProductController extends Controller
      */
     public function productStockAdd(int $id, Request $request)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         if (empty($request->stock) || $request->stock <= 0) {
             return response()->json([
@@ -1400,13 +1561,29 @@ class ProductController extends Controller
      */
     public function productStockRemove(int $id, Request $request)
     {
-        $product = Product::where('id', $id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         if (empty($request->stock) || $request->stock > 0) {
             return response()->json([
@@ -1503,13 +1680,29 @@ class ProductController extends Controller
      */
     public function productAttributeAdd(Request $request)
     {
-        $product = Product::where('id', $request->product_id)->whereNull('deleted_at')->first();
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $request->product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
         if (empty($product)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid product id',
             ], 400);
         }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
         if (!empty($request->size_id)) {
             $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Blog;
 use App\Shop;
+use App\User;
 use App\Entity;
 use App\Category;
 use App\CategoryMap;
@@ -14,6 +15,7 @@ use App\StatusOption;
 use App\View;
 use App\Like;
 use App\Comment;
+use App\Language;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -94,17 +96,42 @@ class BlogController extends Controller
      */
     public function blogList(Request $request = null)
     {
-        $blogFilter = Blog::whereNull('deleted_at');
+        $blogFilter = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogFilter
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
 
         if (isset($request->shop_id)) {
-            if (empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+            $shopQuery = \DB::table('shop')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('shop.*')
+                ->where('shop.id', $shop_id)
+                ->whereNull('shop.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $shopQuery
+                    ->whereNull('user.deleted_at');
+            }
+
+            $shop = $shopQuery->first();
+
+            if (empty($shop)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid shop id',
                 ], 400);
-            } else {
-                $blogFilter->where('shop_id', $request->shop_id);
             }
+
+            $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+
+            $blogFilter->where('shop_id', $request->shop_id);
         }
 
         if (isset($request->title_en)) {
@@ -192,7 +219,7 @@ class BlogController extends Controller
      *         name="title_en",
      *         in="query",
      *         description="The blog title (in English)",
-     *         required=true,
+     *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
@@ -220,7 +247,7 @@ class BlogController extends Controller
      *         name="content_en",
      *         in="query",
      *         description="The blog content (in English)",
-     *         required=true,
+     *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
@@ -272,12 +299,27 @@ class BlogController extends Controller
      */
     public function blogCreate(Request $request)
     {
-        if (empty($request->shop_id) || empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $request->shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
+        if (empty($shop)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
             ], 400);
         }
+
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         $blog = new Blog();
         $blogEntity = Entity::where('name', $blog->getTable())->first();
@@ -371,11 +413,30 @@ class BlogController extends Controller
      *     ),
      * )
      */
-    public function blogGet($id)
+    public function blogGet(int $id, Request $request)
     {
-        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
 
         if (!empty($blog)) {
+            $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
+
+            // LANGUAGE Translation
+            $blog->title = Language::translate($request, $blog, 'title');
+            $blog->content = Language::translate($request, $blog, 'content');
+
             $blogEntity = Entity::where('name', $blog->getTable())->first();
 
             $categoryMap = CategoryMap::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
@@ -449,13 +510,29 @@ class BlogController extends Controller
      */
     public function blogDelete($id, Request $request)
     {
-        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid blog id',
             ], 400);
         }
+
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
 
         $request->request->add([
             'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
@@ -602,21 +679,53 @@ class BlogController extends Controller
      */
     public function blogModify($id, Request $request)
     {
-        $blog = Blog::where('id', $id)->whereNull('deleted_at')->first();
-        $blogEntity = Entity::where('name', $blog->getTable())->first();
+        $blogQuery = \DB::table('blog')
+            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('blog.*')
+            ->where('blog.id', $id)
+            ->whereNull('blog.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $blogQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $blog = $blogQuery->first();
+
         if (empty($blog)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid id',
+                'message' => 'Invalid blog id',
             ], 400);
         }
 
-        if (!empty($request->shop_id) && empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
+        $blog = Blog::where('id', $blog->id)->whereNull('deleted_at')->first();
+
+        $blogEntity = Entity::where('name', $blog->getTable())->first();
+
+        $shopQuery = \DB::table('shop')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('shop.*')
+            ->where('shop.id', $request->shop_id)
+            ->whereNull('shop.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $shopQuery
+                ->whereNull('user.deleted_at');
+        }
+
+        $shop = $shopQuery->first();
+
+        if (empty($shop)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shop id',
             ], 400);
         }
+
+        $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
         if (!empty($request->title_en)) {
             $request->request->add(['title_en' => $request->title_en]);

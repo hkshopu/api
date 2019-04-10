@@ -100,15 +100,34 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
         return response()->json($data, 200);
     }
 
-    public function cartItemList(Collection $cartItemList = null, Request $request = null) {
+    public function cartItemList(Collection $cartItemList = null, Request $request = null, bool $generateFromOrder = false) {
+        $request->request->add([
+            'filter_inactive' => !$generateFromOrder,
+        ]);
+
         $data = [
             'shop' => [],
         ];
 
         $productGroupList = [];
         foreach ($cartItemList as $cartItem) {
-            $product = Product::where('id', $cartItem->product_id)->whereNull('deleted_at')->first();
+            $productQuery = \DB::table('product')
+                ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('product.*')
+                ->where('product.id', $cartItem->product_id)
+                ->whereNull('product.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $productQuery
+                    ->whereNull('shop.deleted_at')
+                    ->whereNull('user.deleted_at');
+            }
+
+            $product = $productQuery->first();
+
             if (!empty($product)) {
+                $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
                 $productGroupList[$product->shop_id][] = [
                     'cart_item_id' => $cartItem->id,
                 ];
@@ -119,6 +138,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
         $shopCtr = 0;
         foreach ($productGroupList as $shopId => $productGroup) {
             $shop = app('App\Http\Controllers\ShopController')->shopGet($shopId, $request)->getData();
+
             if (!empty($shop) && !empty($shop->id)) {
                 $paymentMethodList = ShopPaymentMethodMap::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('payment_method_id', 'ASC')->get();
                 foreach ($paymentMethodList as $key => $paymentMethodItem) {
@@ -152,6 +172,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                 $data['shop'][$shopCtr] = [
                     'shop_id' => $shop->id,
                     'logo_url' => $shop->logo_url,
+                    'name' => $shop->name,
                     'name_en' => $shop->name_en,
                     'name_tc' => $shop->name_tc,
                     'name_sc' => $shop->name_sc,
@@ -239,9 +260,11 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                         'attribute_id' => $cartItem->attribute_id,
                                         'attribute' => $attribute,
                                         'image_url' => $product->image[0]->url ?? null,
+                                        'name' => $product->name,
                                         'name_en' => $product->name_en,
                                         'name_tc' => $product->name_tc,
                                         'name_sc' => $product->name_sc,
+                                        'shop_name' => $shop->name,
                                         'shop_name_en' => $shop->name_en,
                                         'shop_name_tc' => $shop->name_tc,
                                         'shop_name_sc' => $shop->name_sc,
@@ -768,11 +791,28 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
             ], 400);
         }
 
-        if (isset($request->shop_id) && empty(Shop::where('id', $request->shop_id)->whereNull('deleted_at')->first())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid shop id',
-            ], 400);
+        if (isset($request->shop_id)) {
+            $shopQuery = \DB::table('shop')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('shop.*')
+                ->where('shop.id', $request->shop_id)
+                ->whereNull('shop.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $shopQuery
+                    ->whereNull('user.deleted_at');
+            }
+
+            $shop = $shopQuery->first();
+
+            if (empty($shop)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid shop id',
+                ], 400);
+            }
+
+            $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
         }
 
         $request->request->add([
@@ -807,12 +847,29 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
                                         ->get();
 
             foreach ($cartItemList as $cartItem) {
-                $product = Product::where('id', $cartItem->product_id)->whereNull('deleted_at')->first();
-                if ($request->shop_id == $product->shop_id) {
-                    $cartItem->update($request->only([
-                        'deleted_at',
-                        'deleted_by',
-                    ]));
+                $productQuery = \DB::table('product')
+                    ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+                    ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                    ->select('product.*')
+                    ->where('product.id', $cartItem->product_id)
+                    ->whereNull('product.deleted_at');
+
+                if ($request->filter_inactive == true) {
+                    $productQuery
+                        ->whereNull('shop.deleted_at')
+                        ->whereNull('user.deleted_at');
+                }
+
+                $product = $productQuery->first();
+
+                if (!empty($product)) {
+                    $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
+                    if ($request->shop_id == $product->shop_id) {
+                        $cartItem->update($request->only([
+                            'deleted_at',
+                            'deleted_by',
+                        ]));
+                    }
                 }
             }
         }

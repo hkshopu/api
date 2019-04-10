@@ -6,10 +6,14 @@ use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use App\AccessToken;
 use App\User;
+use App\UserType;
+use App\Language;
 use Carbon\Carbon;
 
 class Authenticate
 {
+    const DEFAULT_LANGUAGE = 'en'; // English
+
     /**
      * The authentication guard factory instance.
      *
@@ -38,6 +42,15 @@ class Authenticate
      */
     public function handle($request, Closure $next, $guard = null)
     {
+        $request->request->add([
+            'filter_inactive' => true,
+        ]);
+
+        $language = Language::where('code', self::DEFAULT_LANGUAGE)->whereNull('deleted_at')->first();
+        $request->request->add([
+            'language' => $language->code,
+        ]);
+
         if (empty($request->header('token'))) {
 
             // Bypass token authentication for guest account browsing
@@ -101,6 +114,8 @@ class Authenticate
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "PATCH /api/cart"
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "POST /api/carttest"
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "POST /api/assigncart"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/language"
             ) {
                 return $next($request);
             }
@@ -116,6 +131,8 @@ class Authenticate
                 $request->request->add([
                     'access_token_user_id' => null,
                 ]);
+
+                // Loophole in filter_inactive in webadmin (Must be fixed)
 
                 return $next($request);
             }
@@ -164,9 +181,22 @@ class Authenticate
                 }
             }
 
+            $language = Language::where('id', $user->language_id)->whereNull('deleted_at')->first();
+
             $request->request->add([
                 'access_token_user_id' => $accessToken->user_id,
+                'language' => $language->code,
             ]);
+
+            $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+
+            if ($userType->name == 'system administrator'
+                    || $userType->name == 'system operator'
+                    || $userType->name == 'retailer') {
+                $request->request->add([
+                    'filter_inactive' => false,
+                ]);
+            }
         }
 
         return $next($request);

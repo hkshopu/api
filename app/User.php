@@ -36,6 +36,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         'address',
         'user_type_id',
         'activation_key',
+        'language_id',
         //
         'created_by',
         'updated_by',
