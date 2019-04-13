@@ -158,7 +158,7 @@ class CommentController extends Controller
 
         $statusMap = StatusMap::create($request->all());
 
-        return response()->json(self::commentGet($comment->id)->getData(), 201);
+        return response()->json(self::commentGet($comment->id, $request)->getData(), 201);
     }
 
     /**
@@ -196,7 +196,7 @@ class CommentController extends Controller
      *     ),
      * )
      */
-    public function shopCommentGet(int $shop_id)
+    public function shopCommentGet(int $shop_id, Request $request = null)
     {
         $shopQuery = \DB::table('shop')
             ->leftJoin('user', 'user.id', '=', 'shop.user_id')
@@ -228,7 +228,7 @@ class CommentController extends Controller
         $commentList = Comment::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->orderBy('created_at', 'DESC')->orderBy('id', 'DESC')->get();
         $listTemp = [];
         foreach ($commentList as $key => $comment) {
-            $listTemp[$key] = self::commentGet($comment->id)->getData();
+            $listTemp[$key] = self::commentGet($comment->id, $request)->getData();
         }
 
         $commentList = $listTemp;
@@ -558,7 +558,7 @@ class CommentController extends Controller
 
         $statusMap = StatusMap::create($request->all());
 
-        return response()->json(self::commentGet($comment->id)->getData(), 201);
+        return response()->json(self::commentGet($comment->id, $request)->getData(), 201);
     }
 
     /**
@@ -596,7 +596,7 @@ class CommentController extends Controller
      *     ),
      * )
      */
-    public function blogCommentGet(int $blog_id)
+    public function blogCommentGet(int $blog_id, Request $request)
     {
         $blogQuery = \DB::table('blog')
             ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
@@ -630,7 +630,7 @@ class CommentController extends Controller
         $commentList = Comment::where('entity', $blogEntity->id)->where('entity_id', $blog->id)->whereNull('deleted_at')->orderBy('created_at', 'DESC')->orderBy('id', 'DESC')->get();
         $listTemp = [];
         foreach ($commentList as $key => $comment) {
-            $listTemp[$key] = self::commentGet($comment->id)->getData();
+            $listTemp[$key] = self::commentGet($comment->id, $request)->getData();
         }
 
         $commentList = $listTemp;

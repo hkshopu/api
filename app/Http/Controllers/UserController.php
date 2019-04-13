@@ -163,7 +163,7 @@ class UserController extends Controller
         $userList = $userListPaginated;
 
         foreach ($userList as $userKey => $user) {
-            $userList[$userKey] = self::userGet($user->id)->getData();
+            $userList[$userKey] = self::userGet($user->id, $request)->getData();
         }
 
         return response()->json($userList, 200);
@@ -533,7 +533,7 @@ class UserController extends Controller
             ]));
         }
 
-        return response()->json(self::userGet($user->id)->getData(), 200);
+        return response()->json(self::userGet($user->id, $request)->getData(), 200);
     }
 
     /**
@@ -609,10 +609,12 @@ class UserController extends Controller
                 $user['status'] = null;
             }
 
+            $user['shop'] = null;
+
             $shopQuery = \DB::table('shop')
                 ->leftJoin('user', 'user.id', '=', 'shop.user_id')
                 ->select('shop.*')
-                ->where('shop.id', $user->id)
+                ->where('shop.user_id', $user->id)
                 ->whereNull('shop.deleted_at');
 
             if ($request->filter_inactive == true) {
@@ -622,9 +624,10 @@ class UserController extends Controller
 
             $shop = $shopQuery->first();
 
-            $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
-
-            $user['shop'] = $shop;
+            if (!empty($shop)) {
+                $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+                $user['shop'] = $shop;
+            }
 
             $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
         }
@@ -928,7 +931,7 @@ class UserController extends Controller
             ]));
         }
 
-        return response()->json(self::userGet($user->id)->getData(), 200);
+        return response()->json(self::userGet($user->id, $request)->getData(), 200);
     }
 
     /**
@@ -1265,7 +1268,7 @@ class UserController extends Controller
             'updated_by',
         ]));
 
-        return response()->json(self::userGet($user->id)->getData(), 200);
+        return response()->json(self::userGet($user->id, $request)->getData(), 200);
     }
 
     /**
@@ -1522,7 +1525,7 @@ class UserController extends Controller
             'updated_by',
         ]));
 
-        return response()->json(self::userGet($user->id)->getData(), 200);
+        return response()->json(self::userGet($user->id, $request)->getData(), 200);
     }
 
     /**
