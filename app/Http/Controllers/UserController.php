@@ -609,7 +609,6 @@ class UserController extends Controller
             $userEntity = Entity::where('name', $user->getTable())->first();
 
             $user['user_type'] = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
-            unset($user['user_type_id']);
 
             $statusMap = StatusMap::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($statusMap)) {
@@ -637,6 +636,27 @@ class UserController extends Controller
             if (!empty($shop)) {
                 $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
                 $user['shop'] = $shop;
+            }
+
+            $user['cart_items'] = 0;
+
+            $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+
+            if ($userType->name == 'consumer') {
+                $cart = app('App\Http\Controllers\CartController')->cartGet(null, $request)->getData();
+                $cartItemCount = 0;
+
+                foreach ($cart->shop as $cartShop) {
+                    if (!empty($cartShop->product)) {
+                        foreach ($cartShop->product as $cartShopProduct) {
+                            if (!empty($cartShopProduct->cart_item_id)) {
+                                $cartItemCount++;
+                            }
+                        }
+                    }
+                }
+
+                $user['cart_items'] = $cartItemCount;
             }
 
             $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
