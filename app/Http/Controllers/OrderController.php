@@ -104,25 +104,27 @@ class OrderController extends Controller
         if ($isConsumer == true) {
             $orderListSimplified = [];
             foreach ($orderList as $order) {
-                foreach ($order->shop_order->product as $orderItem) {
-                    $orderSimplifiedItem['product_id'] = $orderItem->product_id;
-                    $orderSimplifiedItem['product_image'] = $orderItem->image_url;
-                    $orderSimplifiedItem['product_name'] = $orderItem->name;
-                    $orderSimplifiedItem['product_name_en'] = $orderItem->name_en;
-                    $orderSimplifiedItem['product_name_tc'] = $orderItem->name_tc;
-                    $orderSimplifiedItem['product_name_sc'] = $orderItem->name_sc;
-                    $orderSimplifiedItem['shop_name'] = $order->shop->name;
-                    $orderSimplifiedItem['shop_name_en'] = $order->shop->name_en;
-                    $orderSimplifiedItem['shop_name_tc'] = $order->shop->name_tc;
-                    $orderSimplifiedItem['shop_name_sc'] = $order->shop->name_sc;
-                    $orderSimplifiedItem['cart_item_id'] = $orderItem->cart_item_id;
-                    $orderSimplifiedItem['order_date'] = $order->order_date;
-                    $orderSimplifiedItem['total_price'] = $orderItem->total_price;
-                    $orderSimplifiedItem['total_price_discounted'] = $orderItem->total_price_discounted;
-                    $orderSimplifiedItem['payment_status'] = $order->payment_status;
-                    $orderSimplifiedItem['order_item_status'] = $orderItem->order_item_status;
-                    $orderItem = $orderSimplifiedItem;
-                    $orderListSimplified[$order->id][] = $orderItem;
+                if (!empty($order->shop_order->product)) {
+                    foreach ($order->shop_order->product as $orderItem) {
+                        $orderSimplifiedItem['product_id'] = $orderItem->product_id;
+                        $orderSimplifiedItem['product_image'] = $orderItem->image_url;
+                        $orderSimplifiedItem['product_name'] = $orderItem->name;
+                        $orderSimplifiedItem['product_name_en'] = $orderItem->name_en;
+                        $orderSimplifiedItem['product_name_tc'] = $orderItem->name_tc;
+                        $orderSimplifiedItem['product_name_sc'] = $orderItem->name_sc;
+                        $orderSimplifiedItem['shop_name'] = $order->shop->name;
+                        $orderSimplifiedItem['shop_name_en'] = $order->shop->name_en;
+                        $orderSimplifiedItem['shop_name_tc'] = $order->shop->name_tc;
+                        $orderSimplifiedItem['shop_name_sc'] = $order->shop->name_sc;
+                        $orderSimplifiedItem['cart_item_id'] = $orderItem->cart_item_id;
+                        $orderSimplifiedItem['order_date'] = $order->order_date;
+                        $orderSimplifiedItem['total_price'] = $orderItem->total_price;
+                        $orderSimplifiedItem['total_price_discounted'] = $orderItem->total_price_discounted;
+                        $orderSimplifiedItem['payment_status'] = $order->payment_status;
+                        $orderSimplifiedItem['order_item_status'] = $orderItem->order_item_status;
+                        $orderItem = $orderSimplifiedItem;
+                        $orderListSimplified[$order->id][] = $orderItem;
+                    }
                 }
             }
 
