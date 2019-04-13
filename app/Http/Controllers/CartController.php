@@ -77,9 +77,9 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
      */
     public function cartGet(string $cart_id = null, Request $request = null)
     {
-        if (!isset($request->access_token_user_id)) {
-            $cart = Cart::where('id', $cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
-        } else {
+        if (isset($cart_id)) {
+            $cart = Cart::where('id', $cart_id)->whereNull('deleted_at')->first();
+        } else if (isset($request->access_token_user_id)) {
             $cart = Cart::where('user_id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         }
 

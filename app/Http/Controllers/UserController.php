@@ -14,6 +14,7 @@ use App\Image;
 use App\Category;
 use App\CategoryMap;
 use App\Language;
+use App\Cart;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -643,20 +644,25 @@ class UserController extends Controller
             $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
 
             if ($userType->name == 'consumer') {
-                $cart = app('App\Http\Controllers\CartController')->cartGet(null, $request)->getData();
-                $cartItemCount = 0;
+                $cartObject = Cart::where('user_id', $user->id)->whereNull('deleted_at')->first();
 
-                foreach ($cart->shop as $cartShop) {
-                    if (!empty($cartShop->product)) {
-                        foreach ($cartShop->product as $cartShopProduct) {
-                            if (!empty($cartShopProduct->cart_item_id)) {
-                                $cartItemCount++;
+                // Possibly some users hasn't initialized its cart yet
+                if (!empty($cartObject)) {
+                    $cart = app('App\Http\Controllers\CartController')->cartGet($cartObject->id, $request)->getData();
+                    $cartItemCount = 0;
+    
+                    foreach ($cart->shop as $cartShop) {
+                        if (!empty($cartShop->product)) {
+                            foreach ($cartShop->product as $cartShopProduct) {
+                                if (!empty($cartShopProduct->cart_item_id)) {
+                                    $cartItemCount++;
+                                }
                             }
                         }
                     }
+    
+                    $user['cart_items'] = $cartItemCount;
                 }
-
-                $user['cart_items'] = $cartItemCount;
             }
 
             $user['image'] = Image::where('entity', $userEntity->id)->where('entity_id', $user->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
