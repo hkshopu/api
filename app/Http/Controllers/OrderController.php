@@ -142,6 +142,10 @@ class OrderController extends Controller
         return response()->json($orderList, 200);
     }
 
+    public function orderListLatest(Request $request) {
+        return response()->json(current(self::orderList($request)->getData()), 200);
+    }
+
     /**
      * @OA\Post(
      *     path="/api/order",
@@ -405,7 +409,7 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             ]));
         }
 
-        return response()->json(self::orderGet($order->id, $request)->getData(), 201);
+        return response()->json(self::orderListLatest($request)->getData(), 201);
     }
 
     /**
