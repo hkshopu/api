@@ -52,10 +52,16 @@ class UserController extends Controller
         $user['language'] = $language->code;
         $user['language_full'] = $language->name;
         $user['user_type'] = null;
+        $user['shop_id'] = null;
 
         $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
         if (!empty($userType)) {
             $user['user_type'] = $userType;
+        }
+
+        $shop = Shop::where('user_id', $user->id)->whereNull('deleted_at')->first();
+        if (!empty($shop)) {
+            $user['shop_id'] = $shop->id;
         }
 
         $accessTokenDetails['user'] = $user;
