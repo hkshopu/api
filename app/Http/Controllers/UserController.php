@@ -51,10 +51,14 @@ class UserController extends Controller
         $language = Language::where('id', $user->language_id)->whereNull('deleted_at')->first();
         $user['language'] = $language->code;
         $user['language_full'] = $language->name;
-
-        $accessTokenDetails['user'] = $user;
+        $user['user_type'] = null;
 
         $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+        if (!empty($userType)) {
+            $user['user_type'] = $userType;
+        }
+
+        $accessTokenDetails['user'] = $user;
 
         $request->request->add([
             'access_token_user_id' => $user->id,

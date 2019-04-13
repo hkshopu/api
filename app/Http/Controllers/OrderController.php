@@ -518,9 +518,19 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             $shopOrderList = app('App\Http\Controllers\CartController')->cartItemList($cartItemList, $request, true)->getData();
             $order['shop_order'] = current($shopOrderList);
 
-            $order->shop_cart_gross = $order->shop_order->total_amount_discounted;
-            $order->shipping_fee_original = $order->shop_order->shipment_fee_computed;
-            $order->shop_order_total = $order->shop_cart_gross + ($shipmentFeeOverride ?? $order->shop_order->shipment_fee_computed);
+            $shopCartGross = 0.00;
+            $shippingFeeOriginal = 0.00;
+            $shopOrderTotal = 0.00;
+
+            if (!empty($order['shop_order'])) {
+                $shopCartGross = $order->shop_order->total_amount_discounted;
+                $shippingFeeOriginal = $order->shop_order->shipment_fee_computed;
+                $shopOrderTotal = $order->shop_cart_gross + ($shipmentFeeOverride ?? $order->shop_order->shipment_fee_computed);
+            }
+
+            $order->shop_cart_gross = $shopCartGross;
+            $order->shipping_fee_original = $shippingFeeOriginal;
+            $order->shop_order_total = $shopOrderTotal;
         }
 
         return response()->json($order, 200);
