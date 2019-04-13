@@ -405,7 +405,7 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             ]));
         }
 
-        return response()->json(self::orderList($request)->getData(), 201);
+        return response()->json(self::orderGet($order->id, $request)->getData(), 201);
     }
 
     /**
