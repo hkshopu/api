@@ -455,6 +455,28 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
             }
         }
 
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $request->product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
+        if (empty($product)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product id',
+            ], 400);
+        }
+
         $productStock = ProductInventory::checkStock((int) $request->product_id, (int) $request->attribute_id);
 
         if ($productStock === null) {
