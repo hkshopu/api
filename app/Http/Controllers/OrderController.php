@@ -522,7 +522,7 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             $shopOrderList = app('App\Http\Controllers\CartController')->cartItemList($cartItemList, $request, true)->getData();
             $order['shop_order'] = current($shopOrderList);
 
-            if (!empty($order)) {
+            if (!empty($order->shop_order)) {
                 $order->shop_cart_gross = $order->shop_order->total_amount_discounted;
                 $order->shipping_fee_original = $order->shop_order->shipment_fee_computed;
                 $order->shop_order_total = $order->shop_cart_gross + ($shipmentFeeOverride ?? $order->shop_order->shipment_fee_computed);
