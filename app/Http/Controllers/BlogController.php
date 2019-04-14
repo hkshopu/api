@@ -112,7 +112,7 @@ class BlogController extends Controller
             $shopQuery = \DB::table('shop')
                 ->leftJoin('user', 'user.id', '=', 'shop.user_id')
                 ->select('shop.*')
-                ->where('shop.id', $shop_id)
+                ->where('shop.id', $request->shop_id)
                 ->whereNull('shop.deleted_at');
 
             if ($request->filter_inactive == true) {
