@@ -82,6 +82,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     /* UTX */ $router->get('productview/{product_id}',  ['uses' => 'ViewController@productViewGet']);
     $router->post('blogview', ['uses' => 'ViewController@blogViewAdd']);
     /* UTX */ $router->get('blogview/{blog_id}',  ['uses' => 'ViewController@blogViewGet']);
+    $router->post('orderview', ['uses' => 'ViewController@orderViewAdd']);
+    $router->get('orderview/{order_id}',  ['uses' => 'ViewController@orderViewGet']);
 
     // Shop
     /* UTX */ $router->get('shop',  ['uses' => 'ShopController@shopList']);

@@ -116,6 +116,8 @@ class Authenticate
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "POST /api/assigncart"
 
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/language"
+
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/orderview/{$id}"
             ) {
                 return $next($request);
             }

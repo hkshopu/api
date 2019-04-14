@@ -15,6 +15,7 @@ use App\User;
 use App\UserType;
 use App\Image;
 use App\Language;
+use App\View;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -501,6 +502,15 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
                     $image = Image::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
                     $shop['image_url'] = !empty($image) ? $image->url : null;
                     $order['shop'] = $shop;
+                }
+            }
+
+            $order['is_new'] = true;
+            $orderViewList = app('App\Http\Controllers\ViewController')->orderViewGet($order->id)->getData();
+            foreach ($orderViewList as $orderViewItem) {
+                if ($request->access_token_user_id == $orderViewItem->created_by) {
+                    $order['is_new'] = false;
+                    break;
                 }
             }
 

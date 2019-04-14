@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\View;
 use App\Product;
 use App\Blog;
+use App\Order;
 use App\Entity;
 use Illuminate\Http\Request;
 
@@ -274,6 +275,137 @@ class ViewController extends Controller
         return response()->json([
             'count' => count($viewList),
         ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/orderview",
+     *     operationId="orderViewAdd",
+     *     tags={"View"},
+     *     summary="Adds view to order",
+     *     description="Adds view to order.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="order_id_list",
+     *         in="query",
+     *         description="The order id (JSON string of order ids. Examples: [123], [123,234])",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the order view create status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the order view create failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function orderViewAdd(Request $request = null)
+    {
+        $orderIdList = json_decode(str_replace(' ', '', $request->order_id_list));
+        if ($orderIdList == null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid order id list format',
+            ], 400);
+        }
+
+        $invalidOrderIds = [];
+
+        foreach ($orderIdList as $orderId) {
+            $order = Order::where('id', $orderId)->whereNull('deleted_at')->first();
+
+            if (empty($order)) {
+                $invalidOrderIds[] = $orderId;
+                continue;
+            }
+
+            $orderEntity = Entity::where('name', $order->getTable())->first();
+
+            $view = View::where('entity', $orderEntity->id)->where('entity_id', $order->id)->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->first();
+
+            if (!empty($view)) {
+                continue;
+            }
+
+            $request->request->add([
+                'entity' => $orderEntity->id,
+                'entity_id' => $order->id,
+                'ip_address' => $_SERVER['REMOTE_ADDR'],
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
+            ]);
+
+            $view = View::create($request->only([
+                'entity',
+                'entity_id',
+                'ip_address',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'View added',
+            'warning' => 'Except for the following invalid ids: ' . implode(', ', $invalidOrderIds),
+        ], 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/orderview/{order_id}",
+     *     operationId="orderViewGet",
+     *     tags={"View"},
+     *     summary="Retrieves all order views given the order id",
+     *     description="Retrieves all order views given the order id.",
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="path",
+     *         description="The order id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns order view total count",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the order view get failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function orderViewGet(int $order_id)
+    {
+        $order = Order::where('id', $order_id)->whereNull('deleted_at')->first();
+
+        if (empty($order)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid order id',
+            ], 400);
+        }
+
+        $orderEntity = Entity::where('name', $order->getTable())->first();
+
+        $viewList = View::where('entity', $orderEntity->id)->where('entity_id', $order->id)->whereNull('deleted_at')->get();
+
+        return response()->json($viewList, 200);
     }
 }
 
