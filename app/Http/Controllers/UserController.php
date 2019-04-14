@@ -79,7 +79,7 @@ class UserController extends Controller
                 if (!empty($cartShop->product)) {
                     foreach ($cartShop->product as $cartShopProduct) {
                         if (!empty($cartShopProduct->cart_item_id)) {
-                            $cartItemCount++;
+                            $cartItemCount += $cartShopProduct->quantity;
                         }
                     }
                 }
@@ -655,7 +655,7 @@ class UserController extends Controller
                         if (!empty($cartShop->product)) {
                             foreach ($cartShop->product as $cartShopProduct) {
                                 if (!empty($cartShopProduct->cart_item_id)) {
-                                    $cartItemCount++;
+                                    $cartItemCount += $cartShopProduct->quantity;
                                 }
                             }
                         }
