@@ -879,6 +879,8 @@ class ProductController extends Controller
 
             $product['sell_object_inventory'] = $productSellPerInventory;
 
+            $product['sell'] = $product['sell_via_inventory'];
+
             $productAttributeList = [];
             $productStock = 0;
             foreach ($productInventory as $productInventoryItem) {
