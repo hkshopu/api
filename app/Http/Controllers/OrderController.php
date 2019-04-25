@@ -104,7 +104,7 @@ class OrderController extends Controller
         foreach ($orderList as $orderKey => $order) {
             $orderList[$orderKey] = self::orderGet($order->id, $request)->getData();
         }
-
+var_dump($orderList);exit;
         if ($isConsumer == true) {
             $orderListSimplified = [];
             foreach ($orderList as $order) {
