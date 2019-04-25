@@ -4,12 +4,12 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ProductAttribute extends Model
+class Attribute extends Model
 {
     /**
      * Bypass eloquent pluralization
      */
-    protected $table = 'product_attribute';
+    protected $table = 'attribute';
 
     /**
      * The attributes that are mass assignable.
@@ -17,8 +17,9 @@ class ProductAttribute extends Model
      * @var array
      */
     protected $fillable = [
-        'product_id',
-        'attribute_id',
+        'size_id',
+        'color_id',
+        'other',
         //
         'created_by',
         'updated_by',

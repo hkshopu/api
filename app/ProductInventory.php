@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use App\ProductAttribute;
 
 class ProductInventory extends Model
 {
@@ -17,9 +18,9 @@ class ProductInventory extends Model
      * @var array
      */
     protected $fillable = [
-        'product_id',
-        'attribute_id',
+        'product_attribute_id',
         'stock',
+        'order_id',
         //
         'created_by',
         'updated_by',
@@ -36,15 +37,11 @@ class ProductInventory extends Model
     ];
 
     public static function checkStock(int $productId, int $attributeId) {
-        $productInventoryList = self::where('product_id', $productId)->where('attribute_id', $attributeId)->whereNull('deleted_at')->get();
+        $productAttribute = ProductAttribute::where('product_id', $productId)->where('attribute_id', $attributeId)->whereNull('deleted_at')->first();
 
-        $productStock = null;
+        $stock = app('App\Http\Controllers\ProductController')->getStock($productAttribute->id);
 
-        foreach ($productInventoryList as $productInventory) {
-            $productStock += $productInventory->stock;
-        }
-
-        return $productStock;
+        return $stock;
     }
 }
 

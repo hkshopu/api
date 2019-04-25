@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Product;
+use App\Attribute;
+use App\ProductAttribute;
+use App\ProductInventory;
 use App\ProductPricing;
 use App\ProductDiscount;
 use App\ProductShipping;
-use App\ProductInventory;
-use App\ProductAttribute;
 use App\Shop;
 use App\Color;
 use App\ProductColorMap;
@@ -26,6 +27,8 @@ use App\StatusOption;
 use App\View;
 use App\User;
 use App\Language;
+use App\CartItem;
+use App\Order;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -494,8 +497,8 @@ class ProductController extends Controller
 
         $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
-        $productAttribute = ProductAttribute::whereNull('deleted_at');
-        $attribute = [];
+        $attribute = Attribute::whereNull('deleted_at');
+        $attributeDraft = [];
 
         if (!empty($request->size_id)) {
             $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();
@@ -506,8 +509,8 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            $attribute['size_id'] = $size->id;
-            $productAttribute = $productAttribute->where('size_id', $size->id);
+            $attributeDraft['size_id'] = $size->id;
+            $attribute = $attribute->where('size_id', $size->id);
         }
 
         if (!empty($request->color_id)) {
@@ -519,13 +522,13 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            $attribute['color_id'] = $color->id;
-            $productAttribute = $productAttribute->where('color_id', $color->id);
+            $attributeDraft['color_id'] = $color->id;
+            $attribute = $attribute->where('color_id', $color->id);
         }
 
         if (!empty($request->other)) {
-            $attribute['other'] = $request->other;
-            $productAttribute = $productAttribute->where('other', $request->other);
+            $attributeDraft['other'] = $request->other;
+            $attribute = $attribute->where('other', $request->other);
         }
 
         $request->request->add([
@@ -544,7 +547,13 @@ class ProductController extends Controller
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        CategoryMap::create($request->all());
+        CategoryMap::create($request->only([
+            'entity',
+            'entity_id',
+            'category_id',
+            'created_by',
+            'updated_by',
+        ]));
 
         $request->request->add([
             'status_id' => $request->status_id,
@@ -552,7 +561,13 @@ class ProductController extends Controller
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        StatusMap::create($request->all());
+        StatusMap::create($request->only([
+            'entity',
+            'entity_id',
+            'status_id',
+            'created_by',
+            'updated_by',
+        ]));
 
         $request->request->add([
             'product_id' => $product->id,
@@ -561,7 +576,12 @@ class ProductController extends Controller
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        ProductPricing::create($request->all());
+        ProductPricing::create($request->only([
+            'product_id',
+            'price',
+            'created_by',
+            'updated_by',
+        ]));
 
         if (!empty($request->price_discounted)) {
             if ($request->price_discounted == 0) {
@@ -578,7 +598,13 @@ class ProductController extends Controller
                 'updated_by' => $request->access_token_user_id,
             ]);
 
-            ProductDiscount::create($request->all());
+            ProductDiscount::create($request->only([
+                'product_id',
+                'type',
+                'amount',
+                'created_by',
+                'updated_by',
+            ]));
         }
 
         $request->request->add([
@@ -588,10 +614,15 @@ class ProductController extends Controller
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        ProductShipping::create($request->all());
+        ProductShipping::create($request->only([
+            'product_id',
+            'amount',
+            'created_by',
+            'updated_by',
+        ]));
 
-        if (!empty($attribute)) {
-            foreach ($attribute as $key => $value) {
+        if (!empty($attributeDraft)) {
+            foreach ($attributeDraft as $key => $value) {
                 $request->request->add([$key => $value]);
             }
 
@@ -600,25 +631,46 @@ class ProductController extends Controller
                 'updated_by' => $request->access_token_user_id,
             ]);
 
-            if (!empty($productAttribute->whereNull('deleted_at')->first())) {
-                $productAttribute = $productAttribute->whereNull('deleted_at')->first();
+            if (!empty($attribute->whereNull('deleted_at')->first())) {
+                $attribute = $attribute->whereNull('deleted_at')->first();
             } else {
-                $productAttribute = ProductAttribute::create($request->all());
+                $attribute = Attribute::create($request->only([
+                    'size_id',
+                    'color_id',
+                    'other',
+                    'created_by',
+                    'updated_by',
+                ]));
             }
-
-            $attribute['id'] = $productAttribute->id;
-        } else {
-            $attribute['id'] = null;
         }
 
         $request->request->add([
-            'attribute_id' => $attribute['id'],
+            'product_id' => $product->id,
+            'attribute_id' => !empty($attribute->id) ? $attribute->id : null,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        $productAttribute = ProductAttribute::create($request->only([
+            'product_id',
+            'attribute_id',
+            'created_by',
+            'updated_by',
+        ]));
+
+        $request->request->add([
+            'product_attribute_id' => $productAttribute->id,
             'stock' => abs($request->stock),
             'created_by' => $request->access_token_user_id,
             'updated_by' => $request->access_token_user_id,
         ]);
 
-        ProductInventory::create($request->all());
+        ProductInventory::create($request->only([
+            'product_attribute_id',
+            'stock',
+            'created_by',
+            'updated_by',
+        ]));
 
         return response()->json(self::productGet($product->id, $request)->getData(), 201);
     }
@@ -739,6 +791,48 @@ class ProductController extends Controller
             }
 
             $product['sell'] = 0;
+
+            $product['sell_via_order'] = 0;
+            $product['sell_object_order'] = null;
+
+            $productSellPerCartOrder = [];
+            $cartItemList = CartItem::where('product_id', $product->id)->whereNotNull('order_id')->whereNull('deleted_at')->get();
+            foreach ($cartItemList as $cartItemItem) {
+                // Getting PAID status for payment
+                $order = Order::where('id', $cartItemItem->order_id)->whereNull('deleted_at')->first();
+                $statusPayment = Status::where('name', 'paid')->whereNull('deleted_at')->first();
+                $paymentEntity = Entity::where('name', 'payment')->first();
+                $statusMapPayment = StatusMap::where('entity', $paymentEntity->id)->where('entity_id', $order->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+                if ($statusMapPayment->status_id <> $statusPayment->id) {
+                    continue;
+                }
+
+                $productAttribute = ProductAttribute::where('product_id', $cartItemItem->product_id)->where('attribute_id', $cartItemItem->attribute_id)->whereNull('deleted_at')->first();
+
+                if (!isset($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id])) {
+                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id] = [];
+                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
+                }
+
+                $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id][] = $cartItemItem->quantity;
+                $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] += $cartItemItem->quantity;
+
+                if ($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] < 0) {
+                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
+                }
+            }
+
+            foreach ($productSellPerCartOrder as $key => $value) {
+                if (strpos($key, '_computed')) {
+                    $product['sell_via_order'] += $value;
+                }
+            }
+
+            $product['sell_object_order'] = $productSellPerCartOrder;
+
+            $product['sell_via_inventory'] = 0;
+            $product['sell_object_inventory'] = null;
+
             $product['stock'] = 0;
 
             $statusMap = StatusMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
@@ -749,40 +843,80 @@ class ProductController extends Controller
                 $product['status'] = null;
             }
 
-            // MySQL-centric code, change this to cross-database compatibility
-            $productInventory = ProductInventory::select('attribute_id', \DB::raw('SUM(stock) AS stock'))
-                ->groupBy('attribute_id')
-                ->where('product_id', $product->id)
-                ->get();
+            $productInventory = [];
+            $productSellPerInventory = [];
+            $productInventoryQuery = \DB::table('product_inventory')
+                ->leftJoin('product_attribute', 'product_attribute.id', '=', 'product_inventory.product_attribute_id')
+                ->leftJoin('product', 'product.id', '=', 'product_attribute.product_id')
+                ->leftJoin('attribute', 'attribute.id', '=', 'product_attribute.attribute_id')
+                ->select('product_inventory.*', 'product_attribute.product_id', 'product_attribute.attribute_id')
+                ->where('product.id', $product->id)
+                ->whereNull('product_inventory.deleted_at')
+                ->whereNull('product_attribute.deleted_at')
+                ->whereNull('product.deleted_at')
+                ->whereNull('attribute.deleted_at')
+            ;
+
+            $productInventoryListArray = $productInventoryQuery->get()->toArray();
+
+            foreach ($productInventoryListArray as $productInventoryItem) {
+                if (!isset($productInventory[$productInventoryItem->product_attribute_id])) {
+                    $productInventory[$productInventoryItem->product_attribute_id] = array(
+                        'product_attribute_id' => $productInventoryItem->product_attribute_id,
+                        'product_id' => $productInventoryItem->product_id,
+                        'attribute_id' => $productInventoryItem->attribute_id,
+                        'stock' => $productInventoryItem->stock,
+                    );
+                } else {
+                    $productInventory[$productInventoryItem->product_attribute_id]['stock'] += $productInventoryItem->stock;
+                }
+
+                if ($productInventoryItem->order_id != null) {
+                    $product['sell_via_inventory'] += abs($productInventoryItem->stock);
+                    $productSellPerInventory[] = $productInventoryItem;
+                }
+            }
+
+            $product['sell_object_inventory'] = $productSellPerInventory;
 
             $productAttributeList = [];
             $productStock = 0;
             foreach ($productInventory as $productInventoryItem) {
-                $productAttribute = ProductAttribute::where('id', $productInventoryItem->attribute_id)->whereNull('deleted_at')->first();
-                if (!empty($productAttribute)) {
-                    $productAttributeOther = $productAttribute->other;
-                    unset($productAttribute->other);
+                $productAttribute = ProductAttribute::where('id', $productInventoryItem['product_attribute_id'])->whereNull('deleted_at')->first();
+                $productAttributeStock = (int) $productInventoryItem['stock'];
+                $productStock += $productAttributeStock;
 
-                    $productAttribute->stock = (int) $productInventoryItem->stock;
-                    $productStock += $productAttribute->stock;
-
-                    $productAttribute->size = null;
-                    if (!empty($productAttribute->size_id)) {
-                        $productAttribute->size = Size::where('id', $productAttribute->size_id)->whereNull('deleted_at')->first();
-                    }
-                    unset($productAttribute->size_id);
-
-                    $productAttribute->color = null;
-                    if (!empty($productAttribute->color_id)) {
-                        $productAttribute->color = Color::where('id', $productAttribute->color_id)->whereNull('deleted_at')->first();
-                    }
-                    unset($productAttribute->color_id);
-
-                    $productAttribute->other = $productAttributeOther;
-                    $productAttributeList[] = $productAttribute;
-                } else {
-                    $productStock += $productInventoryItem->stock;
+                if (empty($productAttribute)) {
+                    continue;
                 }
+
+                $productAttribute->stock = $productAttributeStock;
+                $productAttribute->size = null;
+                $productAttribute->color = null;
+                $productAttribute->other = null;
+
+                $attribute = Attribute::where('id', $productAttribute->attribute_id)->whereNull('deleted_at')->first();
+                if (empty($attribute)) {
+                    $productAttribute = null;
+                    continue;
+                }
+
+                // Replace product attribute id with attribute id
+                $productAttribute->id = $attribute->id;
+                unset($productAttribute->product_id);
+                unset($productAttribute->attribute_id);
+
+                $productAttribute->other = $attribute->other;
+
+                if (!empty($attribute->size_id)) {
+                    $productAttribute->size = Size::where('id', $attribute->size_id)->whereNull('deleted_at')->first();
+                }
+
+                if (!empty($attribute->color_id)) {
+                    $productAttribute->color = Color::where('id', $attribute->color_id)->whereNull('deleted_at')->first();
+                }
+
+                $productAttributeList[] = $productAttribute;
             }
 
             $product['stock'] = $productStock;
@@ -835,7 +969,7 @@ class ProductController extends Controller
             unset($product['shop_id']);
         }
 
-        return response()->json($product, 200);
+        return response()->json($product, 200);$productAttribute;
     }
 
     public function productGetMinimal(int $id, Request $request = null)
@@ -940,37 +1074,67 @@ class ProductController extends Controller
             'deleted_by' => $request->access_token_user_id,
         ]);
 
-        $product->update($request->all());
+        $product->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
         $productEntity = Entity::where('name', $product->getTable())->first();
 
         $categoryMap = CategoryMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->first();
         if (!empty($categoryMap)) {
-            $categoryMap->update($request->all());
+            $categoryMap->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
         }
 
         $statusMap = StatusMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->first();
         if (!empty($statusMap)) {
-            $statusMap->update($request->all());
+            $statusMap->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
         }
 
-        $productInventory = ProductInventory::where('product_id', $product->id)->whereNull('deleted_at')->first();
-        if (!empty($productInventory)) {
-            $productInventory->update($request->all());
+        $productAttribute = ProductAttribute::where('product_id', $product->id)->whereNull('deleted_at')->first();
+        if (!empty($productAttribute)) {
+            $productAttribute->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
+
+            $productInventory = ProductInventory::where('product_attribute_id', $productAttribute->id)->whereNull('deleted_at')->first();
+            if (!empty($productInventory)) {
+                $productInventory->update($request->only([
+                    'deleted_at',
+                    'deleted_by',
+                ]));
+            }
         }
 
         $productPricing = ProductPricing::where('product_id', $product->id)->whereNull('deleted_at')->first();
         if (!empty($productPricing)) {
-            $productPricing->update($request->all());
+            $productPricing->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
         }
 
         $productDiscount = ProductDiscount::where('product_id', $product->id)->whereNull('deleted_at')->first();
         if (!empty($productDiscount)) {
-            $productDiscount->update($request->all());
+            $productDiscount->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
         }
 
         $productShipping = ProductShipping::where('product_id', $product->id)->whereNull('deleted_at')->first();
         if (!empty($productShipping)) {
-            $productShipping->update($request->all());
+            $productShipping->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
         }
 
         return response()->json([
@@ -1203,30 +1367,17 @@ class ProductController extends Controller
             $request->request->add([
                 'entity' => $productEntity->id,
                 'entity_id' => $product->id,
-                'created_by' => $request->access_token_user_id,
-                'updated_by' => $request->access_token_user_id,
+                'category_id' => $request->category_id,
             ]);
-
-            $categoryMap = CategoryMap::create($request->all());
-            $request->request->remove('created_by');
-            $request->request->remove('updated_by');
         }
 
         if (!empty($request->status_id)) {
             if (empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
-                if (!empty($categoryMap)) {
-                    $categoryMap->delete();
-                }
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid status id',
                 ], 400);
             } else if (empty(StatusOption::where('entity', $productEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first())) {
-                if (!empty($categoryMap)) {
-                    $categoryMap->delete();
-                }
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid status for product',
@@ -1236,24 +1387,12 @@ class ProductController extends Controller
             $request->request->add([
                 'entity' => $productEntity->id,
                 'entity_id' => $product->id,
-                'created_by' => $request->access_token_user_id,
-                'updated_by' => $request->access_token_user_id,
+                'status_id' => $request->status_id,
             ]);
-
-            $statusMap = StatusMap::create($request->all());
-            $request->request->remove('created_by');
-            $request->request->remove('updated_by');
         }
 
         if (!empty($request->price_original)) {
             if ($request->price_original < 0) {
-                if (!empty($categoryMap)) {
-                    $categoryMap->delete();
-                }
-                if (!empty($statusMap)) {
-                    $statusMap->delete();
-                }
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid original price',
@@ -1263,13 +1402,7 @@ class ProductController extends Controller
             $request->request->add([
                 'product_id' => $product->id,
                 'price' => abs($request->price_original),
-                'created_by' => $request->access_token_user_id,
-                'updated_by' => $request->access_token_user_id,
             ]);
-
-            $productPricing = ProductPricing::create($request->all());
-            $request->request->remove('created_by');
-            $request->request->remove('updated_by');
         }
 
         if (!empty($request->price_discounted) || $request->price_discounted == 0) {
@@ -1278,16 +1411,6 @@ class ProductController extends Controller
             } else {
                 $productPricing = ProductPricing::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
                 if ($request->price_discounted < 0 || $productPricing->price <= $request->price_discounted) {
-                    if (!empty($categoryMap)) {
-                        $categoryMap->delete();
-                    }
-                    if (!empty($statusMap)) {
-                        $statusMap->delete();
-                    }
-                    if (!empty($productPricing)) {
-                        $productPricing->delete();
-                    }
-
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid discounted price',
@@ -1301,30 +1424,11 @@ class ProductController extends Controller
                 'product_id' => $product->id,
                 'type' => 'fixed',
                 'amount' => abs($discountedAmount),
-                'created_by' => $request->access_token_user_id,
-                'updated_by' => $request->access_token_user_id,
             ]);
-
-            $productDiscount = ProductDiscount::create($request->all());
-            $request->request->remove('created_by');
-            $request->request->remove('updated_by');
         }
 
         if (!empty($request->shipping_price) || $request->shipping_price == 0) {
             if ($request->shipping_price < 0.00) {
-                if (!empty($categoryMap)) {
-                    $categoryMap->delete();
-                }
-                if (!empty($statusMap)) {
-                    $statusMap->delete();
-                }
-                if (!empty($productPricing)) {
-                    $productPricing->delete();
-                }
-                if (!empty($productDiscount)) {
-                    $productDiscount->delete();
-                }
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid shipping price',
@@ -1334,16 +1438,64 @@ class ProductController extends Controller
             $request->request->add([
                 'product_id' => $product->id,
                 'amount' => abs($request->shipping_price),
-                'created_by' => $request->access_token_user_id,
-                'updated_by' => $request->access_token_user_id,
             ]);
-
-            $productShipping = ProductShipping::create($request->all());
-            $request->request->remove('created_by');
-            $request->request->remove('updated_by');
         }
 
+        $request->request->add([
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
         $product->update($request->all());
+
+        if (!empty($request->category_id)) {
+            $categoryMap = CategoryMap::create($request->only([
+                'entity',
+                'entity_id',
+                'category_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        if (!empty($request->status_id)) {
+            $statusMap = StatusMap::create($request->only([
+                'entity',
+                'entity_id',
+                'status_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        if (!empty($request->price_original)) {
+            $productPricing = ProductPricing::create($request->only([
+                'product_id',
+                'price',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        if (!empty($request->price_discounted)) {
+            $productDiscount = ProductDiscount::create($request->only([
+                'product_id',
+                'type',
+                'amount',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        if (!empty($request->shipping_price)) {
+            $productShipping = ProductShipping::create($request->only([
+                'product_id',
+                'amount',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
         $product = self::productGet($id, $request)->getData();
 
         return response()->json($product, 201);
@@ -1445,7 +1597,7 @@ class ProductController extends Controller
             ], 400);
         }
 
-        $productAttribute = new ProductAttribute();
+        $productAttribute = new Attribute();
         $attribute = [];
 
         if (!empty($request->size_id)) {
@@ -1490,7 +1642,7 @@ class ProductController extends Controller
                     'updated_by' => $request->access_token_user_id,
                 ]);
 
-                $productAttribute = ProductAttribute::create($request->all());
+                $productAttribute = Attribute::create($request->all());
             }
             $attribute['id'] = $productAttribute->id;
         } else {
@@ -1592,7 +1744,7 @@ class ProductController extends Controller
             ], 400);
         }
 
-        if (!empty($request->attribute_id) && empty(ProductAttribute::where('id', $request->attribute_id)->whereNull('deleted_at')->first())) {
+        if (!empty($request->attribute_id) && empty(Attribute::where('id', $request->attribute_id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid attribute id',
@@ -1770,9 +1922,9 @@ class ProductController extends Controller
      *     ),
      * )
      */
-    public function productAttributeDelete(int $attribute_id, Request $request = null)
+    public function productAttributeDelete(int $attribute_id, Request $request)
     {
-        $productAttribute = ProductAttribute::where('id', $attribute_id)->whereNull('deleted_at')->first();
+        $productAttribute = Attribute::where('id', $attribute_id)->whereNull('deleted_at')->first();
         if (empty($productAttribute)) {
             return response()->json([
                 'success' => false,
@@ -1844,7 +1996,7 @@ class ProductController extends Controller
      */
     public function productAttributeModify(int $attribute_id, Request $request)
     {
-        $productAttribute = ProductAttribute::where('id', $attribute_id)->whereNull('deleted_at')->first();
+        $productAttribute = Attribute::where('id', $attribute_id)->whereNull('deleted_at')->first();
         if (empty($productAttribute)) {
             return response()->json([
                 'success' => false,
@@ -1880,6 +2032,566 @@ class ProductController extends Controller
             'success' => false,
             'message' => 'Attribute not associated with any product',
         ], 400);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/productstock/{product_id}",
+     *     operationId="productStockPut",
+     *     tags={"Product"},
+     *     summary="Modifies product attribute and stock",
+     *     description="Modifies product attribute and stock given the product id, attributes, stock.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="path",
+     *         description="The product id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="attribute_id",
+     *         in="query",
+     *         description="The attribute id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="size_id",
+     *         in="query",
+     *         description="The product size (Optional)",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="color_id",
+     *         in="query",
+     *         description="The product color (Optional)",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="other",
+     *         in="query",
+     *         description="The product remarks (Optional)",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="stock",
+     *         in="query",
+     *         description="The product stock (Optional)",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the product with the updated stocks",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the product stock update failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function productStockPut(int $product_id, Request $request) {
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
+        if (empty($product)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product id',
+            ], 400);
+        }
+
+        $attribute = Attribute::where('id', $request->attribute_id)->whereNull('deleted_at')->first();
+
+        if (empty($attribute)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid attribute id',
+            ], 400);
+        }
+
+        $productAttribute = ProductAttribute::where('product_id', $product_id)->where('attribute_id', $request->attribute_id)->whereNull('deleted_at')->first();
+
+        if (empty($productAttribute)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid attribute for the product',
+            ], 400);
+        }
+
+        $attributeSearch = new Attribute();
+        $attributeDraft = [];
+
+        if (isset($request->size_id)) {
+            $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();
+            if (empty($size)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid size id',
+                ], 400);
+            } else {
+                $attributeDraft['size_id'] = $size->id;
+                $attributeSearch = $attributeSearch->where('size_id', $size->id);
+            }
+        }
+
+        if (isset($request->color_id)) {
+            $color = Color::where('id', $request->color_id)->whereNull('deleted_at')->first();
+            if (empty($color)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid color id',
+                ], 400);
+            } else {
+                $attributeDraft['color_id'] = $color->id;
+                $attributeSearch = $attributeSearch->where('color_id', $color->id);
+            }
+        }
+
+        if (isset($request->other)) {
+            $attributeDraft['other'] = $request->other;
+            $attributeSearch = $attributeSearch->where('other', $request->other);
+        }
+
+        if (isset($request->stock) && $request->stock < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid stock value',
+            ], 400);
+        }
+
+        $stock = $request->stock;
+
+        if (empty($attributeDraft)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attribute required (Product should have at least size, color, remark to have a stock)',
+            ], 400);
+        }
+
+        foreach ($attributeDraft as $key => $value) {
+            $request->request->add([$key => $value]);
+        }
+
+        $attributeSearch = $attributeSearch->first();
+
+        // Changes made leads to new product attribute
+        if (empty($attributeSearch)) {
+            $this->deleteProductAttribute($productAttribute, $request);
+            $this->clearStock($productAttribute->id, $request);
+
+            $request->request->add([
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
+            ]);
+
+            $attribute = Attribute::create($request->only([
+                'size_id',
+                'color_id',
+                'other',
+                'created_by',
+                'updated_by',
+            ]));
+
+            $productAttributeNew = $this->createProductAttribute($product->id, $attribute->id, $request);
+            $this->addStock($productAttributeNew->id, $stock, $request);
+
+        // Changes made leads to existing product attribute
+        } else if ($attributeSearch->id <> $attribute->id) {
+            $this->deleteProductAttribute($productAttribute, $request);
+            $this->clearStock($productAttribute->id, $request);
+            $productAttributeNew = ProductAttribute::where('product_id', $product->id)->where('attribute_id', $attributeSearch->id)->whereNull('deleted_at')->first();
+            if (empty($productAttributeNew)) {
+                $productAttributeNew = $this->createProductAttribute($product->id, $attributeSearch->id, $request);
+                $this->addStock($productAttributeNew->id, $stock, $request);
+            } else {
+                $this->replaceStock($productAttributeNew->id, $stock, $request);
+            }
+
+        // Changes made leads to same product attribute
+        } else {
+            $this->replaceStock($productAttribute->id, $stock, $request);
+        }
+
+        return response()->json(self::productGet($product->id, $request)->getData(), 201);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/productstock/{product_id}",
+     *     operationId="productStockPost",
+     *     tags={"Product"},
+     *     summary="Adds product attribute and stock",
+     *     description="Adds product attribute and stock given the product id, attributes, stock.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="path",
+     *         description="The product id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="size_id",
+     *         in="query",
+     *         description="The product size (Optional)",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="color_id",
+     *         in="query",
+     *         description="The product color (Optional)",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="other",
+     *         in="query",
+     *         description="The product remarks (Optional)",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="stock",
+     *         in="query",
+     *         description="The product stock",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the product with the added stocks",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the product stock add failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function productStockPost(int $product_id, Request $request) {
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
+        if (empty($product)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product id',
+            ], 400);
+        }
+
+        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
+
+        $attribute = new Attribute();
+        $attributeDraft = [];
+
+        if (isset($request->size_id)) {
+            $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();
+            if (empty($size)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid size id',
+                ], 400);
+            } else {
+                $attributeDraft['size_id'] = $size->id;
+                $attribute = $attribute->where('size_id', $size->id);
+            }
+        }
+
+        if (isset($request->color_id)) {
+            $color = Color::where('id', $request->color_id)->whereNull('deleted_at')->first();
+            if (empty($color)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid color id',
+                ], 400);
+            } else {
+                $attributeDraft['color_id'] = $color->id;
+                $attribute = $attribute->where('color_id', $color->id);
+            }
+        }
+
+        if (isset($request->other)) {
+            $attributeDraft['other'] = $request->other;
+            $attribute = $attribute->where('other', $request->other);
+        }
+
+        if (!isset($request->stock) || $request->stock < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid stock value',
+            ], 400);
+        }
+
+        $stock = $request->stock;
+
+        if (empty($attributeDraft)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attribute required (Product should have at least size, color, remark to have a stock)',
+            ], 400);
+        }
+
+        foreach ($attributeDraft as $key => $value) {
+            $request->request->add([$key => $value]);
+        }
+
+        $attribute = $attribute->first();
+
+        if (empty($attribute)) {
+            $request->request->add([
+                'created_by' => $request->access_token_user_id,
+                'updated_by' => $request->access_token_user_id,
+            ]);
+
+            $attribute = Attribute::create($request->only([
+                'size_id',
+                'color_id',
+                'other',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        $productAttribute = ProductAttribute::where('product_id', $product_id)->where('attribute_id', $attribute->id)->whereNull('deleted_at')->first();
+        if (empty($productAttribute)) {
+            $productAttribute = $this->createProductAttribute($product_id, $attribute->id, $request);
+        }
+
+        $this->addStock($productAttribute->id, $stock, $request);
+
+        return response()->json(self::productGet($product->id, $request)->getData(), 201);
+    }
+
+     /**
+     * @OA\Delete(
+     *     path="/api/productstock/{product_id}",
+     *     operationId="productStockDelete",
+     *     tags={"Product"},
+     *     summary="Deletes product attribute",
+     *     description="Deletes product attribute and stock given the product id, attribute id.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="path",
+     *         description="The product id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="attribute_id",
+     *         in="query",
+     *         description="The attribute id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response="201",
+     *         description="Returns the product",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the product stock delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function productStockDelete(int $product_id, Request $request) {
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $product_id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
+        if (empty($product)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid product id',
+            ], 400);
+        }
+
+        $attribute = Attribute::where('id', $request->attribute_id)->whereNull('deleted_at')->first();
+
+        if (empty($attribute)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid attribute id',
+            ], 400);
+        }
+
+        $productAttribute = ProductAttribute::where('product_id', $product_id)->where('attribute_id', $request->attribute_id)->whereNull('deleted_at')->first();
+
+        if (empty($productAttribute)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid attribute for the product',
+            ], 400);
+        }
+
+        $this->deleteProductAttribute($productAttribute, $request);
+        $this->clearStock($productAttribute->id, $request);
+
+        return response()->json(self::productGet($product->id, $request)->getData(), 201);
+    }
+
+    private function createProductAttribute(int $product_id, int $attribute_id, Request $request) {
+        $request->request->add([
+            'product_id' => $product_id,
+            'attribute_id' => $attribute_id,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        $productAttribute = ProductAttribute::create($request->only([
+            'product_id',
+            'attribute_id',
+            'created_by',
+            'updated_by',
+        ]));
+
+        return $productAttribute;
+    }
+
+    private function deleteProductAttribute(ProductAttribute $productAttribute, Request $request) {
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $productAttribute->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        return true;
+    }
+
+    private function addStock(int $product_attribute_id, int $stock, Request $request) {
+        $request->request->add([
+            'product_attribute_id' => $product_attribute_id,
+            'stock' => abs($stock),
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        ProductInventory::create($request->only([
+            'product_attribute_id',
+            'stock',
+            'created_by',
+            'updated_by',
+        ]));
+
+        return true;
+    }
+
+    private function subtractStock(int $product_attribute_id, int $stock, Request $request) {
+        $request->request->add([
+            'product_attribute_id' => $product_attribute_id,
+            'stock' => -1 * abs($stock),
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        ProductInventory::create($request->only([
+            'product_attribute_id',
+            'stock',
+            'created_by',
+            'updated_by',
+        ]));
+
+        return true;
+    }
+
+    private function clearStock(int $product_attribute_id, Request $request) {
+        $stock = $this->getStock($product_attribute_id);
+
+        $this->subtractStock($product_attribute_id, $stock, $request);
+
+        return true;
+    }
+
+    private function replaceStock(int $product_attribute_id, int $stock, Request $request) {
+        $this->clearStock($product_attribute_id, $request);
+        $this->addStock($product_attribute_id, $stock, $request);
+
+        return true;
+    }
+
+    public function getStock(int $product_attribute_id) {
+        $stock = 0;
+
+        $productInventoryList = ProductInventory::where('product_attribute_id', $product_attribute_id)->whereNull('deleted_at')->get();
+        foreach ($productInventoryList as $productInventoryItem) {
+            $stock += $productInventoryItem->stock;
+        }
+
+        return $stock;
     }
 }
 

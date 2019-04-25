@@ -1802,6 +1802,11 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'New password should be at least 4 characters',
             ], 400);
+        } else if (crypt($request->password, $user->salt) == $user->password) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password and replacement password are the same',
+            ], 400);
         }
 
         // Set password hash

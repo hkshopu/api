@@ -354,6 +354,22 @@ class CategoryController extends Controller
             }
         }
 
+        // Getting DISABLE status for validation
+        $statusDisable = Status::where('name', 'disable')->whereNull('deleted_at')->first();
+
+        // Getting PRODUCT entity
+        $entityProduct = Entity::where('name', 'product')->whereNull('deleted_at')->first();
+
+        if ($request->status_id == $statusDisable->id) {
+            $categoryMap = CategoryMap::where('entity', $entityProduct->id)->where('category_id', $id)->whereNull('deleted_at')->first();
+            if (!empty($categoryMap)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Category is currently being used by a product',
+                ], 400);
+            }
+        }
+
         $request->request->add([
             'entity' => $categoryEntity->id,
             'entity_id' => $category->id,

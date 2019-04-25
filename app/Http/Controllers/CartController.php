@@ -6,8 +6,9 @@ use App\Cart;
 use App\CartItem;
 use App\Shop;
 use App\Product;
-use App\ProductInventory;
+use App\Attribute;
 use App\ProductAttribute;
+use App\ProductInventory;
 use App\Size;
 use App\Color;
 use App\PaymentMethod;
@@ -208,7 +209,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                 $shippingPrice = 0.00;
                             }
 
-                            $attribute = ProductAttribute::where('id', $cartItem->attribute_id)->whereNull('deleted_at')->first();
+                            $attribute = Attribute::where('id', $cartItem->attribute_id)->whereNull('deleted_at')->first();
                             $attribute['color'] = Color::where('id', $attribute->color_id)->whereNull('deleted_at')->first();
                             $attribute['size'] = Size::where('id', $attribute->size_id)->whereNull('deleted_at')->first();
 
@@ -272,6 +273,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                                         'shop_name_en' => $shop->name_en,
                                         'shop_name_tc' => $shop->name_tc,
                                         'shop_name_sc' => $shop->name_sc,
+                                        'description' => $product->description,
                                         'description_en' => $product->description_en,
                                         'description_tc' => $product->description_tc,
                                         'description_sc' => $product->description_sc,
@@ -481,7 +483,52 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
             ], 400);
         }
 
-        $productStock = ProductInventory::checkStock((int) $request->product_id, (int) $request->attribute_id);
+        $attribute = Attribute::where('id', $request->attribute_id)->whereNull('deleted_at')->first();
+
+        if (empty($attribute)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid attribute id',
+            ], 400);
+        }
+
+        $productAttribute = ProductAttribute::where('product_id', $product->id)->where('attribute_id', $attribute->id)->whereNull('deleted_at')->first();
+
+        if (empty($productAttribute)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid attribute for the product',
+            ], 400);
+        }
+
+        if ($request->quantity == 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid quantity',
+            ], 400);
+        }
+
+        $quantityCart = 0;
+
+        $cartItemList = CartItem::where('cart_id', $cart->id)
+            ->where('product_id', $product->id)
+            ->where('attribute_id', $attribute->id)
+            ->whereNull('order_id')
+            ->whereNull('deleted_at')
+            ->get()
+        ;
+
+        foreach ($cartItemList as $cartItemItem) {
+            $quantityCart += $cartItemItem->quantity;
+
+            if ($quantityCart < 0) {
+                $quantityCart = 0;
+            }
+        }
+
+        $quantityCart += $request->quantity;
+
+        $productStock = ProductInventory::checkStock($request->product_id, $request->attribute_id);
 
         if ($productStock === null) {
             return response()->json([
@@ -492,6 +539,11 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
             return response()->json([
                 'success' => false,
                 'message' => 'Product out of stock',
+            ], 400);
+        } else if ($productStock < $quantityCart) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not enough stock',
             ], 400);
         }
 
@@ -855,7 +907,8 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
                                             ->where('attribute_id', $cartItem->attribute_id)
                                             ->whereNull('order_id')
                                             ->whereNull('deleted_at')
-                                            ->get();
+                                            ->get()
+            ;
 
             foreach ($cartItemToDeleteArray as $cartItemToDelete) {
                 $cartItemToDelete->update($request->only([
