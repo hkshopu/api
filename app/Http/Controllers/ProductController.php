@@ -881,6 +881,12 @@ class ProductController extends Controller
 
             $product['sell'] = $product['sell_via_inventory'];
 
+            // Comment to enable debugging
+            unset($product['sell_via_order']);
+            unset($product['sell_object_order']);
+            unset($product['sell_via_inventory']);
+            unset($product['sell_object_inventory']);
+
             $productAttributeList = [];
             $productStock = 0;
             foreach ($productInventory as $productInventoryItem) {
