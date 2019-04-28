@@ -1890,7 +1890,7 @@ class UserController extends Controller
         $request->request->add([
             'updated_by' => $request->access_token_user_id,
         ]);
-// var_dump($request->all());exit;
+
         $user->update($request->only([
             'language_id',
             'updated_by',

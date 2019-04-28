@@ -727,30 +727,17 @@ class ShopController extends Controller
             $request->request->add([
                 'entity' => $shopEntity->id,
                 'entity_id' => $shop->id,
-                'created_by' => $request->access_token_user_id,
-                'updated_by' => $request->access_token_user_id,
+                'category_id' => $request->category_id,
             ]);
-
-            $categoryMap = CategoryMap::create($request->all());
-            $request->request->remove('created_by');
-            $request->request->remove('updated_by');
         }
 
         if (isset($request->status_id)) {
             if (empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
-                if (!empty($categoryMap)) {
-                    $categoryMap->delete();
-                }
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid status id',
                 ], 400);
             } else if (empty(StatusOption::where('entity', $shopEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first())) {
-                if (!empty($categoryMap)) {
-                    $categoryMap->delete();
-                }
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid status for shop',
@@ -760,16 +747,40 @@ class ShopController extends Controller
             $request->request->add([
                 'entity' => $shopEntity->id,
                 'entity_id' => $shop->id,
-                'created_by' => $request->access_token_user_id,
-                'updated_by' => $request->access_token_user_id,
+                'status_id' => $request->status_id,
             ]);
-
-            $statusMap = StatusMap::create($request->all());
-            $request->request->remove('created_by');
-            $request->request->remove('updated_by');
         }
 
+        $request->request->add([
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
         $shop->update($request->all());
+
+        $request->request->add([
+            'created_by' => $request->access_token_user_id,
+        ]);
+
+        if (isset($request->category_id)) {
+            $categoryMap = CategoryMap::create($request->only([
+                'entity',
+                'entity_id',
+                'category_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        if (isset($request->status_id)) {
+            $statusMap = StatusMap::create($request->only([
+                'entity',
+                'entity_id',
+                'status_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
         $shop = self::shopGet($id, $request)->getData();
 
         return response()->json($shop, 201);

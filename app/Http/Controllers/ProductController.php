@@ -1450,11 +1450,14 @@ class ProductController extends Controller
         }
 
         $request->request->add([
-            'created_by' => $request->access_token_user_id,
             'updated_by' => $request->access_token_user_id,
         ]);
 
         $product->update($request->all());
+
+        $request->request->add([
+            'created_by' => $request->access_token_user_id,
+        ]);
 
         if (!empty($request->category_id)) {
             $categoryMap = CategoryMap::create($request->only([
