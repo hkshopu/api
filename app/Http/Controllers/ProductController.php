@@ -593,7 +593,7 @@ class ProductController extends Controller
             $request->request->add([
                 'product_id' => $product->id,
                 'type' => 'fixed',
-                'amount' => abs($discountedAmount()),
+                'amount' => abs($discountedAmount),
                 'created_by' => $request->access_token_user_id,
                 'updated_by' => $request->access_token_user_id,
             ]);
