@@ -1303,35 +1303,35 @@ class ProductController extends Controller
 
         $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
 
-        if (!empty($request->sku)) {
+        if (isset($request->sku)) {
             $request->request->add(['sku' => $request->sku]);
         }
 
-        if (!empty($request->name_en)) {
+        if (isset($request->name_en)) {
             $request->request->add(['name_en' => $request->name_en]);
         }
 
-        if (!empty($request->name_tc)) {
+        if (isset($request->name_tc)) {
             $request->request->add(['name_tc' => $request->name_tc]);
         }
 
-        if (!empty($request->name_sc)) {
+        if (isset($request->name_sc)) {
             $request->request->add(['name_sc' => $request->name_sc]);
         }
 
-        if (!empty($request->description_en)) {
+        if (isset($request->description_en)) {
             $request->request->add(['description_en' => $request->description_en]);
         }
 
-        if (!empty($request->description_tc)) {
+        if (isset($request->description_tc)) {
             $request->request->add(['description_tc' => $request->description_tc]);
         }
 
-        if (!empty($request->description_sc)) {
+        if (isset($request->description_sc)) {
             $request->request->add(['description_sc' => $request->description_sc]);
         }
 
-        if (!empty($request->shop_id)) {
+        if (isset($request->shop_id)) {
             $shopQuery = \DB::table('shop')
                 ->leftJoin('user', 'user.id', '=', 'shop.user_id')
                 ->select('shop.*')
@@ -1359,7 +1359,7 @@ class ProductController extends Controller
 
         $productEntity = Entity::where('name', $product->getTable())->first();
 
-        if (!empty($request->category_id) || $request->category_id === "0") {
+        if (isset($request->category_id) || $request->category_id === "0") {
             if (empty(Category::where('id', $request->category_id)->whereNull('deleted_at')->first())) {
                 return response()->json([
                     'success' => false,
@@ -1372,14 +1372,14 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            $request->request->add([
+            $var['category_map'] = [
                 'entity' => $productEntity->id,
                 'entity_id' => $product->id,
                 'category_id' => $request->category_id,
-            ]);
+            ];
         }
 
-        if (!empty($request->status_id)) {
+        if (isset($request->status_id)) {
             if (empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
                 return response()->json([
                     'success' => false,
@@ -1392,14 +1392,14 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            $request->request->add([
+            $var['status_map'] = [
                 'entity' => $productEntity->id,
                 'entity_id' => $product->id,
                 'status_id' => $request->status_id,
-            ]);
+            ];
         }
 
-        if (!empty($request->price_original)) {
+        if (isset($request->price_original)) {
             if ($request->price_original < 0) {
                 return response()->json([
                     'success' => false,
@@ -1407,13 +1407,13 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            $request->request->add([
+            $var['product_pricing'] = [
                 'product_id' => $product->id,
                 'price' => abs($request->price_original),
-            ]);
+            ];
         }
 
-        if (!empty($request->price_discounted) || $request->price_discounted == 0) {
+        if (isset($request->price_discounted)) {
             if ($request->price_discounted == 0) {
                 $discountedAmount = 0.00;
             } else {
@@ -1424,18 +1424,18 @@ class ProductController extends Controller
                         'message' => 'Invalid discounted price',
                     ], 400);
                 }
-    
+
                 $discountedAmount = $productPricing->price - $request->price_discounted;
             }
 
-            $request->request->add([
+            $var['product_discount'] = [
                 'product_id' => $product->id,
                 'type' => 'fixed',
                 'amount' => abs($discountedAmount),
-            ]);
+            ];
         }
 
-        if (!empty($request->shipping_price) || $request->shipping_price == 0) {
+        if (isset($request->shipping_price) || $request->shipping_price == 0) {
             if ($request->shipping_price < 0.00) {
                 return response()->json([
                     'success' => false,
@@ -1443,10 +1443,10 @@ class ProductController extends Controller
                 ], 400);
             }
 
-            $request->request->add([
+            $var['product_shipping'] = [
                 'product_id' => $product->id,
                 'amount' => abs($request->shipping_price),
-            ]);
+            ];
         }
 
         $request->request->add([
@@ -1459,7 +1459,13 @@ class ProductController extends Controller
             'created_by' => $request->access_token_user_id,
         ]);
 
-        if (!empty($request->category_id)) {
+        if (isset($request->category_id)) {
+            $request->request->add([
+                'entity' => $var['category_map']['entity'],
+                'entity_id' => $var['category_map']['entity_id'],
+                'category_id' => $var['category_map']['category_id'],
+            ]);
+
             $categoryMap = CategoryMap::create($request->only([
                 'entity',
                 'entity_id',
@@ -1469,7 +1475,13 @@ class ProductController extends Controller
             ]));
         }
 
-        if (!empty($request->status_id)) {
+        if (isset($request->status_id)) {
+            $request->request->add([
+                'entity' => $var['status_map']['entity'],
+                'entity_id' => $var['status_map']['entity_id'],
+                'status_id' => $var['status_map']['status_id'],
+            ]);
+
             $statusMap = StatusMap::create($request->only([
                 'entity',
                 'entity_id',
@@ -1479,7 +1491,12 @@ class ProductController extends Controller
             ]));
         }
 
-        if (!empty($request->price_original)) {
+        if (isset($request->price_original)) {
+            $request->request->add([
+                'product_id' => $var['product_pricing']['product_id'],
+                'price' => $var['product_pricing']['price'],
+            ]);
+
             $productPricing = ProductPricing::create($request->only([
                 'product_id',
                 'price',
@@ -1488,7 +1505,13 @@ class ProductController extends Controller
             ]));
         }
 
-        if (!empty($request->price_discounted)) {
+        if (isset($request->price_discounted)) {
+            $request->request->add([
+                'product_id' => $var['product_discount']['product_id'],
+                'type' => $var['product_discount']['type'],
+                'amount' => $var['product_discount']['amount'],
+            ]);
+
             $productDiscount = ProductDiscount::create($request->only([
                 'product_id',
                 'type',
@@ -1498,7 +1521,12 @@ class ProductController extends Controller
             ]));
         }
 
-        if (!empty($request->shipping_price)) {
+        if (isset($request->shipping_price)) {
+            $request->request->add([
+                'product_id' => $var['product_shipping']['product_id'],
+                'amount' => $var['product_shipping']['amount'],
+            ]);
+
             $productShipping = ProductShipping::create($request->only([
                 'product_id',
                 'amount',
