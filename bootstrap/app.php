@@ -27,7 +27,9 @@ $app->withFacades();
 
 $app->withEloquent();
 
-// class_alias('JD\Cloudder\Facades\Cloudder', 'Cloudder');
+if (!class_exists("Cloudder")) {
+    class_alias('JD\Cloudder\Facades\Cloudder', 'Cloudder');
+}
 
 /*
 |--------------------------------------------------------------------------

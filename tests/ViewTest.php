@@ -97,11 +97,11 @@ class ViewTest extends TestCase
             ->select('blog.*')
             ->whereNull('blog.deleted_at');
 
-        if ($request->filter_inactive == true) {
+        // if ($request->filter_inactive == true) {
             $blogQuery
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
-        }
+        // }
 
         $blog = $blogQuery->inRandomOrder()->first();
 
@@ -124,11 +124,11 @@ class ViewTest extends TestCase
                 ->where('blog.id', $invalidId)
                 ->whereNull('blog.deleted_at');
 
-            if ($request->filter_inactive == true) {
+            // if ($request->filter_inactive == true) {
                 $blogQuery
                     ->whereNull('shop.deleted_at')
                     ->whereNull('user.deleted_at');
-            }
+            // }
 
             $blog = $blogQuery->inRandomOrder()->first();
 

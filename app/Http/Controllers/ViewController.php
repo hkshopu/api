@@ -242,7 +242,7 @@ class ViewController extends Controller
      *     ),
      * )
      */
-    public function blogViewGet(int $blog_id)
+    public function blogViewGet(int $blog_id, Request $request)
     {
         $blogQuery = \DB::table('blog')
             ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
