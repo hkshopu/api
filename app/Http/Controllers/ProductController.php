@@ -257,8 +257,8 @@ class ProductController extends Controller
 
         $productList = $productSortedList;
 
-        $pageNumber = (empty($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
-        $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
+        $pageNumber = (!isset($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
+        $pageSize = (!isset($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
 
@@ -433,42 +433,42 @@ class ProductController extends Controller
      */
     public function productCreate(Request $request)
     {
-        if (empty($request->category_id) || empty(Category::where('id', $request->category_id)->whereNull('deleted_at')->first())) {
+        if (!isset($request->category_id) || empty(Category::where('id', $request->category_id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid category id',
             ], 400);
         }
 
-        if (empty($request->status_id) || empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
+        if (!isset($request->status_id) || empty(Status::where('id', $request->status_id)->whereNull('deleted_at')->first())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid status id',
             ], 400);
         }
 
-        if (empty($request->price_original) || $request->price_original <= 0.00) {
+        if (!isset($request->price_original) || $request->price_original <= 0.00) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid original price',
             ], 400);
         }
 
-        if (!empty($request->price_discounted) && ($request->price_discounted >= $request->price_original || $request->price_discounted <= 0.00)) {
+        if (isset($request->price_discounted) && ($request->price_discounted >= $request->price_original || $request->price_discounted <= 0.00)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid discounted price',
             ], 400);
         }
 
-        if (!empty($request->shipping_price) && $request->shipping_price < 0.00) {
+        if (isset($request->shipping_price) && $request->shipping_price < 0.00) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid shipping price',
             ], 400);
         }
 
-        if (empty($request->stock) || $request->stock <= 0) {
+        if (!isset($request->stock) || $request->stock < 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid stock value',
@@ -500,7 +500,7 @@ class ProductController extends Controller
         $attribute = Attribute::whereNull('deleted_at');
         $attributeDraft = [];
 
-        if (!empty($request->size_id)) {
+        if (isset($request->size_id)) {
             $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();
             if (empty($size)) {
                 return response()->json([
@@ -513,7 +513,7 @@ class ProductController extends Controller
             $attribute = $attribute->where('size_id', $size->id);
         }
 
-        if (!empty($request->color_id)) {
+        if (isset($request->color_id)) {
             $color = Color::where('id', $request->color_id)->whereNull('deleted_at')->first();
             if (empty($color)) {
                 return response()->json([
@@ -526,7 +526,7 @@ class ProductController extends Controller
             $attribute = $attribute->where('color_id', $color->id);
         }
 
-        if (!empty($request->other)) {
+        if (isset($request->other)) {
             $attributeDraft['other'] = $request->other;
             $attribute = $attribute->where('other', $request->other);
         }
@@ -583,7 +583,7 @@ class ProductController extends Controller
             'updated_by',
         ]));
 
-        if (!empty($request->price_discounted)) {
+        if (isset($request->price_discounted)) {
             if ($request->price_discounted == 0) {
                 $discountedAmount = 0.00;
             } else {
@@ -1538,539 +1538,6 @@ class ProductController extends Controller
         $product = self::productGet($id, $request)->getData();
 
         return response()->json($product, 201);
-    }
-
-    /**
-     * @OA\Post(
-     *     path="/api/productstockadd/{id}",
-     *     operationId="productStockAdd",
-     *     tags={"Product"},
-     *     summary="Adds stock to product inventory given the id",
-     *     description="Adds stock to product inventory given the id.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="The product id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="stock",
-     *         in="query",
-     *         description="The product stock",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="size_id",
-     *         in="query",
-     *         description="The product size (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="color_id",
-     *         in="query",
-     *         description="The product color (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="other",
-     *         in="query",
-     *         description="The product remarks (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response="201",
-     *         description="Returns the product with the updated stocks",
-     *         @OA\JsonContent()
-     *     ),
-     *     @OA\Response(
-     *         response="400",
-     *         description="Returns the product stock add failure reason",
-     *         @OA\JsonContent()
-     *     ),
-     * )
-     */
-    public function productStockAdd(int $id, Request $request)
-    {
-        $productQuery = \DB::table('product')
-            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
-            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-            ->select('product.*')
-            ->where('product.id', $id)
-            ->whereNull('product.deleted_at');
-
-        if ($request->filter_inactive == true) {
-            $productQuery
-                ->whereNull('shop.deleted_at')
-                ->whereNull('user.deleted_at');
-        }
-
-        $product = $productQuery->first();
-
-        if (empty($product)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid product id',
-            ], 400);
-        }
-
-        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
-
-        if (empty($request->stock) || $request->stock <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid stock value',
-            ], 400);
-        }
-
-        $productAttribute = new Attribute();
-        $attribute = [];
-
-        if (!empty($request->size_id)) {
-            $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();
-            if (empty($size)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid size id',
-                ], 400);
-            } else {
-                $attribute['size_id'] = $size->id;
-                $productAttribute = $productAttribute->where('size_id', $size->id);
-            }
-        }
-
-        if (!empty($request->color_id)) {
-            $color = Color::where('id', $request->color_id)->whereNull('deleted_at')->first();
-            if (empty($color)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid color id',
-                ], 400);
-            } else {
-                $attribute['color_id'] = $color->id;
-                $productAttribute = $productAttribute->where('color_id', $color->id);
-            }
-        }
-
-        if (!empty($request->other)) {
-            $attribute['other'] = $request->other;
-            $productAttribute = $productAttribute->where('other', $request->other);
-        }
-
-        if (!empty($attribute)) {
-            foreach ($attribute as $key => $value) {
-                $request->request->add([$key => $value]);
-            }
-            $productAttribute = $productAttribute->first();
-            if (empty($productAttribute)) {
-                $request->request->add([
-                    'created_by' => $request->access_token_user_id,
-                    'updated_by' => $request->access_token_user_id,
-                ]);
-
-                $productAttribute = Attribute::create($request->all());
-            }
-            $attribute['id'] = $productAttribute->id;
-        } else {
-            $attribute['id'] = null;
-        }
-
-        $request->request->add([
-            'product_id' => $product->id,
-            'attribute_id' => $attribute['id'],
-            'stock' => abs($request->stock),
-            'created_by' => $request->access_token_user_id,
-            'updated_by' => $request->access_token_user_id,
-        ]);
-
-        ProductInventory::create($request->all());
-
-        return response()->json(self::productGet($product->id, $request)->getData(), 201);
-    }
-
-    /**
-     * @OA\Post(
-     *     path="/api/productstockremove/{id}",
-     *     operationId="productStockRemove",
-     *     tags={"Product"},
-     *     summary="Removes stock to product inventory given the id",
-     *     description="Adds negative record for product inventory.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="The product id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="stock",
-     *         in="query",
-     *         description="The product stock (Should be NEGATIVE value)",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="attribute_id",
-     *         in="query",
-     *         description="The product attribute id",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response="201",
-     *         description="Returns the product with the updated stocks",
-     *         @OA\JsonContent()
-     *     ),
-     *     @OA\Response(
-     *         response="400",
-     *         description="Returns the product stock remove failure reason",
-     *         @OA\JsonContent()
-     *     ),
-     * )
-     */
-    public function productStockRemove(int $id, Request $request)
-    {
-        $productQuery = \DB::table('product')
-            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
-            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-            ->select('product.*')
-            ->where('product.id', $id)
-            ->whereNull('product.deleted_at');
-
-        if ($request->filter_inactive == true) {
-            $productQuery
-                ->whereNull('shop.deleted_at')
-                ->whereNull('user.deleted_at');
-        }
-
-        $product = $productQuery->first();
-
-        if (empty($product)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid product id',
-            ], 400);
-        }
-
-        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
-
-        if (empty($request->stock) || $request->stock > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid stock value',
-            ], 400);
-        }
-
-        if (!empty($request->attribute_id) && empty(Attribute::where('id', $request->attribute_id)->whereNull('deleted_at')->first())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid attribute id',
-            ], 400);
-        } else if (!empty($request->attribute_id) && empty(ProductInventory::where('product_id', $product->id)->where('attribute_id', $request->attribute_id)->whereNull('deleted_at')->first())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid attribute for the product',
-            ], 400);
-        } else if (empty($request->attribute_id) && empty(ProductInventory::where('product_id', $product->id)->whereNull('attribute_id')->whereNull('deleted_at')->first())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product is associated with attribute',
-            ], 400);
-        }
-
-        $request->request->add([
-            'product_id' => $product->id,
-            'attribute_id' => $request->attribute_id,
-            'stock' => abs($request->stock) * -1,
-            'created_by' => $request->access_token_user_id,
-            'updated_by' => $request->access_token_user_id,
-        ]);
-
-        ProductInventory::create($request->all());
-
-        return response()->json(self::productGet($product->id, $request)->getData(), 201);
-    }
-
-    /**
-     * @OA\Post(
-     *     path="/api/productattribute",
-     *     operationId="productAttributeAdd",
-     *     tags={"Product"},
-     *     summary="Adds product attribute",
-     *     description="Adds product attribute.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
-     *         name="product id",
-     *         in="query",
-     *         description="The product id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="size_id",
-     *         in="query",
-     *         description="The product size (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="color_id",
-     *         in="query",
-     *         description="The product color (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="other",
-     *         in="query",
-     *         description="The product remarks (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response="201",
-     *         description="Returns the product attribute added",
-     *         @OA\JsonContent()
-     *     ),
-     *     @OA\Response(
-     *         response="400",
-     *         description="Returns the product attribute add failure reason",
-     *         @OA\JsonContent()
-     *     ),
-     * )
-     */
-    public function productAttributeAdd(Request $request)
-    {
-        $productQuery = \DB::table('product')
-            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
-            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-            ->select('product.*')
-            ->where('product.id', $request->product_id)
-            ->whereNull('product.deleted_at');
-
-        if ($request->filter_inactive == true) {
-            $productQuery
-                ->whereNull('shop.deleted_at')
-                ->whereNull('user.deleted_at');
-        }
-
-        $product = $productQuery->first();
-
-        if (empty($product)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid product id',
-            ], 400);
-        }
-
-        $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
-
-        if (!empty($request->size_id)) {
-            $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();
-            if (empty($size)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid size id',
-                ], 400);
-            }
-        }
-
-        if (!empty($request->color_id)) {
-            $color = Color::where('id', $request->color_id)->whereNull('deleted_at')->first();
-            if (empty($color)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid color id',
-                ], 400);
-            }
-        }
-
-        if (!empty($request->other)) {
-            $attribute['other'] = $request->other;
-            $productAttribute = $productAttribute->where('other', $request->other);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Product attribute already exists',
-        ], 400);
-    }
-
-    /**
-     * @OA\Delete(
-     *     path="/api/productattribute/{attribute_id}",
-     *     operationId="productAttributeDelete",
-     *     tags={"Product"},
-     *     summary="Deletes product attribute given the id with only defined fields",
-     *     description="Deletes product attribute given the id with only defined fields.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
-     *         name="attribute_id",
-     *         in="path",
-     *         description="The attribute id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response="200",
-     *         description="Returns the product attribute deleted",
-     *         @OA\JsonContent()
-     *     ),
-     *     @OA\Response(
-     *         response="400",
-     *         description="Returns the product attribute delete failure reason",
-     *         @OA\JsonContent()
-     *     ),
-     * )
-     */
-    public function productAttributeDelete(int $attribute_id, Request $request)
-    {
-        $productAttribute = Attribute::where('id', $attribute_id)->whereNull('deleted_at')->first();
-        if (empty($productAttribute)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid attribute id',
-            ], 400);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Deleted successfully',
-        ], 200);
-    }
-
-    /**
-     * @OA\Patch(
-     *     path="/api/productattribute/{attribute_id}",
-     *     operationId="productAttributeModify",
-     *     tags={"Product"},
-     *     summary="Modifies product attribute given the id with only defined fields",
-     *     description="Modifies product attribute given the id with only defined fields.",
-     *     @OA\Parameter(
-     *         name="token",
-     *         in="header",
-     *         description="The access token for authentication",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *         )
-     *     ),
-     *     @OA\Parameter(
-     *         name="attribute_id",
-     *         in="path",
-     *         description="The attribute id",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="size_id",
-     *         in="query",
-     *         description="The product size (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="color_id",
-     *         in="query",
-     *         description="The product color (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="other",
-     *         in="query",
-     *         description="The product remarks (Optional)",
-     *         required=false,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response="201",
-     *         description="Returns the product attribute updated",
-     *         @OA\JsonContent()
-     *     ),
-     *     @OA\Response(
-     *         response="400",
-     *         description="Returns the product attribute update failure reason",
-     *         @OA\JsonContent()
-     *     ),
-     * )
-     */
-    public function productAttributeModify(int $attribute_id, Request $request)
-    {
-        $productAttribute = Attribute::where('id', $attribute_id)->whereNull('deleted_at')->first();
-        if (empty($productAttribute)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid attribute id',
-            ], 400);
-        }
-
-        if (!empty($request->size_id)) {
-            $size = Size::where('id', $request->size_id)->whereNull('deleted_at')->first();
-            if (empty($size)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid size id',
-                ], 400);
-            }
-        }
-
-        if (!empty($request->color_id)) {
-            $color = Color::where('id', $request->color_id)->whereNull('deleted_at')->first();
-            if (empty($color)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid color id',
-                ], 400);
-            }
-        }
-
-        if (!empty($request->other)) {
-
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Attribute not associated with any product',
-        ], 400);
     }
 
     /**

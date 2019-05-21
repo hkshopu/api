@@ -8,8 +8,9 @@
 //     // $router->get('product/{id}', ['uses' => 'ProductController@productGet']);
 //     // $router->delete('product/{id}', ['uses' => 'ProductController@productDelete']);
 //     // $router->patch('product/{id}', ['uses' => 'ProductController@productModify']);
-//     // $router->post('productstockadd/{id}', ['uses' => 'ProductController@productStockAdd']);
-//     // $router->post('productstockremove/{id}', ['uses' => 'ProductController@productStockRemove']);
+//     // $router->put('productstock/{product_id}', ['uses' => 'ProductController@productStockPut']);
+//     // $router->post('productstock/{product_id}', ['uses' => 'ProductController@productStockPost']);
+//     // $router->delete('productstock/{product_id}', ['uses' => 'ProductController@productStockDelete']);
 
 //     public function testShouldListProduct() {
 //         $this->get("/api/product", []);
