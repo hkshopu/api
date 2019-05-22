@@ -63,6 +63,9 @@ class Authenticate
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/commentstatus"
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/blogstatus"
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/userstatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/orderstatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/paymentstatus"
+                    || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/orderitemstatus"
 
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/productfollowing/{$id}"
                     || "{$request->getMethod()} {$request->getPathInfo()}" == "GET /api/imagefollowing/{$id}"

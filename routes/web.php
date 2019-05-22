@@ -24,6 +24,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     /* UTX */ $router->get('commentstatus',  ['uses' => 'StatusController@commentStatusList']);
     /* UTX */ $router->get('blogstatus',  ['uses' => 'StatusController@blogStatusList']);
     /* UTX */ $router->get('userstatus',  ['uses' => 'StatusController@userStatusList']);
+    $router->get('orderstatus',  ['uses' => 'StatusController@orderStatusList']);
+    $router->get('paymentstatus',  ['uses' => 'StatusController@paymentStatusList']);
+    $router->get('orderitemstatus',  ['uses' => 'StatusController@orderItemStatusList']);
 
     // Following
     $router->post('productfollowing', ['uses' => 'FollowingController@productFollowingAdd']);
@@ -162,8 +165,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('order', ['uses' => 'OrderController@orderList']);
     $router->post('order', ['uses' => 'OrderController@orderAdd']);
     $router->get('order/{id}', ['uses' => 'OrderController@orderGet']);
+    $router->delete('order/{id}', ['uses' => 'OrderController@orderDelete']);
     $router->patch('order/{id}',  ['uses' => 'OrderController@orderModify']);
-    $router->patch('orderhold/{id}',  ['uses' => 'OrderController@orderHold']);
 
     // Language
     $router->get('language',  ['uses' => 'LanguageController@languageList']);

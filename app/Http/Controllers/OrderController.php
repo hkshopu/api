@@ -10,6 +10,7 @@ use App\CartItem;
 use App\Order;
 use App\StatusMap;
 use App\Status;
+use App\StatusOption;
 use App\Entity;
 use App\User;
 use App\UserType;
@@ -506,7 +507,7 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
         $order = Order::where('id', $id)->whereNull('deleted_at')->first();
 
         if (!empty($order)) {
-            $shipmentFeeOverride = $order->shipment_fee_override;
+            $shipmentFeeOverride = (float) $order->shipment_fee_override;
             $createdAt = $order->created_at;
             $createdBy = $order->created_by;
             unset($order->shipment_fee_override);
@@ -604,6 +605,278 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
         }
 
         return response()->json($order, 200);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/order/{id}",
+     *     operationId="orderDelete",
+     *     tags={"Order"},
+     *     summary="Deletes order from the web app",
+     *     description="Deletes order from the web app.",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The order id",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the order delete status",
+     *         @OA\JsonContent()
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Returns the order delete failure reason",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function orderDelete(int $id, Request $request)
+    {
+        $order = Order::where('id', $id)->whereNull('deleted_at')->first();
+        if (empty($order)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid order id',
+            ], 400);
+        }
+
+        $request->request->add([
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => $request->access_token_user_id,
+        ]);
+
+        $order->update($request->only([
+            'deleted_at',
+            'deleted_by',
+        ]));
+
+        $orderEntity = Entity::where('name', $order->getTable())->first();
+
+        $orderStatusMapList = StatusMap::where('entity', $orderEntity->id)->where('entity_id', $order->id)->whereNull('deleted_at')->get();
+        foreach ($orderStatusMapList as $statusMap) {
+            $statusMap->update($request->all());
+        }
+
+        $paymentEntity = Entity::where('name', 'payment')->first();
+
+        $paymentStatusMapList = StatusMap::where('entity', $paymentEntity->id)->where('entity_id', $order->id)->whereNull('deleted_at')->get();
+        foreach ($paymentStatusMapList as $statusMap) {
+            $statusMap->update($request->all());
+        }
+
+        $orderItemEntity = Entity::where('name', 'order_item')->first();
+
+        $orderItemList = CartItem::where('order_id', $order->id)->whereNull('deleted_at')->get();
+        foreach ($orderItemList as $orderItemItem) {
+            $orderItemStatusMapList = StatusMap::where('entity', $orderItemEntity->id)->where('entity_id', $orderItemItem->id)->whereNull('deleted_at')->get();
+            foreach ($orderItemStatusMapList as $statusMap) {
+                $statusMap->update($request->all());
+            }
+
+            $orderItemItem->update($request->only([
+                'deleted_at',
+                'deleted_by',
+            ]));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Deleted successfully',
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/order/{id}",
+     *     operationId="orderModify",
+     *     tags={"Order"},
+     *     summary="Modifies the order given the id with only defined fields",
+     *     description="
+Modifies the order given the id with only defined fields.
+<br /><br />
+<span style='font-weight:bold;color:red'>NOTE:</span> This should also be used for holding off orders by simply sending the corresponding order status id for 'On Hold'.
+           ",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="header",
+     *         description="The access token for authentication",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="The order id",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="order_status_id",
+     *         in="query",
+     *         description="The order status id",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="payment_status_id",
+     *         in="query",
+     *         description="The payment status id",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="shipment_address",
+     *         in="query",
+     *         description="The shipment address",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="shipment_receiver",
+     *         in="query",
+     *         description="The shipment receiver",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="shipment_fee",
+     *         in="query",
+     *         description="The shipment fee",
+     *         required=false,
+     *         @OA\Schema(type="number")
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns the order given the id",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function orderModify(int $id, Request $request = null)
+    {
+        $order = Order::where('id', $id)->whereNull('deleted_at')->first();
+
+        if (empty($order)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid order id',
+            ], 400);
+        }
+
+        if (isset($request->order_status_id)) {
+            $orderEntity = Entity::where('name', $order->getTable())->first();
+
+            $status = Status::where('id', $request->order_status_id)->whereNull('deleted_at')->first();
+            $statusOption = StatusOption::where('entity', $orderEntity->id)->where('status_id', $request->order_status_id)->whereNull('deleted_at')->first();
+            if (empty($status)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status id',
+                ], 400);
+            } else if (empty($statusOption)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status for the order',
+                ], 400);
+            }
+        }
+
+        if (isset($request->payment_status_id)) {
+            $paymentEntity = Entity::where('name', 'payment')->first();
+
+            $status = Status::where('id', $request->payment_status_id)->whereNull('deleted_at')->first();
+            $statusOption = StatusOption::where('entity', $paymentEntity->id)->where('status_id', $request->payment_status_id)->whereNull('deleted_at')->first();
+            if (empty($status)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status id',
+                ], 400);
+            } else if (empty($statusOption)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status for the payment',
+                ], 400);
+            }
+        }
+
+        if (isset($request->shipment_receiver)) {
+            $request->request->add(['shipment_receiver' => $request->shipment_receiver]);
+        }
+
+        if (isset($request->shipment_address)) {
+            $request->request->add(['shipment_address' => $request->shipment_address]);
+        }
+
+        if (isset($request->shipment_fee)) {
+            if ($request->shipment_fee < 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid shipment fee',
+                ], 400);
+            }
+
+            $request->request->add(['shipment_fee_override' => $request->shipment_fee]);
+        }
+
+        $request->request->add([
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
+        $order->update($request->all());
+
+        $request->request->add([
+            'created_by' => $request->access_token_user_id,
+        ]);
+
+        if (isset($request->order_status_id)) {
+            $request->request->add([
+                'entity' => $orderEntity->id,
+                'entity_id' => $order->id,
+                'status_id' => $request->order_status_id,
+            ]);
+
+            $statusMap = StatusMap::create($request->only([
+                'entity',
+                'entity_id',
+                'status_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        if (isset($request->payment_status_id)) {
+            $request->request->add([
+                'entity' => $paymentEntity->id,
+                'entity_id' => $order->id,
+                'status_id' => $request->payment_status_id,
+            ]);
+
+            $statusMap = StatusMap::create($request->only([
+                'entity',
+                'entity_id',
+                'status_id',
+                'created_by',
+                'updated_by',
+            ]));
+        }
+
+        return response()->json(self::orderGet($order->id, $request)->getData(), 200);
     }
 }
 

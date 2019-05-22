@@ -171,8 +171,8 @@ class BlogController extends Controller
 
         $blogList = $blogFilteredList;
 
-        $pageNumber = (empty($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
-        $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
+        $pageNumber = (!isset($request->page_number) || $request->page_number <= 0) ? 1 : (int) $request->page_number;
+        $pageSize = (!isset($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
 
@@ -324,7 +324,7 @@ class BlogController extends Controller
         $blog = new Blog();
         $blogEntity = Entity::where('name', $blog->getTable())->first();
 
-        if (empty($request->category_id)) {
+        if (!isset($request->category_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid category id',
@@ -345,7 +345,7 @@ class BlogController extends Controller
             ], 400);
         }
 
-        if (!empty($request->is_top) && ($request->is_top <> 1 && $request->is_top <> 0)) {
+        if (isset($request->is_top) && ($request->is_top <> 1 && $request->is_top <> 0)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid value for is_top',
@@ -727,19 +727,19 @@ class BlogController extends Controller
 
         $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
-        if (!empty($request->title_en)) {
+        if (isset($request->title_en)) {
             $request->request->add(['title_en' => $request->title_en]);
         }
 
-        if (!empty($request->title_tc)) {
+        if (isset($request->title_tc)) {
             $request->request->add(['title_tc' => $request->title_tc]);
         }
 
-        if (!empty($request->title_sc)) {
+        if (isset($request->title_sc)) {
             $request->request->add(['title_sc' => $request->title_sc]);
         }
 
-        if (!empty($request->category_id)) {
+        if (isset($request->category_id)) {
             $category = Category::where('id', $request->category_id)->whereNull('deleted_at')->first();
             if (empty($category)) {
                 return response()->json([
@@ -754,7 +754,7 @@ class BlogController extends Controller
             }
         }
 
-        if (!empty($request->status_id)) {
+        if (isset($request->status_id)) {
             $status = Status::where('id', $request->status_id)->whereNull('deleted_at')->first();
             $statusOption = StatusOption::where('entity', $blogEntity->id)->where('status_id', $request->status_id)->whereNull('deleted_at')->first();
             if (empty($status)) {
@@ -770,19 +770,19 @@ class BlogController extends Controller
             }
         }
 
-        if (!empty($request->content_en)) {
+        if (isset($request->content_en)) {
             $request->request->add(['content_en' => $request->content_en]);
         }
 
-        if (!empty($request->content_tc)) {
+        if (isset($request->content_tc)) {
             $request->request->add(['content_tc' => $request->content_tc]);
         }
 
-        if (!empty($request->content_sc)) {
+        if (isset($request->content_sc)) {
             $request->request->add(['content_sc' => $request->content_sc]);
         }
 
-        if (!empty($request->is_top) && ($request->is_top <> 1 && $request->is_top <> 0)) {
+        if (isset($request->is_top) && ($request->is_top <> 1 && $request->is_top <> 0)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid value for is_top',
@@ -797,7 +797,7 @@ class BlogController extends Controller
         $blog->update($request->all());
 
         // Update category_map table
-        if (!empty($request->category_id)) {
+        if (isset($request->category_id)) {
             $request->request->add([
                 'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
                 'deleted_by' => $request->access_token_user_id,
@@ -825,7 +825,7 @@ class BlogController extends Controller
         }
 
         // Update status_map table
-        if (!empty($request->status_id)) {
+        if (isset($request->status_id)) {
             $request->request->add([
                 'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
                 'deleted_by' => $request->access_token_user_id,

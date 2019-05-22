@@ -8,6 +8,7 @@ use App\Shop;
 use App\Comment;
 use App\Blog;
 use App\User;
+use App\Order;
 use App\Entity;
 use App\Status;
 use App\StatusOption;
@@ -196,6 +197,94 @@ class StatusController extends Controller
 
         $statusList = [];
         $statusOptionList = StatusOption::where('entity', $userEntity->id)->whereNull('deleted_at')->get();
+        foreach ($statusOptionList as $statusOption) {
+            $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
+        }
+
+        $data = $statusList;
+
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/orderstatus",
+     *     operationId="orderStatusList",
+     *     tags={"Status"},
+     *     summary="Retrieves all order status",
+     *     description="This provides available statuses to the order for frontend dynamically.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns available order status",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function orderStatusList()
+    {
+        $order = new Order();
+        $orderEntity = Entity::where('name', $order->getTable())->first();
+
+        $statusList = [];
+        $statusOptionList = StatusOption::where('entity', $orderEntity->id)->whereNull('deleted_at')->get();
+        foreach ($statusOptionList as $statusOption) {
+            $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
+        }
+
+        $data = $statusList;
+
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/paymentstatus",
+     *     operationId="paymentStatusList",
+     *     tags={"Status"},
+     *     summary="Retrieves all payment status",
+     *     description="This provides available statuses to the payment for frontend dynamically.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns available payment status",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function paymentStatusList()
+    {
+        $paymentEntity = Entity::where('name', 'payment')->first();
+
+        $statusList = [];
+        $statusOptionList = StatusOption::where('entity', $paymentEntity->id)->whereNull('deleted_at')->get();
+        foreach ($statusOptionList as $statusOption) {
+            $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
+        }
+
+        $data = $statusList;
+
+        return response()->json($data, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/orderitemstatus",
+     *     operationId="orderItemStatusList",
+     *     tags={"Status"},
+     *     summary="Retrieves all order item status",
+     *     description="This provides available statuses to the order item for frontend dynamically.",
+     *     @OA\Response(
+     *         response="200",
+     *         description="Returns available order item status",
+     *         @OA\JsonContent()
+     *     ),
+     * )
+     */
+    public function orderitemStatusList()
+    {
+        $orderItemEntity = Entity::where('name', 'order_item')->first();
+
+        $statusList = [];
+        $statusOptionList = StatusOption::where('entity', $orderItemEntity->id)->whereNull('deleted_at')->get();
         foreach ($statusOptionList as $statusOption) {
             $statusList[] = Status::where('id', $statusOption->status_id)->whereNull('deleted_at')->first();
         }
