@@ -59,7 +59,7 @@ class BlogController extends Controller
      *         in="query",
      *         description="The category id",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="title_en",
@@ -73,14 +73,14 @@ class BlogController extends Controller
      *         in="query",
      *         description="Result page number, default is 1",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="page_size",
      *         in="query",
      *         description="Result page size, default is 25",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",

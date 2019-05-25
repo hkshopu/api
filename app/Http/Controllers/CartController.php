@@ -845,6 +845,8 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
      */
     public function cartDelete(Request $request = null)
     {
+        exec("echo \"" . "[" . Carbon::now()->format('Y-m-d H:i:s') . "] Endpoint: {cart_delete}, Params: " . json_encode($request->all()) . "\" >> " . env('DEBUGGING_LOG_FILE'));
+
         if (!isset($request->access_token_user_id)) {
             $cart = Cart::where('id', $request->cart_id)->whereNull('user_id')->whereNull('deleted_at')->first();
             if (empty($cart)) {
@@ -858,6 +860,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
         }
 
         $deleteUsing = 'none';
+        $conditionalCombination = 0;
 
         if (isset($request->shop_id)) {
             $shopQuery = \DB::table('shop')
@@ -882,33 +885,41 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
 
             $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
-            $deleteUsing = 'shop_id';
-        } else {
-            if (isset($request->cart_item_id)) {
-                $cartItemQuery = CartItem::where('id', $request->cart_item_id)->whereNull('deleted_at');
+            $conditionalCombination += 4;
+        }
 
-                if (empty($cartItemQuery->first())) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid cart item id',
-                    ], 400);
-                } else if (empty($cartItemQuery->where('cart_id', $cart->id)->first())) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Item belongs to other cart',
-                    ], 400);
-                }
+        if (isset($request->cart_item_id)) {
+            $cartItemQuery = CartItem::where('id', $request->cart_item_id)->whereNull('deleted_at');
 
-                $cartItem = $cartItemQuery->first();
-
-                if (isset($request->quantity)) {
-                    if ($request->quantity > 0) {
-                        $deleteUsing = 'quantity';
-                    }
-                } else {
-                    $deleteUsing = 'cart_item_id';
-                }
+            if (empty($cartItemQuery->first())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid cart item id',
+                ], 400);
+            } else if (empty($cartItemQuery->where('cart_id', $cart->id)->first())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Item belongs to other cart',
+                ], 400);
             }
+
+            $cartItem = $cartItemQuery->first();
+
+            $conditionalCombination += 2;
+        }
+
+        if (isset($request->quantity)) {
+            if ($request->quantity > 0) {
+                $conditionalCombination += 1;
+            }
+        }
+
+        if (in_array($conditionalCombination, [4, 5])) {
+            $deleteUsing = 'shop_id';
+        } else if (in_array($conditionalCombination, [2, 6])) {
+            $deleteUsing = 'cart_item_id';
+        } else if (in_array($conditionalCombination, [3, 7])) {
+            $deleteUsing = 'quantity';
         }
 
         $request->request->add([
