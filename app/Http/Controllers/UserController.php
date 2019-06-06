@@ -441,30 +441,17 @@ class UserController extends Controller
         $retailerUserType = UserType::where('name', 'Retailer')->whereNull('deleted_at')->first();
 
         if ($request->user_type_id == $retailerUserType->id) {
-            if (!isset($request->shop_name_en)) {
-                $user->delete();
-                $statusMap->delete();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Shop name (in English) required',
-                ], 400);
-            }
-
             $request->request->add([
-                'name_en' => $request->shop_name_en,
+                'name_en' => ($request->shop_name_en ?? null),
             ]);
 
-            if (!isset($request->shop_name_tc)) {
-                $request->request->add([
-                    'name_tc' => null,
-                ]);
-            }
+            $request->request->add([
+                'name_tc' => ($request->shop_name_tc ?? null),
+            ]);
 
-            if (!isset($request->shop_name_sc)) {
-                $request->request->add([
-                    'name_sc' => null,
-                ]);
-            }
+            $request->request->add([
+                'name_sc' => ($request->shop_name_sc ?? null),
+            ]);
 
             $shop = new Shop();
             $shopEntity = Entity::where('name', $shop->getTable())->first();
@@ -1168,28 +1155,17 @@ class UserController extends Controller
             'password' => $password,
         ]);
 
-        if (!isset($request->shop_name_en)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shop name (in English) required',
-            ], 400);
-        }
-
         $request->request->add([
-            'name_en' => $request->shop_name_en,
+            'name_en' => ($request->shop_name_en ?? null),
         ]);
 
-        if (!isset($request->shop_name_tc)) {
-            $request->request->add([
-                'name_tc' => null,
-            ]);
-        }
+        $request->request->add([
+            'name_tc' => ($request->shop_name_tc ?? null),
+        ]);
 
-        if (!isset($request->shop_name_sc)) {
-            $request->request->add([
-                'name_sc' => null,
-            ]);
-        }
+        $request->request->add([
+            'name_sc' => ($request->shop_name_sc ?? null),
+        ]);
 
         $shop = new Shop();
         $shopEntity = Entity::where('name', $shop->getTable())->first();
