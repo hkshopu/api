@@ -273,15 +273,22 @@ class ProductController extends Controller
         $productActive = [];
 
         foreach ($productList as $product) {
-            $productGet = self::productGet($product->id, $request)->getData();
-            if (!empty($productGet) && !empty($productGet->id) && $productGet->stock > 0) {
+            if (!empty(self::productGet($product->id, $request))) {
+                $productGet = self::productGet($product->id, $request)->getData();
+            }
+
+            if (!empty($productGet) && !empty($productGet->id)) {
                 $productActive[] = $productGet;
             }
         }
 
         $productList = $productActive;
 
-        return response()->json($productList, 200);
+        // return response()->json($productList, 200);
+        return response()->json([
+            'role' => $request->user_type,
+            'data' => $productList,
+        ], 200);
     }
 
     /**
@@ -949,6 +956,10 @@ class ProductController extends Controller
 
                 $productAttributeList = $productAttributeListFiltered;
                 $productStock = $productStockFiltered;
+
+                if (empty($productAttributeList)) {
+                    return null;
+                }
             }
 
             $product['stock'] = $productStock;
