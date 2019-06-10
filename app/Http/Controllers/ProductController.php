@@ -284,11 +284,7 @@ class ProductController extends Controller
 
         $productList = $productActive;
 
-        // return response()->json($productList, 200);
-        return response()->json([
-            'role' => $request->user_type,
-            'data' => $productList,
-        ], 200);
+        return response()->json($productList, 200);
     }
 
     /**
