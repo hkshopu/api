@@ -63,14 +63,14 @@ class ShopController extends Controller
      *         in="query",
      *         description="Result page number, default is 1",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Parameter(
      *         name="page_size",
      *         in="query",
      *         description="Result page size, default is 25",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Response(
      *         response="200",
