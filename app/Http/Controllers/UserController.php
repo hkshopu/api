@@ -126,14 +126,14 @@ class UserController extends Controller
      *         in="query",
      *         description="Result page number, default is 1",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Parameter(
      *         name="page_size",
      *         in="query",
      *         description="Result page size, default is 25",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -342,19 +342,6 @@ class UserController extends Controller
             ], 400);
         }
 
-        $userType = UserType::where('id', $request->user_type_id)->whereNull('deleted_at')->first();
-
-        if (empty($userType)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid user type id',
-            ], 400);
-        }
-
-        $request->request->add([
-            'user_type_id' => $userType->id,
-        ]);
-
         if (!isset($request->email)) {
             return response()->json([
                 'success' => false,
@@ -365,7 +352,7 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Invalid email',
             ], 400);
-        } else if (!empty(User::where('email', $request->email)->where('user_type_id', $request->user_type_id)->first())) {
+        } else if (!empty(User::where('email', $request->email)->first())) {
             // Explicit exclusion of the deleted_at field to avoid email duplication whether deleted or not
             return response()->json([
                 'success' => false,
@@ -395,6 +382,19 @@ class UserController extends Controller
 
         $shop = new Shop();
         $shopEntity = Entity::where('name', $shop->getTable())->first();
+
+        $userType = UserType::where('id', $request->user_type_id)->whereNull('deleted_at')->first();
+
+        if (empty($userType)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user type id',
+            ], 400);
+        }
+
+        $request->request->add([
+            'user_type_id' => $userType->id,
+        ]);
 
         $user = User::create($request->only([
             'username',
@@ -1110,9 +1110,6 @@ class UserController extends Controller
             ], 400);
         }
 
-        // Setting RETAILER user_type_id for user
-        $userType = UserType::where('name', 'Retailer')->whereNull('deleted_at')->first();
-
         if (!isset($request->email)) {
             return response()->json([
                 'success' => false,
@@ -1123,17 +1120,13 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Invalid email',
             ], 400);
-        } else if (!empty(User::where('email', $request->email)->where('user_type_id', $userType->id)->first())) {
+        } else if (!empty(User::where('email', $request->email)->first())) {
             // Explicit exclusion of the deleted_at field to avoid email duplication whether deleted or not
             return response()->json([
                 'success' => false,
                 'message' => 'Email already in use',
             ], 400);
         }
-
-        $request->request->add([
-            'user_type_id' => $userType->id,
-        ]);
 
         if (!isset($request->password)) {
             return response()->json([
@@ -1154,6 +1147,19 @@ class UserController extends Controller
             'salt' => $salt,
             'password' => $password,
         ]);
+
+        // Setting RETAILER user_type_id for user
+        $userType = UserType::where('name', 'Retailer')->whereNull('deleted_at')->first();
+        $request->request->add([
+            'user_type_id' => $userType->id,
+        ]);
+
+        if (!isset($request->shop_name_en)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shop name (in English) required',
+            ], 400);
+        }
 
         $request->request->add([
             'name_en' => ($request->shop_name_en ?? null),
@@ -1413,9 +1419,6 @@ class UserController extends Controller
             ], 400);
         }
 
-        // Setting CONSUMER user_type_id for user
-        $userType = UserType::where('name', 'Consumer')->whereNull('deleted_at')->first();
-
         if (!isset($request->email)) {
             return response()->json([
                 'success' => false,
@@ -1426,17 +1429,13 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Invalid email',
             ], 400);
-        } else if (!empty(User::where('email', $request->email)->where('user_type_id', $userType->id)->first())) {
+        } else if (!empty(User::where('email', $request->email)->first())) {
             // Explicit exclusion of the deleted_at field to avoid email duplication whether deleted or not
             return response()->json([
                 'success' => false,
                 'message' => 'Email already in use',
             ], 400);
         }
-
-        $request->request->add([
-            'user_type_id' => $userType->id,
-        ]);
 
         if (!isset($request->password)) {
             return response()->json([
@@ -1502,6 +1501,12 @@ class UserController extends Controller
                 'address' => null,
             ]);
         }
+
+        // Setting CONSUMER user_type_id for user
+        $userType = UserType::where('name', 'Consumer')->whereNull('deleted_at')->first();
+        $request->request->add([
+            'user_type_id' => $userType->id,
+        ]);
 
         $request->request->add([
             'activation_key' => bin2hex(openssl_random_pseudo_bytes(16)),

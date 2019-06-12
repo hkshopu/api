@@ -41,7 +41,7 @@ class OrderController extends Controller
      *     operationId="orderList",
      *     tags={"Order"},
      *     summary="Retrieves all order",
-     *     description="Retrieves all order of the consumer, filterable by shop id (web admin ONLY).",
+     *     description="Retrieves all order of the consumer.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -50,13 +50,6 @@ class OrderController extends Controller
      *         @OA\Schema(
      *             type="string",
      *         )
-     *     ),
-     *     @OA\Parameter(
-     *         name="shop_id",
-     *         in="query",
-     *         description="The shop id",
-     *         required=false,
-     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -79,35 +72,7 @@ class OrderController extends Controller
         switch ($userType->name) {
             case 'system administrator':
             case 'system operator':
-                $orderQuery = Order::whereNull('deleted_at')->orderBy('created_at', 'ASC');
-
-                if (isset($request->shop_id)) {
-                    $shopQuery = \DB::table('shop')
-                        ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-                        ->select('shop.*')
-                        ->where('shop.id', $request->shop_id)
-                        ->whereNull('shop.deleted_at');
-
-                    if ($request->filter_inactive == true) {
-                        $shopQuery
-                            ->whereNull('user.deleted_at');
-                    }
-
-                    $shop = $shopQuery->first();
-
-                    if (empty($shop)) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Invalid shop id',
-                        ], 400);
-                    }
-
-                    $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
-
-                    $orderQuery->where('shop_id', $request->shop_id);
-                }
-
-                $orderList = $orderQuery->get();
+                $orderList = Order::whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
             break;
             case 'retailer':
                 $shopQuery = \DB::table('shop')

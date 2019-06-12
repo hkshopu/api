@@ -50,7 +50,7 @@ class ProductController extends Controller
      *     operationId="productList",
      *     tags={"Product"},
      *     summary="Retrieves all product",
-     *     description="Retrieves all product, filterable by shop id, category id AND product name (in English) or ANY, with pagination.",
+     *     description="Retrieves all product, filterable by category id AND product name (in English) or ANY, with pagination.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
@@ -72,7 +72,7 @@ class ProductController extends Controller
      *         in="query",
      *         description="The category id",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Parameter(
      *         name="name_en",
@@ -93,14 +93,14 @@ class ProductController extends Controller
      *         in="query",
      *         description="Result page number, default is 1",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Parameter(
      *         name="page_size",
      *         in="query",
      *         description="Result page size, default is 25",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="int")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -273,10 +273,7 @@ class ProductController extends Controller
         $productActive = [];
 
         foreach ($productList as $product) {
-            if (!empty(self::productGet($product->id, $request))) {
-                $productGet = self::productGet($product->id, $request)->getData();
-            }
-
+            $productGet = self::productGet($product->id, $request)->getData();
             if (!empty($productGet) && !empty($productGet->id)) {
                 $productActive[] = $productGet;
             }
@@ -778,7 +775,7 @@ class ProductController extends Controller
             $productDiscount = ProductDiscount::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
             if (!empty($productDiscount) && $productDiscount->amount <> 0) {
                 if ($productDiscount->type == 'fixed') {
-                    $product['price_discounted'] = $product['price_original'] - abs($productDiscount->amount);
+                    $product['price_discounted'] = $product['price_original'] - $productDiscount->amount;
                 } else if ($productDiscount->type == 'percentage') {
                     $product['price_discounted'] = $product['price_original'] * (1 - abs($productDiscount->amount));
                 }
@@ -860,11 +857,6 @@ class ProductController extends Controller
                 ->whereNull('attribute.deleted_at')
             ;
 
-            if ($request->user_type == 'retailer') {
-                $productInventoryQuery->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
-                    ->where('shop.user_id', $request->access_token_user_id);
-            }
-
             $productInventoryListArray = $productInventoryQuery->get()->toArray();
 
             foreach ($productInventoryListArray as $productInventoryItem) {
@@ -877,11 +869,6 @@ class ProductController extends Controller
                     );
                 } else {
                     $productInventory[$productInventoryItem->product_attribute_id]['stock'] += $productInventoryItem->stock;
-
-                    // Avoid negative stock
-                    if ($productInventory[$productInventoryItem->product_attribute_id]['stock'] < 0) {
-                        $productInventory[$productInventoryItem->product_attribute_id]['stock'] = 0;
-                    }
                 }
 
                 if ($productInventoryItem->order_id != null) {
@@ -940,24 +927,6 @@ class ProductController extends Controller
                 $productAttributeList[] = $productAttribute;
             }
 
-            if ((in_array($request->user_type, ['consumer', 'guest'])) && (env('ALLOW_EMPTY_STOCK') == false || env('ALLOW_EMPTY_ATTRIBUTE') == false)) {
-                $productAttributeListFiltered = [];
-                $productStockFiltered = 0;
-                foreach ($productAttributeList as $productAttributeItem) {
-                    if  ((env('ALLOW_EMPTY_STOCK') == true || $productAttributeItem->stock > 0 ) && (env('ALLOW_EMPTY_ATTRIBUTE') == true || ($productAttributeItem->size <> null && $productAttributeItem->color <> null))) {
-                        $productAttributeListFiltered[] = $productAttributeItem;
-                        $productStockFiltered += $productAttributeItem->stock;
-                    }
-                }
-
-                $productAttributeList = $productAttributeListFiltered;
-                $productStock = $productStockFiltered;
-
-                if (empty($productAttributeList)) {
-                    return null;
-                }
-            }
-
             $product['stock'] = $productStock;
             $product['attributes'] = $productAttributeList;
 
@@ -1008,7 +977,7 @@ class ProductController extends Controller
             unset($product['shop_id']);
         }
 
-        return response()->json($product, 200);
+        return response()->json($product, 200);$productAttribute;
     }
 
     public function productGetMinimal(int $id, Request $request = null)
@@ -1448,21 +1417,15 @@ class ProductController extends Controller
             if ($request->price_discounted == 0) {
                 $discountedAmount = 0.00;
             } else {
-                if (isset($request->price_original)) {
-                    $priceBasis = $request->price_original;
-                } else {
-                    $productPricing = ProductPricing::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
-                    $priceBasis = $productPricing->price;
-                }
-                
-                if ($request->price_discounted < 0 || $priceBasis <= $request->price_discounted) {
+                $productPricing = ProductPricing::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+                if ($request->price_discounted < 0 || $productPricing->price <= $request->price_discounted) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid discounted price',
                     ], 400);
                 }
 
-                $discountedAmount = $priceBasis - $request->price_discounted;
+                $discountedAmount = $productPricing->price - $request->price_discounted;
             }
 
             $var['product_discount'] = [

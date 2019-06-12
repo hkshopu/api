@@ -20,7 +20,7 @@ class CreateUserTable extends Migration
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->bigInteger('id', 1)->unsigned();
             $table->string('username', 512)->unique();
-            $table->string('email', 512);
+            $table->string('email', 512)->unique();
             $table->text('salt')->nullable();
             $table->text('password')->nullable();
             $table->string('first_name', 512)->nullable();
@@ -38,8 +38,6 @@ class CreateUserTable extends Migration
             $table->bigInteger('updated_by')->nullable()->unsigned();
             $table->timestamp('deleted_at')->nullable();
             $table->bigInteger('deleted_by')->nullable()->unsigned();
-
-            $table->unique(['email', 'user_type_id']);
         });
 
         Schema::table(self::TABLE_NAME, function($table) {
