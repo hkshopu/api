@@ -1,13 +1,13 @@
 
 <?php
 
-class UserTypeTest extends TestCase
+class LanguageTest extends TestCase
 {
-    // $router->get('usertype',  ['uses' => 'UserTypeController@userTypeList']);
-    public function testUserTypeList() {
+    // $router->get('language',  ['uses' => 'LanguageController@languageList']);
+    public function testLanguageList() {
         $this->call(
             "GET",
-            "/api/usertype",
+            "/api/language",
             [],
             [],
             [],

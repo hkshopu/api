@@ -156,7 +156,7 @@ class RatingController extends Controller
      *     ),
      * )
      */
-    public function shopRatingGet(int $shop_id)
+    public function shopRatingGet(int $shop_id, Request $request)
     {
         $shopQuery = \DB::table('shop')
             ->leftJoin('user', 'user.id', '=', 'shop.user_id')
@@ -415,7 +415,7 @@ class RatingController extends Controller
      *     ),
      * )
      */
-    public function productRatingGet(int $product_id)
+    public function productRatingGet(int $product_id, Request $request)
     {
         $productQuery = \DB::table('product')
             ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')

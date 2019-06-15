@@ -1,147 +1,259 @@
 <?php
 
-use App\Product;
-use App\Blog;
-use Illuminate\Http\Request;
+use App\UserType;
+use App\User;
+use App\AccessToken;
 
 class ViewTest extends TestCase
 {
+    const USER_TYPE_SYSTEM_ADMINISTRATOR = 'system administrator';
+    const USER_TYPE_SYSTEM_OPERATOR      = 'system operator';
+    const USER_TYPE_RETAILER             = 'retailer';
+    const USER_TYPE_CONSUMER             = 'consumer';
+
     // $router->post('productview', ['uses' => 'ViewController@productViewAdd']);
     // $router->get('productview/{product_id}',  ['uses' => 'ViewController@productViewGet']);
+    public function testProductViewGet() {
+        $this->call(
+            "GET",
+            "/api/productview/123434",
+            [],
+            [],
+            [],
+            [],
+            ""
+        );
+        $this->assertResponseStatus(400);
+
+        $this->call(
+            "GET",
+            "/api/product",
+            [
+                'shop_id' => null,
+                'category_id' => null,
+                'name_en' => null,
+                'sort' => null,
+                'page_number' => null,
+                'page_size' => null,
+                'access_token_user_id' => null,
+            ],
+            [],
+            [],
+            [
+                'HTTP_token' => null,
+            ],
+            ""
+        );
+
+        $productList = json_decode($this->response->content());
+        $product = $productList[array_rand($productList)];
+
+        $this->call(
+            "GET",
+            "/api/productview/{$product->id}",
+            [],
+            [],
+            [],
+            [],
+            ""
+        );
+        $this->assertResponseStatus(200);
+    }
+
     // $router->post('blogview', ['uses' => 'ViewController@blogViewAdd']);
     // $router->get('blogview/{blog_id}',  ['uses' => 'ViewController@blogViewGet']);
+    public function testBlogViewGet() {
+        $this->call(
+            "GET",
+            "/api/blogview/123434",
+            [],
+            [],
+            [],
+            [],
+            ""
+        );
+        $this->assertResponseStatus(400);
 
-    // public function testShouldAddProductView() {
-    //     $parameters = [
-    //         'product_id' => 10000001,
-    //     ];
-    //     $this->post("/api/productview", $parameters, []);
-    //     $this->seeStatusCode(201);
-    //     $this->seeJsonStructure([
-            
-    //     ]);
-    // }
+        $this->call(
+            "GET",
+            "/api/blog",
+            [
+                'shop_id' => null,
+                'category_id' => null,
+                'title_en' => null,
+                'page_number' => null,
+                'page_size' => null,
+            ],
+            [],
+            [],
+            [
+                'HTTP_token' => null,
+            ],
+            ""
+        );
 
-    // public function testShouldNotAddProductViewIfProductIdInvalid() {
-    //     $this->post("/api/productview/", [
-    //         'product_id' => 434,
-    //     ], []);
-    //     $this->seeStatusCode(400);
-    //     $this->seeJsonStructure([
+        $blogList = json_decode($this->response->content());
+        $blog = $blogList[array_rand($blogList)];
 
-    //     ]);
-    // }
-
-    // public function testShouldGetProductView(Request $request) {
-    //     $isProductActive = false;
-
-    //     // $request = new Request();
-    //     // $request->request->add([
-    //     //     'filter_inactive' => true,
-    //     //     'language' => 'en',
-    //     // ]);
-
-    //     while ($isProductActive == false) {
-    //         $product = Product::whereNull('deleted_at')->inRandomOrder()->first();
-    //         $shop = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request)->getData();
-    //         if (!empty($shop->id)) {
-    //             $isProductActive = true;
-    //         }
-    //     }
-
-    //     var_dump($request);exit;
-
-    //     $this->get("/api/productview/{$product->id}", []);
-    //     $this->seeStatusCode(200);
-    //     $this->seeJsonStructure([
-    //         'count',
-    //     ]);
-    // }
-
-    public function testShouldNotGetProductViewIfInvalidProductId() {
-        $invalidId = null;
-        $isIdInvalid = false;
-        while ($isIdInvalid == false) {
-            $invalidId = rand(10000000, 99999999);
-            $productQuery = \DB::table('product')
-                ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
-                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-                ->select('product.*')
-                ->where('product.id', $invalidId)
-                ->whereNull('product.deleted_at');
-
-            // if ($request->filter_inactive == true) {
-                $productQuery
-                    ->whereNull('shop.deleted_at')
-                    ->whereNull('user.deleted_at');
-            // }
-
-            $product = $productQuery->inRandomOrder()->first();
-
-            if (empty($product)) {
-                $isIdInvalid = true;
-            }
-        }
-        $this->get("/api/productview/{$invalidId}", []);
-        $this->seeStatusCode(400);
-        $this->seeJsonStructure([
-            'success',
-            'message',
-        ]);
+        $this->call(
+            "GET",
+            "/api/blogview/{$blog->id}",
+            [],
+            [],
+            [],
+            [],
+            ""
+        );
+        $this->assertResponseStatus(200);
     }
 
-    public function testShouldGetBlogView() {
-        $blogQuery = \DB::table('blog')
-            ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
-            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-            ->select('blog.*')
-            ->whereNull('blog.deleted_at');
+    // $router->post('orderview', ['uses' => 'ViewController@orderViewAdd']);
+    // $router->get('orderview/{order_id}',  ['uses' => 'ViewController@orderViewGet']);
+    public function testOrderViewGet() {
+        $this->call(
+            "GET",
+            "/api/orderview/123434",
+            [],
+            [],
+            [],
+            [],
+            ""
+        );
+        $this->assertResponseStatus(400);
 
-        // if ($request->filter_inactive == true) {
-            $blogQuery
-                ->whereNull('shop.deleted_at')
-                ->whereNull('user.deleted_at');
-        // }
+        $userTypeSystemAdministrator = UserType::where('name', self::USER_TYPE_SYSTEM_ADMINISTRATOR)->whereNull('deleted_at')->first();
+        $userSystemAdministrator = User::where('user_type_id', $userTypeSystemAdministrator->id)->whereNull('deleted_at')->inRandomOrder()->first();
 
-        $blog = $blogQuery->inRandomOrder()->first();
-
-        $this->get("/api/blogview/{$blog->id}", []);
-        $this->seeStatusCode(200);
-        $this->seeJsonStructure([
-            'count',
-        ]);
-    }
-
-    public function testShouldNotGetBlogViewIfInvalidId() {
-        $invalidId = null;
-        $isIdInvalid = false;
-        while ($isIdInvalid == false) {
-            $invalidId = rand(10000000, 99999999);
-            $blogQuery = \DB::table('blog')
-                ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
-                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-                ->select('blog.*')
-                ->where('blog.id', $invalidId)
-                ->whereNull('blog.deleted_at');
-
-            // if ($request->filter_inactive == true) {
-                $blogQuery
-                    ->whereNull('shop.deleted_at')
-                    ->whereNull('user.deleted_at');
-            // }
-
-            $blog = $blogQuery->inRandomOrder()->first();
-
-            if (empty($blog)) {
-                $isIdInvalid = true;
-            }
+        $accessTokenSystemAdministrator = AccessToken::where('token', "unit_test_{$userSystemAdministrator->username}")->where('user_id', $userSystemAdministrator->id)->whereNull('deleted_at')->first();
+        if (empty($accessTokenSystemAdministrator)) {
+            $accessTokenSystemAdministrator = AccessToken::create([
+                'user_id' => $userSystemAdministrator->id,
+                'token' => "unit_test_{$userSystemAdministrator->username}",
+                'expires_at' => '2042-12-31',
+                'created_by' => 13,
+                'updated_by' => 13,
+            ]);
         }
-        $this->get("/api/blogview/{$invalidId}", []);
-        $this->seeStatusCode(400);
-        $this->seeJsonStructure([
-            'success',
-            'message',
-        ]);
+
+        $this->call(
+            "GET",
+            "/api/order",
+            [
+                'product_id' => null,
+            ],
+            [],
+            [],
+            [
+                'HTTP_token' => $accessTokenSystemAdministrator->token,
+            ],
+            ""
+        );
+
+        $orderList = json_decode($this->response->content());
+        $order = $orderList[array_rand($orderList)];
+
+        $this->call(
+            "GET",
+            "/api/orderview/{$order->id}",
+            [],
+            [],
+            [],
+            [
+                'HTTP_token' => $accessTokenSystemAdministrator->token,
+            ],
+            ""
+        );
+        $this->assertResponseStatus(200);
+
+        $userTypeSystemOperator = UserType::where('name', self::USER_TYPE_SYSTEM_OPERATOR)->whereNull('deleted_at')->first();
+        $userSystemOperator = User::where('user_type_id', $userTypeSystemOperator->id)->whereNull('deleted_at')->inRandomOrder()->first();
+
+        $accessTokenSystemOperator = AccessToken::where('token', "unit_test_{$userSystemOperator->username}")->where('user_id', $userSystemOperator->id)->whereNull('deleted_at')->first();
+        if (empty($accessTokenSystemOperator)) {
+            $accessTokenSystemOperator = AccessToken::create([
+                'user_id' => $userSystemOperator->id,
+                'token' => "unit_test_{$userSystemOperator->username}",
+                'expires_at' => '2042-12-31',
+                'created_by' => 13,
+                'updated_by' => 13,
+            ]);
+        }
+
+        $this->call(
+            "GET",
+            "/api/order",
+            [
+                'product_id' => null,
+            ],
+            [],
+            [],
+            [
+                'HTTP_token' => $accessTokenSystemOperator->token,
+            ],
+            ""
+        );
+
+        $orderList = json_decode($this->response->content());
+        $order = $orderList[array_rand($orderList)];
+
+        $this->call(
+            "GET",
+            "/api/orderview/{$order->id}",
+            [],
+            [],
+            [],
+            [
+                'HTTP_token' => $accessTokenSystemOperator->token,
+            ],
+            ""
+        );
+        $this->assertResponseStatus(200);
+
+        $userTypeRetailer = UserType::where('name', self::USER_TYPE_RETAILER)->whereNull('deleted_at')->first();
+        $userRetailer = User::where('user_type_id', $userTypeRetailer->id)->whereNull('deleted_at')->inRandomOrder()->first();
+
+        $accessTokenRetailer = AccessToken::where('token', "unit_test_{$userRetailer->username}")->where('user_id', $userRetailer->id)->whereNull('deleted_at')->first();
+        if (empty($accessTokenRetailer)) {
+            $accessTokenRetailer = AccessToken::create([
+                'user_id' => $userRetailer->id,
+                'token' => "unit_test_{$userRetailer->username}",
+                'expires_at' => '2042-12-31',
+                'created_by' => 13,
+                'updated_by' => 13,
+            ]);
+        }
+
+        $this->call(
+            "GET",
+            "/api/order",
+            [
+                'product_id' => null,
+            ],
+            [],
+            [],
+            [
+                'HTTP_token' => $accessTokenRetailer->token,
+            ],
+            ""
+        );
+
+        $orderList = json_decode($this->response->content());
+        if (!empty($orderList)) {
+            $order = $orderList[array_rand($orderList)];
+
+            $this->call(
+                "GET",
+                "/api/orderview/{$order->id}",
+                [],
+                [],
+                [],
+                [
+                    'HTTP_token' => $accessTokenRetailer->token,
+                ],
+                ""
+            );
+            $this->assertResponseStatus(200);
+        }
     }
 }
 

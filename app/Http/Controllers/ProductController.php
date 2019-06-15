@@ -809,16 +809,18 @@ class ProductController extends Controller
 
                 $productAttribute = ProductAttribute::where('product_id', $cartItemItem->product_id)->where('attribute_id', $cartItemItem->attribute_id)->whereNull('deleted_at')->first();
 
-                if (!isset($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id])) {
-                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id] = [];
-                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
-                }
+                if (!empty($productAttribute)) {
+                    if (!isset($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id])) {
+                        $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id] = [];
+                        $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
+                    }
 
-                $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id][] = $cartItemItem->quantity;
-                $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] += $cartItemItem->quantity;
+                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id][] = $cartItemItem->quantity;
+                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] += $cartItemItem->quantity;
 
-                if ($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] < 0) {
-                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
+                    if ($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] < 0) {
+                        $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
+                    }
                 }
             }
 

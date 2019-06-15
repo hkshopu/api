@@ -4,34 +4,29 @@
 use App\UserType;
 use App\User;
 use App\AccessToken;
+use App\Order;
 
-class ProductTest extends TestCase
+class OrderTest extends TestCase
 {
     const USER_TYPE_SYSTEM_ADMINISTRATOR = 'system administrator';
     const USER_TYPE_SYSTEM_OPERATOR      = 'system operator';
     const USER_TYPE_RETAILER             = 'retailer';
     const USER_TYPE_CONSUMER             = 'consumer';
 
-    // $router->get('product',  ['uses' => 'ProductController@productList']);
-    public function testProductList() {
+    // $router->get('order', ['uses' => 'OrderController@orderList']);
+    public function testOrderList() {
         $this->call(
             "GET",
-            "/api/product",
+            "/api/order",
+            [],
+            [],
+            [],
             [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
+                'HTTP_token' => null,
             ],
-            [],
-            [],
-            [],
             ""
         );
-        $this->assertResponseStatus(200);
+        $this->assertResponseStatus(401);
 
         $userTypeSystemAdministrator = UserType::where('name', self::USER_TYPE_SYSTEM_ADMINISTRATOR)->whereNull('deleted_at')->first();
         $userSystemAdministrator = User::where('user_type_id', $userTypeSystemAdministrator->id)->whereNull('deleted_at')->inRandomOrder()->first();
@@ -49,15 +44,9 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product",
+            "/api/order",
             [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
+                'product_id' => null,
             ],
             [],
             [],
@@ -84,15 +73,9 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product",
+            "/api/order",
             [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
+                'product_id' => null,
             ],
             [],
             [],
@@ -119,15 +102,9 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product",
+            "/api/order",
             [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
+                'product_id' => null,
             ],
             [],
             [],
@@ -154,15 +131,9 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product",
+            "/api/order",
             [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
+                'product_id' => null,
             ],
             [],
             [],
@@ -174,12 +145,12 @@ class ProductTest extends TestCase
         $this->assertResponseStatus(200);
     }
 
-    // $router->post('product', ['uses' => 'ProductController@productCreate']);
-    // $router->get('product/{id}', ['uses' => 'ProductController@productGet']);
-    public function testProductGet() {
+    // $router->post('order', ['uses' => 'OrderController@orderAdd']);
+    // $router->get('order/{id}', ['uses' => 'OrderController@orderGet']);
+    public function testOrderGet() {
         $this->call(
             "GET",
-            "/api/product/123434",
+            "/api/order/123434",
             [],
             [],
             [],
@@ -188,30 +159,7 @@ class ProductTest extends TestCase
             ],
             ""
         );
-        $this->assertResponseStatus(200);
-
-        $this->call(
-            "GET",
-            "/api/product",
-            [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
-            ],
-            [],
-            [],
-            [
-                'HTTP_token' => null,
-            ],
-            ""
-        );
-
-        $productList = json_decode($this->response->content());
-        $product = $productList[array_rand($productList)];
+        $this->assertResponseStatus(401);
 
         $userTypeSystemAdministrator = UserType::where('name', self::USER_TYPE_SYSTEM_ADMINISTRATOR)->whereNull('deleted_at')->first();
         $userSystemAdministrator = User::where('user_type_id', $userTypeSystemAdministrator->id)->whereNull('deleted_at')->inRandomOrder()->first();
@@ -229,8 +177,25 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product/{$product->id}",
+            "/api/order/123434",
             [],
+            [],
+            [],
+            [
+                'HTTP_token' => $accessTokenSystemAdministrator->token,
+            ],
+            ""
+        );
+        $this->assertResponseStatus(200);
+
+        $order = Order::whereNull('deleted_at')->inRandomOrder()->first();
+
+        $this->call(
+            "GET",
+            "/api/order/{$order->id}",
+            [
+                'product_id' => null,
+            ],
             [],
             [],
             [
@@ -256,20 +221,29 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product/{$product->id}",
-            [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
-            ],
+            "/api/order/123434",
+            [],
             [],
             [],
             [
                 'HTTP_token' => $accessTokenSystemOperator->token,
+            ],
+            ""
+        );
+        $this->assertResponseStatus(200);
+
+        $order = Order::whereNull('deleted_at')->inRandomOrder()->first();
+
+        $this->call(
+            "GET",
+            "/api/order/{$order->id}",
+            [
+                'product_id' => null,
+            ],
+            [],
+            [],
+            [
+                'HTTP_token' => $accessTokenSystemAdministrator->token,
             ],
             ""
         );
@@ -291,16 +265,8 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product/{$product->id}",
-            [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
-            ],
+            "/api/order/123434",
+            [],
             [],
             [],
             [
@@ -309,6 +275,34 @@ class ProductTest extends TestCase
             ""
         );
         $this->assertResponseStatus(200);
+
+        $order = \DB::table('order')
+            ->leftJoin('shop', 'shop.id', '=', 'order.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('order.*')
+            ->where('user.id', $userRetailer->id)
+            ->whereNull('order.deleted_at')
+            ->whereNull('shop.deleted_at')
+            ->inRandomOrder()
+            ->first()
+        ;
+
+        if (!empty($order)) {
+            $this->call(
+                "GET",
+                "/api/order/{$order->id}",
+                [
+                    'product_id' => null,
+                ],
+                [],
+                [],
+                [
+                    'HTTP_token' => $accessTokenRetailer->token,
+                ],
+                ""
+            );
+            $this->assertResponseStatus(200);
+        }
 
         $userTypeConsumer = UserType::where('name', self::USER_TYPE_CONSUMER)->whereNull('deleted_at')->first();
         $userConsumer = User::where('user_type_id', $userTypeConsumer->id)->whereNull('deleted_at')->inRandomOrder()->first();
@@ -326,16 +320,8 @@ class ProductTest extends TestCase
 
         $this->call(
             "GET",
-            "/api/product/{$product->id}",
-            [
-                'shop_id' => null,
-                'category_id' => null,
-                'name_en' => null,
-                'sort' => null,
-                'page_number' => null,
-                'page_size' => null,
-                'access_token_user_id' => null,
-            ],
+            "/api/order/123434",
+            [],
             [],
             [],
             [
@@ -344,12 +330,37 @@ class ProductTest extends TestCase
             ""
         );
         $this->assertResponseStatus(200);
+
+        $order = \DB::table('order')
+            ->leftJoin('cart', 'cart.id', '=', 'order.cart_id')
+            ->leftJoin('user', 'user.id', '=', 'cart.user_id')
+            ->select('order.*')
+            ->where('user.id', $userConsumer->id)
+            ->whereNull('order.deleted_at')
+            ->whereNull('cart.deleted_at')
+            ->inRandomOrder()
+            ->first()
+        ;
+
+        if (!empty($order)) {
+            $this->call(
+                "GET",
+                "/api/order/{$order->id}",
+                [
+                    'product_id' => null,
+                ],
+                [],
+                [],
+                [
+                    'HTTP_token' => $accessTokenConsumer->token,
+                ],
+                ""
+            );
+            $this->assertResponseStatus(200);
+        }
     }
 
-    // $router->delete('product/{id}', ['uses' => 'ProductController@productDelete']);
-    // $router->patch('product/{id}', ['uses' => 'ProductController@productModify']);
-    // $router->put('productstock/{product_id}', ['uses' => 'ProductController@productStockPut']);
-    // $router->post('productstock/{product_id}', ['uses' => 'ProductController@productStockPost']);
-    // $router->delete('productstock/{product_id}', ['uses' => 'ProductController@productStockDelete']);
+    // $router->delete('order/{id}', ['uses' => 'OrderController@orderDelete']);
+    // $router->patch('order/{id}',  ['uses' => 'OrderController@orderModify']);
 }
 

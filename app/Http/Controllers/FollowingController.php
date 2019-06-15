@@ -146,7 +146,7 @@ class FollowingController extends Controller
      *     ),
      * )
      */
-    public function productFollowingGet(int $product_id)
+    public function productFollowingGet(int $product_id, Request $request)
     {
         $productQuery = \DB::table('product')
             ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
@@ -590,7 +590,7 @@ class FollowingController extends Controller
      *     ),
      * )
      */
-    public function shopFollowingGet(int $shop_id)
+    public function shopFollowingGet(int $shop_id, Request $request)
     {
         $shopQuery = \DB::table('shop')
             ->leftJoin('user', 'user.id', '=', 'shop.user_id')

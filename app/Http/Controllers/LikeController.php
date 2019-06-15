@@ -146,7 +146,7 @@ class LikeController extends Controller
      *     ),
      * )
      */
-    public function blogLikeGet(int $blog_id)
+    public function blogLikeGet(int $blog_id, Request $request)
     {
         $blogQuery = \DB::table('blog')
             ->leftJoin('shop', 'shop.id', '=', 'blog.shop_id')
