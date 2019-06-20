@@ -902,6 +902,10 @@ class UserController extends Controller
                     'success' => false,
                     'message' => 'Invalid gender',
                 ], 400);
+            } else if ($request->gender == "") {
+                $request->request->add([
+                    'gender' => null,
+                ]);
             } else {
                 $request->request->add([
                     'gender' => strtolower(substr($request->gender, 0, 1)),

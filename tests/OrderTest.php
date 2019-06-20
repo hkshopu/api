@@ -46,6 +46,7 @@ class OrderTest extends TestCase
             "GET",
             "/api/order",
             [
+                'shop_id' => null,
                 'product_id' => null,
             ],
             [],
@@ -75,6 +76,7 @@ class OrderTest extends TestCase
             "GET",
             "/api/order",
             [
+                'shop_id' => null,
                 'product_id' => null,
             ],
             [],
@@ -104,6 +106,7 @@ class OrderTest extends TestCase
             "GET",
             "/api/order",
             [
+                'shop_id' => null,
                 'product_id' => null,
             ],
             [],
@@ -133,6 +136,7 @@ class OrderTest extends TestCase
             "GET",
             "/api/order",
             [
+                'shop_id' => null,
                 'product_id' => null,
             ],
             [],

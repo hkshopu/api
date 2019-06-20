@@ -9,7 +9,7 @@ class Controller extends BaseController
     /**
      * @OA\Info(
      *   title="API Explorer ",
-     *   version="0.38.0",
+     *   version="0.39.0",
      *   @OA\Contact(
      *     email="jancarlotaylo@gmail.com",
      *     name="Engineering Support Team"

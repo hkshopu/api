@@ -150,20 +150,22 @@ class ViewTest extends TestCase
         );
 
         $orderList = json_decode($this->response->content());
-        $order = $orderList[array_rand($orderList)];
+        if (!empty($orderList)) {
+            $order = $orderList[array_rand($orderList)];
 
-        $this->call(
-            "GET",
-            "/api/orderview/{$order->id}",
-            [],
-            [],
-            [],
-            [
-                'HTTP_token' => $accessTokenSystemAdministrator->token,
-            ],
-            ""
-        );
-        $this->assertResponseStatus(200);
+            $this->call(
+                "GET",
+                "/api/orderview/{$order->id}",
+                [],
+                [],
+                [],
+                [
+                    'HTTP_token' => $accessTokenSystemAdministrator->token,
+                ],
+                ""
+            );
+            $this->assertResponseStatus(200);
+        }
 
         $userTypeSystemOperator = UserType::where('name', self::USER_TYPE_SYSTEM_OPERATOR)->whereNull('deleted_at')->first();
         $userSystemOperator = User::where('user_type_id', $userTypeSystemOperator->id)->whereNull('deleted_at')->inRandomOrder()->first();
@@ -194,20 +196,22 @@ class ViewTest extends TestCase
         );
 
         $orderList = json_decode($this->response->content());
-        $order = $orderList[array_rand($orderList)];
+        if (!empty($orderList)) {
+            $order = $orderList[array_rand($orderList)];
 
-        $this->call(
-            "GET",
-            "/api/orderview/{$order->id}",
-            [],
-            [],
-            [],
-            [
-                'HTTP_token' => $accessTokenSystemOperator->token,
-            ],
-            ""
-        );
-        $this->assertResponseStatus(200);
+            $this->call(
+                "GET",
+                "/api/orderview/{$order->id}",
+                [],
+                [],
+                [],
+                [
+                    'HTTP_token' => $accessTokenSystemOperator->token,
+                ],
+                ""
+            );
+            $this->assertResponseStatus(200);
+        }
 
         $userTypeRetailer = UserType::where('name', self::USER_TYPE_RETAILER)->whereNull('deleted_at')->first();
         $userRetailer = User::where('user_type_id', $userTypeRetailer->id)->whereNull('deleted_at')->inRandomOrder()->first();

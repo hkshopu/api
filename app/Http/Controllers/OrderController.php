@@ -51,6 +51,13 @@ class OrderController extends Controller
      *             type="string",
      *         )
      *     ),
+     *     @OA\Parameter(
+     *         name="shop_id",
+     *         in="query",
+     *         description="The shop id",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\Response(
      *         response="200",
      *         description="Returns all order",
@@ -67,12 +74,40 @@ class OrderController extends Controller
         $user = User::where('id', $request->access_token_user_id)->whereNull('deleted_at')->first();
         $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
 
+        $orderFilter = Order::whereNotNull('id');
+
+        if (isset($request->shop_id)) {
+            $shopQuery = \DB::table('shop')
+                ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                ->select('shop.*')
+                ->where('shop.id', $request->shop_id)
+                ->whereNull('shop.deleted_at');
+
+            if ($request->filter_inactive == true) {
+                $shopQuery
+                    ->whereNull('user.deleted_at');
+            }
+
+            $shop = $shopQuery->first();
+
+            if (empty($shop)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid shop id',
+                ], 400);
+            }
+
+            $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+
+            $orderFilter->where('order.shop_id', $request->shop_id);
+        }
+
         $orderList = null;
         $isConsumer = false;
         switch ($userType->name) {
             case 'system administrator':
             case 'system operator':
-                $orderList = Order::whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
+                $orderList = $orderFilter->whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
             break;
             case 'retailer':
                 $shopQuery = \DB::table('shop')
@@ -90,15 +125,15 @@ class OrderController extends Controller
 
                 if (!empty($shop)) {
                     $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
-                    $orderList = Order::where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
+                    $orderList = $orderFilter->where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
                 }
             break;
             case 'consumer':
                 $isConsumer = true;
-                $orderList = Order::where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->orderBy('created_at', 'DESC')->get();
+                $orderList = $orderFilter->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->orderBy('created_at', 'DESC')->get();
             break;
             default:
-                $orderList = Order::where('id', 0)->whereNull('deleted_at')->get();
+                $orderList = $orderFilter->where('id', 0)->whereNull('deleted_at')->get();
             break;
         }
 
