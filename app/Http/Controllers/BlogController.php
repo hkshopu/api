@@ -137,11 +137,11 @@ class BlogController extends Controller
 
             $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
-            $blogFilter->where('shop_id', $request->shop_id);
+            $blogFilter->where('blog.shop_id', $request->shop_id);
         }
 
         if (isset($request->title_en)) {
-            $blogFilter->where('title_en', 'LIKE', '%' . $request->title_en . '%');
+            $blogFilter->where('blog.title_en', 'LIKE', '%' . $request->title_en . '%');
         }
 
         $blogList = $blogFilter->get();
