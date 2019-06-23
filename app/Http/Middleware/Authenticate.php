@@ -44,6 +44,7 @@ class Authenticate
     {
         $request->request->add([
             'filter_inactive' => true,
+            'user_type' => 'guest',
         ]);
 
         $language = Language::where('code', self::DEFAULT_LANGUAGE)->whereNull('deleted_at')->first();
@@ -194,10 +195,13 @@ class Authenticate
             ]);
 
             $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+            $request->request->add([
+                'user_type' => $userType->name,
+            ]);
 
-            if ($userType->name == 'system administrator'
-                    || $userType->name == 'system operator'
-                    || $userType->name == 'retailer') {
+            if ($request->user_type == 'system administrator'
+                    || $request->user_type == 'system operator'
+                    || $request->user_type == 'retailer') {
                 $request->request->add([
                     'filter_inactive' => false,
                 ]);
