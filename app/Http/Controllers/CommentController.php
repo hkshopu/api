@@ -118,6 +118,9 @@ class CommentController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -206,6 +209,9 @@ class CommentController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -517,6 +523,9 @@ class CommentController extends Controller
 
         if ($request->filter_inactive == true) {
             $blogQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -607,6 +616,9 @@ class CommentController extends Controller
 
         if ($request->filter_inactive == true) {
             $blogQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }

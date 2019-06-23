@@ -70,11 +70,85 @@ class OrderController extends Controller
      *     ),
      * )
      */
-    public function orderList(Request $request = null) {
-        $user = User::where('id', $request->access_token_user_id)->whereNull('deleted_at')->first();
-        $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+    public function orderList(Request $request = null, int $user_id = null, int $product_id = null) {
+        $simplifyResult = true;
 
-        $orderFilter = Order::whereNotNull('id');
+        $user = User::where('id', $request->access_token_user_id)->whereNull('deleted_at')->first();
+        if (!empty($user)) {
+            $userType = UserType::where('id', $user->user_type_id)->whereNull('deleted_at')->first();
+        } else {
+            // Getting GUEST user type
+            $userType = UserType::where('name', 'guest')->whereNull('deleted_at')->first();
+        }
+
+        if (isset($user_id)) {
+            // Call is coming from /api/user
+            $call = 'user';
+        } else if (isset($product_id)) {
+            // Call is coming from /api/product
+            $call = 'product';
+            $user = User::where('id', (isset($user_id) ? $user_id : $request->access_token_user_id))->whereNull('deleted_at')->first();
+        } else {
+            // Call is coming from /api/order
+            $call = 'order';
+            $user = User::where('id', (isset($user_id) ? $user_id : $request->access_token_user_id))->whereNull('deleted_at')->first();
+        }
+
+        /*
+            =======================================
+            USE CASES
+
+            /api/order LIST
+
+            Sys Admin   ALL orders                      COVERED V
+            Retailer    ALL of retailer orders          COVERED IV
+            Consumer    ALL of consumer/user orders     COVERED II
+            Guest       Forbidden                       COVERED I
+
+            /api/user GET
+
+            Sys Admin   ALL of consumer/user orders     COVERED II
+            Retailer    ALL of consumer/user orders     COVERED II
+            Consumer    Empty                           COVERED I
+            Guest       Empty                           COVERED I
+
+            /api/product GET
+
+            Sys Admin   ALL of product orders           COVERED III
+            Retailer    ALL of product orders           COVERED III
+            Consumer    Empty                           COVERED I
+            Guest       Empty                           COVERED I
+        */
+
+        $orderFilter = \DB::table('order')
+            ->leftJoin('shop', 'shop.id', '=', 'order.shop_id')
+            ->leftJoin('cart', 'cart.id', '=', 'order.cart_id')
+            ->leftJoin('cart_item', 'cart_item.order_id', '=', 'order.id')
+            ->select('order.*')
+            ->whereNull('order.deleted_at')
+            ->whereNull('shop.deleted_at')
+            ->whereNull('cart.deleted_at')
+            ->whereNull('cart_item.deleted_at')
+            ->orderBy('order.id', 'ASC')
+        ;
+
+        if ($userType->name == 'guest' || ($userType->name == 'consumer' && $call <> 'order')) {
+            // Empty
+            $orderFilter->where('order.id', 0);
+        } else if ($userType->name == 'consumer' || $call == 'user') {
+            // ALL of consumer/user orders
+            $orderFilter->where('cart.user_id', $user_id ?? $request->access_token_user_id);
+        } else if ($call == 'product') {
+            // ALL of product orders
+            $orderFilter->where('cart_item.product_id', $product_id);
+        } else if ($userType->name == 'retailer') {
+            // ALL of retailer orders
+            $orderFilter->where('shop.user_id', $request->access_token_user_id);
+            $simplifyResult = false;
+        } else {
+            // ALL orders
+            $simplifyResult = false;
+        }
 
         if (isset($request->shop_id)) {
             $shopQuery = \DB::table('shop')
@@ -85,6 +159,9 @@ class OrderController extends Controller
 
             if ($request->filter_inactive == true) {
                 $shopQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('shop.id')
                     ->whereNull('user.deleted_at');
             }
 
@@ -102,46 +179,16 @@ class OrderController extends Controller
             $orderFilter->where('order.shop_id', $request->shop_id);
         }
 
-        $orderList = null;
-        $isConsumer = false;
-        switch ($userType->name) {
-            case 'system administrator':
-            case 'system operator':
-                $orderList = $orderFilter->whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
-            break;
-            case 'retailer':
-                $shopQuery = \DB::table('shop')
-                    ->leftJoin('user', 'user.id', '=', 'shop.user_id')
-                    ->select('shop.*')
-                    ->where('shop.user_id', $user->id)
-                    ->whereNull('shop.deleted_at');
-
-                if ($request->filter_inactive == true) {
-                    $shopQuery
-                        ->whereNull('user.deleted_at');
-                }
-
-                $shop = $shopQuery->first();
-
-                if (!empty($shop)) {
-                    $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
-                    $orderList = $orderFilter->where('shop_id', $shop->id)->whereNull('deleted_at')->orderBy('created_at', 'ASC')->get();
-                }
-            break;
-            case 'consumer':
-                $isConsumer = true;
-                $orderList = $orderFilter->where('created_by', $request->access_token_user_id)->whereNull('deleted_at')->orderBy('created_at', 'DESC')->get();
-            break;
-            default:
-                $orderList = $orderFilter->where('id', 0)->whereNull('deleted_at')->get();
-            break;
+        $orderList = [];
+        $orderListRaw = $orderFilter->get();
+        foreach ($orderListRaw as $orderItem) {
+            $orderInfo = self::orderGet($orderItem->id, $request)->getData();
+            if (!empty($orderInfo->shop_order)) {
+                $orderList[] = $orderInfo;
+            }
         }
 
-        foreach ($orderList as $orderKey => $order) {
-            $orderList[$orderKey] = self::orderGet($order->id, $request)->getData();
-        }
-
-        if ($isConsumer == true) {
+        if ($simplifyResult == true) {
             $orderListSimplified = [];
             foreach ($orderList as $order) {
                 $orderListSimplified[$order->id]['order_id'] = $order->id;
@@ -297,6 +344,9 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -580,6 +630,9 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
 
                 if ($request->filter_inactive == true) {
                     $shopQuery
+                        ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                        ->whereNotNull('shop_payment_method_map.id')
+                        ->groupBy('shop.id')
                         ->whereNull('user.deleted_at');
                 }
 

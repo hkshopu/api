@@ -24,6 +24,7 @@ class UserTest extends TestCase
                 'page_size' => null,
                 'product_id' => null,
                 'access_token_user_id' => null,
+                'shop_id' => null,
             ],
             [],
             [],
@@ -39,7 +40,10 @@ class UserTest extends TestCase
         $this->call(
             "GET",
             "/api/user/123434",
-            [],
+            [
+                'shop_id' => null,
+                'access_token_user_id' => null,
+            ],
             [],
             [],
             [],
@@ -57,6 +61,7 @@ class UserTest extends TestCase
                 'page_size' => null,
                 'product_id' => null,
                 'access_token_user_id' => null,
+                'shop_id' => null,
             ],
             [],
             [],
@@ -70,7 +75,10 @@ class UserTest extends TestCase
         $this->call(
             "GET",
             "/api/user/{$user->id}",
-            [],
+            [
+                'shop_id' => null,
+                'access_token_user_id' => null,
+            ],
             [],
             [],
             [],

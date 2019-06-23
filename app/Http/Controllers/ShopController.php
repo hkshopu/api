@@ -63,14 +63,14 @@ class ShopController extends Controller
      *         in="query",
      *         description="Result page number, default is 1",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="page_size",
      *         in="query",
      *         description="Result page size, default is 25",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -95,6 +95,9 @@ class ShopController extends Controller
 
             if ($request->filter_inactive == true) {
                 $shopListQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('shop.id')
                     ->whereNull('user.deleted_at');
             }
 
@@ -107,6 +110,9 @@ class ShopController extends Controller
 
             if ($request->filter_inactive == true) {
                 $shopListQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('shop.id')
                     ->whereNull('user.deleted_at');
             }
 
@@ -117,6 +123,7 @@ class ShopController extends Controller
         $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
+        $totalRecords = count($shopList);
 
         $shopListPaginated = [];
         foreach ($shopList as $shopKey => $shop) {
@@ -128,9 +135,10 @@ class ShopController extends Controller
         $shopList = $shopListPaginated;
         $shopListActive = [];
 
-        foreach ($shopList as $shopKey => $shop) {
+        foreach ($shopList as $shop) {
             $shopInfo = self::shopGet($shop->id, $request)->getData();
-            if (!empty($shopInfo->id)) {
+            $shopInfo->total_records = $totalRecords;
+            if (!empty($shopInfo) && !empty($shopInfo->id)) {
                 $shopListActive[] = $shopInfo;
             }
         }
@@ -316,6 +324,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -428,6 +439,9 @@ class ShopController extends Controller
 
             if ($request->filter_inactive == true) {
                 $productQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('product.id')
                     ->whereNull('shop.deleted_at')
                     ->whereNull('user.deleted_at');
             }
@@ -499,6 +513,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -522,6 +539,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -667,6 +687,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -867,6 +890,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -987,6 +1013,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -1115,6 +1144,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -1293,6 +1325,9 @@ class ShopController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 

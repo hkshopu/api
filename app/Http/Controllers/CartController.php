@@ -125,6 +125,9 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
 
             if ($request->filter_inactive == true) {
                 $productQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('product.id')
                     ->whereNull('shop.deleted_at')
                     ->whereNull('user.deleted_at');
             }
@@ -200,7 +203,7 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                 foreach ($productGroup as $cartItemId) {
                     $cartItem = CartItem::where('id', $cartItemId)->whereNull('deleted_at')->first();
                     if (!empty($cartItem)) {
-                        $product = app('App\Http\Controllers\ProductController')->productGet($cartItem->product_id, $request)->getData();
+                        $product = app('App\Http\Controllers\ProductController')->productGetClone($cartItem->product_id, $request)->getData();
                         if (!empty($product)) {
                             $productShipping = ProductShipping::where('product_id', $cartItem->product_id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
                             if (!empty($productShipping)) {
@@ -470,6 +473,9 @@ If no token is provided, but has <strong>cart_id</strong>, it will populate the 
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -868,6 +874,9 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
 
             if ($request->filter_inactive == true) {
                 $shopQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('shop.id')
                     ->whereNull('user.deleted_at');
             }
 
@@ -933,6 +942,9 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
 
                     if ($request->filter_inactive == true) {
                         $productQuery
+                            ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                            ->whereNotNull('shop_payment_method_map.id')
+                            ->groupBy('product.id')
                             ->whereNull('shop.deleted_at')
                             ->whereNull('user.deleted_at');
                     }

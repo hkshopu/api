@@ -72,7 +72,7 @@ class ProductController extends Controller
      *         in="query",
      *         description="The category id",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="name_en",
@@ -93,14 +93,14 @@ class ProductController extends Controller
      *         in="query",
      *         description="Result page number, default is 1",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="page_size",
      *         in="query",
      *         description="Result page size, default is 25",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -124,6 +124,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productFilter
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -137,6 +140,9 @@ class ProductController extends Controller
 
             if ($request->filter_inactive == true) {
                 $shopQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('shop.id')
                     ->whereNull('user.deleted_at');
             }
 
@@ -245,6 +251,9 @@ class ProductController extends Controller
 
             if ($request->filter_inactive == true) {
                 $productItemQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('product.id')
                     ->whereNull('shop.deleted_at')
                     ->whereNull('user.deleted_at');
             }
@@ -261,6 +270,7 @@ class ProductController extends Controller
         $pageSize = (!isset($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
+        $totalRecords = count($productList);
 
         $productListPaginated = [];
         foreach ($productList as $productKey => $product) {
@@ -270,16 +280,17 @@ class ProductController extends Controller
         }
 
         $productList = $productListPaginated;
-        $productActive = [];
+        $productListActive = [];
 
         foreach ($productList as $product) {
-            $productGet = self::productGet($product->id, $request)->getData();
-            if (!empty($productGet) && !empty($productGet->id)) {
-                $productActive[] = $productGet;
+            $productInfo = self::productGet($product->id, $request)->getData();
+            $productInfo->total_records = $totalRecords;
+            if (!empty($productInfo) && !empty($productInfo->id)) {
+                $productListActive[] = $productInfo;
             }
         }
 
-        $productList = $productActive;
+        $productList = $productListActive;
 
         return response()->json($productList, 200);
     }
@@ -483,6 +494,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -716,6 +730,291 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
+                ->whereNull('shop.deleted_at')
+                ->whereNull('user.deleted_at');
+        }
+
+        $product = $productQuery->first();
+
+        if (!empty($product)) {
+            $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
+
+            // LANGUAGE Translation
+            $product->name = Language::translate($request, $product, 'name');
+            $product->description = Language::translate($request, $product, 'description');
+
+            // Explicit exclusion of the deleted_at field to still get username who created the product
+            $createUser = User::where('id', $product->created_by)->first();
+            $product['created_by_user'] = $createUser->only([
+                'id',
+                'username',
+                'email',
+                'first_name',
+                'middle_name',
+                'last_name',
+            ]);
+
+            // Explicit exclusion of the deleted_at field to still get username who updated the product
+            $updateUser = User::where('id', $product->updated_by)->first();
+            $product['updated_by_user'] = $updateUser->only([
+                'id',
+                'username',
+                'email',
+                'first_name',
+                'middle_name',
+                'last_name',
+            ]);
+
+            $productEntity = Entity::where('name', $product->getTable())->first();
+
+            $categoryMap = CategoryMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($categoryMap)) {
+                $product['category'] = Category::where('id', $categoryMap->category_id)->whereNull('deleted_at')->first();
+                $categoryRoot[] = CategoryLevel::buildRoot([
+                    'category' => Category::where('id', $categoryMap->category_id)->whereNull('deleted_at')->first()->toArray(),
+                ]);
+                $product['category_root'] = $categoryRoot;
+            } else {
+                $product['category'] = null;
+                $product['category_root'] = null;
+            }
+
+            $productPricing = ProductPricing::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($productPricing)) {
+                $product['price_original'] = $productPricing->price;
+            } else {
+                $product['price_original'] = 0.00;
+            }
+
+            $productDiscount = ProductDiscount::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($productDiscount) && $productDiscount->amount <> 0) {
+                if ($productDiscount->type == 'fixed') {
+                    $product['price_discounted'] = $product['price_original'] - $productDiscount->amount;
+                } else if ($productDiscount->type == 'percentage') {
+                    $product['price_discounted'] = $product['price_original'] * (1 - abs($productDiscount->amount));
+                }
+            } else {
+                $product['price_discounted'] = null;
+            }
+
+            $productShipping = ProductShipping::where('product_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($productShipping)) {
+                $product['shipping_price'] = $productShipping->amount;
+            } else {
+                $product['shipping_price'] = 0.00;
+            }
+
+            $product['sell'] = 0;
+
+            $product['sell_via_order'] = 0;
+            $product['sell_object_order'] = null;
+
+            $productSellPerCartOrder = [];
+            $cartItemList = CartItem::where('product_id', $product->id)->whereNotNull('order_id')->whereNull('deleted_at')->get();
+            foreach ($cartItemList as $cartItemItem) {
+                // Getting PAID status for payment
+                $order = Order::where('id', $cartItemItem->order_id)->whereNull('deleted_at')->first();
+                $statusPayment = Status::where('name', 'paid')->whereNull('deleted_at')->first();
+                $paymentEntity = Entity::where('name', 'payment')->first();
+                $statusMapPayment = StatusMap::where('entity', $paymentEntity->id)->where('entity_id', $order->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+                if ($statusMapPayment->status_id <> $statusPayment->id) {
+                    continue;
+                }
+
+                $productAttribute = ProductAttribute::where('product_id', $cartItemItem->product_id)->where('attribute_id', $cartItemItem->attribute_id)->whereNull('deleted_at')->first();
+
+                if (!empty($productAttribute)) {
+                    if (!isset($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id])) {
+                        $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id] = [];
+                        $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
+                    }
+
+                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id][] = $cartItemItem->quantity;
+                    $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] += $cartItemItem->quantity;
+
+                    if ($productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] < 0) {
+                        $productSellPerCartOrder['Order:' . $cartItemItem->order_id . '_Cart:' . $cartItemItem->cart_id . '_ProductAttribute:' . $productAttribute->id . '_computed'] = 0;
+                    }
+                }
+            }
+
+            foreach ($productSellPerCartOrder as $key => $value) {
+                if (strpos($key, '_computed')) {
+                    $product['sell_via_order'] += $value;
+                }
+            }
+
+            $product['sell_object_order'] = $productSellPerCartOrder;
+
+            $product['sell_via_inventory'] = 0;
+            $product['sell_object_inventory'] = null;
+
+            $product['stock'] = 0;
+
+            $statusMap = StatusMap::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($statusMap)) {
+                $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                $product['status'] = (!empty($status)) ? $status->name : null;
+            } else {
+                $product['status'] = null;
+            }
+
+            $productInventory = [];
+            $productSellPerInventory = [];
+            $productInventoryQuery = \DB::table('product_inventory')
+                ->leftJoin('product_attribute', 'product_attribute.id', '=', 'product_inventory.product_attribute_id')
+                ->leftJoin('product', 'product.id', '=', 'product_attribute.product_id')
+                ->leftJoin('attribute', 'attribute.id', '=', 'product_attribute.attribute_id')
+                ->select('product_inventory.*', 'product_attribute.product_id', 'product_attribute.attribute_id')
+                ->where('product.id', $product->id)
+                ->whereNull('product_inventory.deleted_at')
+                ->whereNull('product_attribute.deleted_at')
+                ->whereNull('product.deleted_at')
+                ->whereNull('attribute.deleted_at')
+            ;
+
+            $productInventoryListArray = $productInventoryQuery->get()->toArray();
+
+            foreach ($productInventoryListArray as $productInventoryItem) {
+                if (!isset($productInventory[$productInventoryItem->product_attribute_id])) {
+                    $productInventory[$productInventoryItem->product_attribute_id] = array(
+                        'product_attribute_id' => $productInventoryItem->product_attribute_id,
+                        'product_id' => $productInventoryItem->product_id,
+                        'attribute_id' => $productInventoryItem->attribute_id,
+                        'stock' => $productInventoryItem->stock,
+                    );
+                } else {
+                    $productInventory[$productInventoryItem->product_attribute_id]['stock'] += $productInventoryItem->stock;
+                }
+
+                if ($productInventoryItem->order_id != null) {
+                    $product['sell_via_inventory'] += abs($productInventoryItem->stock);
+                    $productSellPerInventory[] = $productInventoryItem;
+                }
+            }
+
+            $product['sell_object_inventory'] = $productSellPerInventory;
+
+            $product['sell'] = $product['sell_via_inventory'];
+
+            // Comment to enable debugging
+            unset($product['sell_via_order']);
+            unset($product['sell_object_order']);
+            unset($product['sell_via_inventory']);
+            unset($product['sell_object_inventory']);
+
+            $productAttributeList = [];
+            $productStock = 0;
+            foreach ($productInventory as $productInventoryItem) {
+                $productAttribute = ProductAttribute::where('id', $productInventoryItem['product_attribute_id'])->whereNull('deleted_at')->first();
+                $productAttributeStock = (int) $productInventoryItem['stock'];
+                $productStock += $productAttributeStock;
+
+                if (empty($productAttribute)) {
+                    continue;
+                }
+
+                $productAttribute->stock = $productAttributeStock;
+                $productAttribute->size = null;
+                $productAttribute->color = null;
+                $productAttribute->other = null;
+
+                $attribute = Attribute::where('id', $productAttribute->attribute_id)->whereNull('deleted_at')->first();
+                if (empty($attribute)) {
+                    $productAttribute = null;
+                    continue;
+                }
+
+                // Replace product attribute id with attribute id
+                $productAttribute->id = $attribute->id;
+                unset($productAttribute->product_id);
+                unset($productAttribute->attribute_id);
+
+                $productAttribute->other = $attribute->other;
+
+                if (!empty($attribute->size_id)) {
+                    $productAttribute->size = Size::where('id', $attribute->size_id)->whereNull('deleted_at')->first();
+                }
+
+                if (!empty($attribute->color_id)) {
+                    $productAttribute->color = Color::where('id', $attribute->color_id)->whereNull('deleted_at')->first();
+                }
+
+                $productAttributeList[] = $productAttribute;
+            }
+
+            $product['stock'] = $productStock;
+            $product['attributes'] = $productAttributeList;
+
+            $image = new Image();
+            $imageEntity = Entity::where('name', $image->getTable())->first();
+            $imageList = Image::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->get();
+            $product['image'] = $imageList;
+            foreach ($imageList as $imageKey => $imageItem) {
+                $imageFollowingList = Following::where('entity', $imageEntity->id)->where('entity_id', $imageItem->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+                $product['image'][$imageKey]['followers'] = count($imageFollowingList);
+            }
+
+            $productRatingList = Rating::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+            $productRatingTotal = 0;
+            $productUserRating = null;
+            foreach ($productRatingList as $productRatingItem) {
+                $productRatingTotal += $productRatingItem->rate;
+                if ($productRatingItem->created_by == $request->access_token_user_id) {
+                    $productUserRating = $productRatingItem->rate;
+                }
+            }
+            $productRating = [
+                'average' => $productRatingTotal / (count($productRatingList) ?: 1),
+                'count' => count($productRatingList),
+                'user_rating' => $productUserRating,
+            ];
+            $product['rating'] = $productRating;
+
+            $productFollowingList = Following::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->get();
+            $product['followers'] = count($productFollowingList);
+
+            $product['is_following'] = false;
+            foreach ($productFollowingList as $following) {
+                if (!empty($following) && $following->created_by == $request->access_token_user_id) {
+                    $product['is_following'] = true;
+                    break;
+                }
+            }
+
+            $productViewList = View::where('entity', $productEntity->id)->where('entity_id', $product->id)->whereNull('deleted_at')->get();
+            $product['views'] = count($productViewList);
+
+            $request->request->add([
+                'product_id' => $product->id,
+            ]);
+
+            $product['shop'] = app('App\Http\Controllers\ShopController')->shopGet($product->shop_id, $request)->getData();
+            unset($product['shop_id']);
+
+            $product['order'] = app('App\Http\Controllers\OrderController')->orderList($request, null, $product->id)->getData();
+        }
+
+        return response()->json($product, 200);$productAttribute;
+    }
+
+    public function productGetClone(int $id, Request $request = null)
+    {
+        $productQuery = \DB::table('product')
+            ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+            ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+            ->select('product.*')
+            ->where('product.id', $id)
+            ->whereNull('product.deleted_at');
+
+        if ($request->filter_inactive == true) {
+            $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -993,6 +1292,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -1064,6 +1366,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -1290,6 +1595,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -1342,6 +1650,9 @@ class ProductController extends Controller
 
             if ($request->filter_inactive == true) {
                 $shopQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('shop.id')
                     ->whereNull('user.deleted_at');
             }
 
@@ -1622,6 +1933,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -1823,6 +2137,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -1971,6 +2288,9 @@ class ProductController extends Controller
 
         if ($request->filter_inactive == true) {
             $productQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }

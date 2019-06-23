@@ -59,7 +59,7 @@ class BlogController extends Controller
      *         in="query",
      *         description="The category id",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="title_en",
@@ -73,14 +73,14 @@ class BlogController extends Controller
      *         in="query",
      *         description="Result page number, default is 1",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="page_size",
      *         in="query",
      *         description="Result page size, default is 25",
      *         required=false,
-     *         @OA\Schema(type="int")
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -104,6 +104,9 @@ class BlogController extends Controller
 
         if ($request->filter_inactive == true) {
             $blogFilter
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -117,6 +120,9 @@ class BlogController extends Controller
 
             if ($request->filter_inactive == true) {
                 $shopQuery
+                    ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                    ->whereNotNull('shop_payment_method_map.id')
+                    ->groupBy('shop.id')
                     ->whereNull('user.deleted_at');
             }
 
@@ -175,6 +181,7 @@ class BlogController extends Controller
         $pageSize = (!isset($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
+        $totalRecords = count($blogList);
 
         $blogListPaginated = [];
         foreach ($blogList as $blogKey => $blog) {
@@ -184,9 +191,14 @@ class BlogController extends Controller
         }
 
         $blogList = $blogListPaginated;
+        $blogListActive = [];
 
-        foreach ($blogList as $blogKey => $blog) {
-            $blogList[$blogKey] = self::blogGet($blog->id, $request)->getData();
+        foreach ($blogList as $blog) {
+            $blogInfo = self::blogGet($blog->id, $request)->getData();
+            $blogInfo->total_records = $totalRecords;
+            if (!empty($blogInfo) && !empty($blogInfo->id)) {
+                $blogListActive[] = $blogInfo;
+            }
         }
 
         return response()->json($blogList, 200);
@@ -307,6 +319,9 @@ class BlogController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 
@@ -424,6 +439,9 @@ class BlogController extends Controller
 
         if ($request->filter_inactive == true) {
             $blogQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -519,6 +537,9 @@ class BlogController extends Controller
 
         if ($request->filter_inactive == true) {
             $blogQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -688,6 +709,9 @@ class BlogController extends Controller
 
         if ($request->filter_inactive == true) {
             $blogQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
         }
@@ -713,6 +737,9 @@ class BlogController extends Controller
 
         if ($request->filter_inactive == true) {
             $shopQuery
+                ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                ->whereNotNull('shop_payment_method_map.id')
+                ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
 

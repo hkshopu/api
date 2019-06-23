@@ -180,7 +180,10 @@ class ProductTest extends TestCase
         $this->call(
             "GET",
             "/api/product/123434",
-            [],
+            [
+                'shop_id' => null,
+                'access_token_user_id' => null,
+            ],
             [],
             [],
             [
@@ -230,7 +233,10 @@ class ProductTest extends TestCase
         $this->call(
             "GET",
             "/api/product/{$product->id}",
-            [],
+            [
+                'shop_id' => null,
+                'access_token_user_id' => null,
+            ],
             [],
             [],
             [

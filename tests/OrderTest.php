@@ -18,7 +18,10 @@ class OrderTest extends TestCase
         $this->call(
             "GET",
             "/api/order",
-            [],
+            [
+                'shop_id' => null,
+                'product_id' => null,
+            ],
             [],
             [],
             [
@@ -155,7 +158,10 @@ class OrderTest extends TestCase
         $this->call(
             "GET",
             "/api/order/123434",
-            [],
+            [
+                'shop_id' => null,
+                'product_id' => null,
+            ],
             [],
             [],
             [
@@ -182,7 +188,10 @@ class OrderTest extends TestCase
         $this->call(
             "GET",
             "/api/order/123434",
-            [],
+            [
+                'shop_id' => null,
+                'product_id' => null,
+            ],
             [],
             [],
             [
@@ -198,6 +207,7 @@ class OrderTest extends TestCase
             "GET",
             "/api/order/{$order->id}",
             [
+                'shop_id' => null,
                 'product_id' => null,
             ],
             [],
@@ -226,7 +236,10 @@ class OrderTest extends TestCase
         $this->call(
             "GET",
             "/api/order/123434",
-            [],
+            [
+                'shop_id' => null,
+                'product_id' => null,
+            ],
             [],
             [],
             [
@@ -242,6 +255,7 @@ class OrderTest extends TestCase
             "GET",
             "/api/order/{$order->id}",
             [
+                'shop_id' => null,
                 'product_id' => null,
             ],
             [],
@@ -270,7 +284,10 @@ class OrderTest extends TestCase
         $this->call(
             "GET",
             "/api/order/123434",
-            [],
+            [
+                'shop_id' => null,
+                'product_id' => null,
+            ],
             [],
             [],
             [
@@ -296,6 +313,7 @@ class OrderTest extends TestCase
                 "GET",
                 "/api/order/{$order->id}",
                 [
+                    'shop_id' => null,
                     'product_id' => null,
                 ],
                 [],
@@ -325,7 +343,10 @@ class OrderTest extends TestCase
         $this->call(
             "GET",
             "/api/order/123434",
-            [],
+            [
+                'shop_id' => null,
+                'product_id' => null,
+            ],
             [],
             [],
             [
@@ -351,6 +372,7 @@ class OrderTest extends TestCase
                 "GET",
                 "/api/order/{$order->id}",
                 [
+                    'shop_id' => null,
                     'product_id' => null,
                 ],
                 [],
