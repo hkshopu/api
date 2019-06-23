@@ -20,7 +20,7 @@ class CreateUserTable extends Migration
         Schema::create(self::TABLE_NAME, function (Blueprint $table) {
             $table->bigInteger('id', 1)->unsigned();
             $table->string('username', 512)->unique();
-            $table->string('email', 512)->unique();
+            $table->string('email', 512);
             $table->text('salt')->nullable();
             $table->text('password')->nullable();
             $table->string('first_name', 512)->nullable();
