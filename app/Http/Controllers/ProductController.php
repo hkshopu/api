@@ -50,7 +50,7 @@ class ProductController extends Controller
      *     operationId="productList",
      *     tags={"Product"},
      *     summary="Retrieves all product",
-     *     description="Retrieves all product, filterable by category id AND product name (in English) or ANY, with pagination.",
+     *     description="Retrieves all product, filterable by shop id, category id AND product name (in English) or ANY, with pagination.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",

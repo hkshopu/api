@@ -41,7 +41,7 @@ class OrderController extends Controller
      *     operationId="orderList",
      *     tags={"Order"},
      *     summary="Retrieves all order",
-     *     description="Retrieves all order of the consumer.",
+     *     description="Retrieves all order of the consumer, filterable by shop id.",
      *     @OA\Parameter(
      *         name="token",
      *         in="header",
