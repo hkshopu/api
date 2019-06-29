@@ -201,6 +201,8 @@ class BlogController extends Controller
             }
         }
 
+        $blogList = $blogListActive;
+
         return response()->json($blogList, 200);
     }
 

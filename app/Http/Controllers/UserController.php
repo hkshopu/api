@@ -183,6 +183,8 @@ class UserController extends Controller
             }
         }
 
+        $userList = $userListActive;
+
         return response()->json($userList, 200);
     }
 
