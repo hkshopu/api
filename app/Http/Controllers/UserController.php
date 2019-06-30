@@ -650,14 +650,16 @@ class UserController extends Controller
 
                 // Possibly some users hasn't initialized its cart yet
                 if (!empty($cartObject)) {
-                    $cart = app('App\Http\Controllers\CartController')->cartGet($cartObject->id, $request)->getData();
                     $cartItemCount = 0;
-    
-                    foreach ($cart->shop as $cartShop) {
-                        if (!empty($cartShop->product)) {
-                            foreach ($cartShop->product as $cartShopProduct) {
-                                if (!empty($cartShopProduct->cart_item_id)) {
-                                    $cartItemCount += $cartShopProduct->quantity;
+                    $cart = app('App\Http\Controllers\CartController')->cartGet($cartObject->id, $request)->getData();
+
+                    if (!empty($cart) && !empty($cart->shop)) {
+                        foreach ($cart->shop as $cartShop) {
+                            if (!empty($cartShop->product)) {
+                                foreach ($cartShop->product as $cartShopProduct) {
+                                    if (!empty($cartShopProduct->cart_item_id)) {
+                                        $cartItemCount += $cartShopProduct->quantity;
+                                    }
                                 }
                             }
                         }

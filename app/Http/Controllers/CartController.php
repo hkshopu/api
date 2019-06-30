@@ -78,11 +78,6 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
      */
     public function cartGet(string $cart_id = null, Request $request = null)
     {
-        // This endpoint is for Consumer / Guest ONLY
-        if (!in_array($request->user_type, ['consumer', 'guest'])) {
-            return response()->json((object)[], 200);
-        }
-
         if (isset($cart_id)) {
             $cart = Cart::where('id', $cart_id)->whereNull('deleted_at')->first();
         }
