@@ -98,6 +98,20 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             'shop' => [],
         ];
 
+        // Re-validate active product list
+        $cartItemListActive = CartItem::where('cart_id', $cart->id)->whereNull('order_id')->whereNull('deleted_at');
+        $cartItemListIds = [];
+
+        foreach ($cartItemList as $cartItemItem) {
+            $productInfo = app('App\Http\Controllers\ProductController')->productGet($cartItemItem->product_id, $request, false)->getData();
+            if (!empty($productInfo->id)) {
+                $cartItemListIds[] = $cartItemItem->id;
+            }
+        }
+
+        $cartItemListActive->whereIn('id', $cartItemListIds);
+        $cartItemList = $cartItemListActive->get();
+
         if (!empty($cartItemList)) {
             $data['shop'] = $this->cartItemList($cartItemList, $request)->getData();
         }

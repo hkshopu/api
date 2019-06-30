@@ -976,6 +976,10 @@ class ProductController extends Controller
 
                 $productAttributeList = $productAttributeListFiltered;
                 $productStock = $productStockFiltered;
+
+                if ($productStock <= 0 || empty($productAttributeList)) {
+                    return response()->json((object)[], 200);
+                }
             }
 
             $product['stock'] = $productStock;
@@ -1191,6 +1195,11 @@ class ProductController extends Controller
                 ->whereNull('attribute.deleted_at')
             ;
 
+            if ($request->user_type == 'retailer') {
+                $productInventoryQuery->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
+                    ->where('shop.user_id', $request->access_token_user_id);
+            }
+
             $productInventoryListArray = $productInventoryQuery->get()->toArray();
 
             foreach ($productInventoryListArray as $productInventoryItem) {
@@ -1203,6 +1212,11 @@ class ProductController extends Controller
                     );
                 } else {
                     $productInventory[$productInventoryItem->product_attribute_id]['stock'] += $productInventoryItem->stock;
+
+                    // Avoid negative stock
+                    if ($productInventory[$productInventoryItem->product_attribute_id]['stock'] < 0) {
+                        $productInventory[$productInventoryItem->product_attribute_id]['stock'] = 0;
+                    }
                 }
 
                 if ($productInventoryItem->order_id != null) {
@@ -1259,6 +1273,24 @@ class ProductController extends Controller
                 }
 
                 $productAttributeList[] = $productAttribute;
+            }
+
+            if ((in_array($request->user_type, ['consumer', 'guest'])) && (env('ALLOW_EMPTY_STOCK') == false || env('ALLOW_EMPTY_ATTRIBUTE') == false)) {
+                $productAttributeListFiltered = [];
+                $productStockFiltered = 0;
+                foreach ($productAttributeList as $productAttributeItem) {
+                    if  ((env('ALLOW_EMPTY_STOCK') == true || $productAttributeItem->stock > 0 ) && (env('ALLOW_EMPTY_ATTRIBUTE') == true || ($productAttributeItem->size <> null && $productAttributeItem->color <> null))) {
+                        $productAttributeListFiltered[] = $productAttributeItem;
+                        $productStockFiltered += $productAttributeItem->stock;
+                    }
+                }
+
+                $productAttributeList = $productAttributeListFiltered;
+                $productStock = $productStockFiltered;
+
+                if ($productStock <= 0 || empty($productAttributeList)) {
+                    return response()->json((object)[], 200);
+                }
             }
 
             $product['stock'] = $productStock;
