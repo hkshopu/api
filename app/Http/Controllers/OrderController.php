@@ -184,7 +184,7 @@ class OrderController extends Controller
         $orderList = [];
         $orderListRaw = $orderFilter->get();
         foreach ($orderListRaw as $orderItem) {
-            $orderInfo = self::orderGet($orderItem->id, $request)->getData();
+            $orderInfo = self::orderGetTwoPointOw($orderItem->id, $request)->getData();
             if (!empty($orderInfo->shop_order)) {
                 $orderList[] = $orderInfo;
             }
@@ -686,6 +686,214 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
             $order['order_date'] = $order->created_at->format('Y-m-d H:i:s');
 
             $cartItemList = CartItem::where('order_id', $order->id)->whereNull('deleted_at')->get();
+            $shopOrderList = app('App\Http\Controllers\CartController')->cartItemList($cartItemList, $request, true)->getData();
+            $order['shop_order'] = current($shopOrderList);
+
+            if (!empty($order->shop_order)) {
+                $order->shop_cart_gross = $order->shop_order->total_amount_discounted;
+                $order->shipping_fee_original = $order->shop_order->shipment_fee_computed;
+                $order->shop_order_total = $order->shop_cart_gross + ($shipmentFeeOverride ?? $order->shop_order->shipment_fee_computed);
+            }
+        }
+
+        return response()->json($order, 200);
+    }
+
+    public function orderGetTwoPointOw(int $id, Request $request = null)
+    {
+        $orderQuery = \DB::table('order')
+            ->leftJoin('cart_item', 'cart_item.order_id', '=', 'order.id')
+            ->leftJoin('cart', 'cart.id', '=', 'cart_item.cart_id')
+            ->leftJoin('user', 'user.id', '=', 'cart.user_id')
+            ->leftJoin('shop', 'shop.id', '=', 'order.shop_id')
+            ->select([
+                'order.id',
+                'order.cart_id',
+                'order.shop_id',
+                'order.shop_payment_method_id',
+                'order.shipment_receiver',
+                'order.shipment_address',
+            ])
+            ->where('order.id', $id)
+            ->whereNull('order.deleted_at')
+            ->whereNull('cart_item.deleted_at')
+            ->whereNull('cart.deleted_at')
+        ;
+
+        $orderQuery->addSelect([
+            \DB::raw("0.00 AS shop_cart_gross"),
+            \DB::raw("0.00 AS shipping_fee_original"),
+        ]);
+
+        $orderQuery->addSelect([
+            'order.shipment_fee_override',
+        ]);
+
+        $orderQuery->addSelect([
+            \DB::raw("0.00 AS shop_order_total"),
+        ]);
+
+        $orderQuery->addSelect([
+            'order.created_at',
+            'order.created_by',
+        ]);
+
+        $orderQuery->addSelect([
+            'user.id AS user_id',
+            'user.username AS user_username',
+            'user.email AS user_email',
+            'user.first_name AS user_first_name',
+            'user.middle_name AS user_middle_name',
+            'user.last_name AS user_last_name',
+            'user.gender AS user_gender',
+            'user.birth_date AS user_birth_date',
+            'user.mobile_phone AS user_mobile_phone',
+            'user.address AS user_address',
+            'user.user_type_id AS user_user_type_id',
+            'user.activation_key AS user_activation_key',
+            'user.language_id AS user_language_id',
+            'user.created_at AS user_created_at',
+        ]);
+
+        $orderQuery->addSelect([
+            \DB::raw("NULL AS user_image_url"),
+        ]);
+
+        $orderQuery->addSelect([
+            'shop.id AS shop_id',
+            'shop.name AS shop_name',
+            'shop.name_en AS shop_name_en',
+            'shop.name_tc AS shop_name_tc',
+            'shop.name_sc AS shop_name_sc',
+            'shop.description AS shop_description',
+            'shop.description_en AS shop_description_en',
+            'shop.description_tc AS shop_description_tc',
+            'shop.description_sc AS shop_description_sc',
+            'shop.logo_url AS shop_logo_url',
+            'shop.user_id AS shop_user_id',
+            'shop.created_at AS shop_created_at',
+        ]);
+
+        $orderQuery->addSelect([
+            \DB::raw("NULL AS shop_image_url"),
+        ]);
+
+        $orderQuery->addSelect([
+            \DB::raw("NULL AS is_new"),
+            \DB::raw("NULL AS order_status"),
+            \DB::raw("NULL AS payment_status"),
+        ]);
+
+        $orderQuery->addSelect([
+            'order.created_at AS order_date',
+        ]);
+
+        $orderInfo = $orderQuery->first();
+        $order = [];
+
+        if (!empty($orderInfo)) {
+            $request->request->add([
+                'filter_inactive' => false,
+            ]);
+
+            $order['id'] = $orderInfo->id;
+            $order['cart_id'] = $orderInfo->cart_id;
+            $order['shop_id'] = $orderInfo->shop_id;
+            $order['shop_payment_method_id'] = $orderInfo->shop_payment_method_id;
+            $order['shipment_receiver'] = $orderInfo->shipment_receiver;
+            $order['shipment_address'] = $orderInfo->shipment_address;
+            $order['shop_cart_gross'] = (float) $orderInfo->shop_cart_gross;
+            $order['shipping_fee_original'] = (float) $orderInfo->shipping_fee_original;
+            $order['shipment_fee_override'] = (float) $orderInfo->shipment_fee_override;
+            $order['shop_order_total'] = (float) $orderInfo->shop_order_total;
+            $order['created_at'] = $orderInfo->created_at;
+            $order['created_by'] = $orderInfo->created_by;
+
+            $order['user'] = [];
+            $order['user']['id'] = $orderInfo->user_id;
+            $order['user']['username'] = $orderInfo->user_username;
+            $order['user']['email'] = $orderInfo->user_email;
+            $order['user']['first_name'] = $orderInfo->user_first_name;
+            $order['user']['middle_name'] = $orderInfo->user_middle_name;
+            $order['user']['last_name'] = $orderInfo->user_last_name;
+            $order['user']['gender'] = $orderInfo->user_gender;
+            $order['user']['birth_date'] = $orderInfo->user_birth_date;
+            $order['user']['mobile_phone'] = $orderInfo->user_mobile_phone;
+            $order['user']['address'] = $orderInfo->user_address;
+            $order['user']['user_type_id'] = $orderInfo->user_user_type_id;
+            $order['user']['activation_key'] = $orderInfo->user_activation_key;
+            $order['user']['language_id'] = $orderInfo->user_language_id;
+            $order['user']['created_at'] = $orderInfo->user_created_at;
+
+            $user = new User();
+            $userEntity = Entity::where('name', $user->getTable())->first();
+            $image = Image::where('entity', $userEntity->id)->where('entity_id', $orderInfo->user_id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+            $order['user']['image_url'] = !empty($image) ? $image->url : null;
+
+            $order['shop'] = [];
+
+            if (!empty($orderInfo->shop_id)) {
+                $shopQuery = \DB::table('shop')
+                    ->leftJoin('user', 'user.id', '=', 'shop.user_id')
+                    ->select('shop.*')
+                    ->where('shop.id', $orderInfo->shop_id)
+                    ->whereNull('shop.deleted_at');
+
+                if ($request->filter_inactive == true) {
+                    $shopQuery
+                        ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
+                        ->whereNotNull('shop_payment_method_map.id')
+                        ->groupBy('shop.id')
+                        ->whereNull('user.deleted_at');
+                }
+
+                $shop = $shopQuery->first();
+
+                if (!empty($shop)) {
+                    $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
+
+                    // LANGUAGE Translation
+                    $shop->name = Language::translate($request, $shop, 'name');
+                    $shop->description = Language::translate($request, $shop, 'description');
+
+                    $shopEntity = Entity::where('name', $shop->getTable())->first();
+                    $image = Image::where('entity', $shopEntity->id)->where('entity_id', $shop->id)->whereNull('deleted_at')->where('sort', '<>', 0)->orderBy('sort', 'ASC')->first();
+                    $shop['image_url'] = !empty($image) ? $image->url : null;
+                    $order['shop'] = $shop->toArray();
+                }
+            }
+
+            $order['is_new'] = true;
+            $orderViewList = app('App\Http\Controllers\ViewController')->orderViewGet($orderInfo->id)->getData();
+            foreach ($orderViewList as $orderViewItem) {
+                if ($request->access_token_user_id == $orderViewItem->created_by) {
+                    $order['is_new'] = false;
+                    break;
+                }
+            }
+
+            $orderObject = new Order();
+            $orderEntity = Entity::where('name', $orderObject->getTable())->first();
+            $paymentEntity = Entity::where('name', 'payment')->first();
+            $orderInfoStatusMap = StatusMap::where('entity', $orderEntity->id)->where('entity_id', $orderInfo->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($orderInfoStatusMap)) {
+                $orderInfoStatus = Status::where('id', $orderInfoStatusMap->status_id)->whereNull('deleted_at')->first();
+                $order['order_status'] = (!empty($orderInfoStatus)) ? $orderInfoStatus->name : null;
+            } else {
+                $order['order_status'] = null;
+            }
+
+            $paymentStatusMap = StatusMap::where('entity', $paymentEntity->id)->where('entity_id', $orderInfo->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+            if (!empty($paymentStatusMap)) {
+                $paymentStatus = Status::where('id', $paymentStatusMap->status_id)->whereNull('deleted_at')->first();
+                $order['payment_status'] = (!empty($paymentStatus)) ? $paymentStatus->name : null;
+            } else {
+                $order['payment_status'] = null;
+            }
+
+            $order['order_date'] = $orderInfo->order_date;
+
+            $cartItemList = CartItem::where('order_id', $orderInfo->id)->whereNull('deleted_at')->get();
             $shopOrderList = app('App\Http\Controllers\CartController')->cartItemList($cartItemList, $request, true)->getData();
             $order['shop_order'] = current($shopOrderList);
 

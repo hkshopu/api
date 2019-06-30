@@ -25,6 +25,35 @@ class BlogTest extends TestCase
             ""
         );
         $this->assertResponseStatus(200);
+
+        $this->seeJsonStructure([
+            [
+                'id',
+                'title',
+                'title_en',
+                'title_tc',
+                'title_sc',
+                'content',
+                'content_en',
+                'content_tc',
+                'content_sc',
+                'is_top',
+                'shop_id',
+                'date_publish_start',
+                'date_publish_end',
+                'created_at',
+                'category' => [
+                    'id',
+                    'name',
+                ],
+                'status',
+                'image',
+                'views',
+                'likes',
+                'comments',
+                'total_records',
+            ]
+        ]);
     }
 
     // $router->post('blog', ['uses' => 'BlogController@blogCreate']);
