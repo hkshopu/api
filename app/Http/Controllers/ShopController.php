@@ -125,27 +125,30 @@ class ShopController extends Controller
         $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
-        $totalRecords = count($shopList);
 
-        $shopListPaginated = [];
-        foreach ($shopList as $shopKey => $shop) {
-            if ($shopKey >= $pageStart && $shopKey <= $pageEnd) {
-                $shopListPaginated[] = $shop;
-            }
-        }
-
-        $shopList = $shopListPaginated;
         $shopListActive = [];
 
         foreach ($shopList as $shop) {
             $shopInfo = self::shopGet($shop->id, $request)->getData();
-            $shopInfo->total_records = $totalRecords;
             if (!empty($shopInfo) && !empty($shopInfo->id)) {
                 $shopListActive[] = $shopInfo;
             }
         }
 
         $shopList = $shopListActive;
+
+        $totalRecords = count($shopList);
+
+        $shopListPaginated = [];
+
+        foreach ($shopList as $shopKey => $shop) {
+            if ($shopKey >= $pageStart && $shopKey <= $pageEnd) {
+                $shop->total_records = $totalRecords;
+                $shopListPaginated[] = $shop;
+            }
+        }
+
+        $shopList = $shopListPaginated;
 
         return response()->json($shopList, 200);
     }

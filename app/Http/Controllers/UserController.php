@@ -163,27 +163,30 @@ class UserController extends Controller
         $pageSize = (empty($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
-        $totalRecords = count($userList);
 
-        $userListPaginated = [];
-        foreach ($userList as $userKey => $user) {
-            if ($userKey >= $pageStart && $userKey <= $pageEnd) {
-                $userListPaginated[] = $user;
-            }
-        }
-
-        $userList = $userListPaginated;
         $userListActive = [];
 
         foreach ($userList as $user) {
             $userInfo = self::userGet($user->id, $request)->getData();
-            $userInfo->total_records = $totalRecords;
             if (!empty($userInfo) && !empty($userInfo->id)) {
                 $userListActive[] = $userInfo;
             }
         }
 
         $userList = $userListActive;
+
+        $totalRecords = count($userList);
+
+        $userListPaginated = [];
+
+        foreach ($userList as $userKey => $user) {
+            if ($userKey >= $pageStart && $userKey <= $pageEnd) {
+                $user->total_records = $totalRecords;
+                $userListPaginated[] = $user;
+            }
+        }
+
+        $userList = $userListPaginated;
 
         return response()->json($userList, 200);
     }

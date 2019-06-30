@@ -164,6 +164,7 @@ class BlogController extends Controller
         $blogEntity = Entity::where('name', $blog->getTable())->first();
 
         $blogFilteredList = [];
+
         foreach ($blogList as $blog) {
             foreach ($categoryList as $category) {
                 if (!empty(CategoryMap::where('entity', $blogEntity->id)
@@ -183,27 +184,30 @@ class BlogController extends Controller
         $pageSize = (!isset($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
-        $totalRecords = count($blogList);
 
-        $blogListPaginated = [];
-        foreach ($blogList as $blogKey => $blog) {
-            if ($blogKey >= $pageStart && $blogKey <= $pageEnd) {
-                $blogListPaginated[] = $blog;
-            }
-        }
-
-        $blogList = $blogListPaginated;
         $blogListActive = [];
 
         foreach ($blogList as $blog) {
             $blogInfo = self::blogGet($blog->id, $request)->getData();
-            $blogInfo->total_records = $totalRecords;
             if (!empty($blogInfo) && !empty($blogInfo->id)) {
                 $blogListActive[] = $blogInfo;
             }
         }
 
         $blogList = $blogListActive;
+
+        $totalRecords = count($blogList);
+
+        $blogListPaginated = [];
+
+        foreach ($blogList as $blogKey => $blog) {
+            if ($blogKey >= $pageStart && $blogKey <= $pageEnd) {
+                $blog->total_records = $totalRecords;
+                $blogListPaginated[] = $blog;
+            }
+        }
+
+        $blogList = $blogListPaginated;
 
         return response()->json($blogList, 200);
     }

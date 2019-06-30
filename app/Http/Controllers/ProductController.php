@@ -273,27 +273,30 @@ class ProductController extends Controller
         $pageSize = (!isset($request->page_size) || $request->page_size <= 0) ? 25 : (int) $request->page_size;
         $pageStart = ($pageNumber - 1) * $pageSize;
         $pageEnd = $pageNumber * $pageSize - 1;
-        $totalRecords = count($productList);
 
-        $productListPaginated = [];
-        foreach ($productList as $productKey => $product) {
-            if ($productKey >= $pageStart && $productKey <= $pageEnd) {
-                $productListPaginated[] = $product;
-            }
-        }
-
-        $productList = $productListPaginated;
         $productListActive = [];
 
         foreach ($productList as $product) {
             $productInfo = self::productGet($product->id, $request)->getData();
-            $productInfo->total_records = $totalRecords;
             if (!empty($productInfo) && !empty($productInfo->id) && $productInfo->stock > 0) {
                 $productListActive[] = $productInfo;
             }
         }
 
         $productList = $productListActive;
+
+        $totalRecords = count($productList);
+
+        $productListPaginated = [];
+
+        foreach ($productList as $productKey => $product) {
+            if ($productKey >= $pageStart && $productKey <= $pageEnd) {
+                $product->total_records = $totalRecords;
+                $productListPaginated[] = $product;
+            }
+        }
+
+        $productList = $productListPaginated;
 
         return response()->json($productList, 200);
     }
