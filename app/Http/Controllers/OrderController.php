@@ -130,6 +130,7 @@ class OrderController extends Controller
             ->whereNull('cart.deleted_at')
             ->whereNull('cart_item.deleted_at')
             ->orderBy('order.id', 'ASC')
+            ->groupBy('order.id')
         ;
 
         if ($userType->name == 'guest' || ($userType->name == 'consumer' && $call <> 'order')) {
@@ -363,6 +364,30 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
 
         $shop = Shop::where('id', $shop->id)->whereNull('deleted_at')->first();
 
+        $paymentMethod = PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first();
+        if (empty($paymentMethod)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid payment method id',
+            ], 400);
+        }
+
+        $shopPaymentMethodMap = ShopPaymentMethodMap::where('shop_id', $shop->id)->where('payment_method_id', $request->payment_method_id)->whereNull('deleted_at')->first();
+        if (empty($shopPaymentMethodMap)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method not available for that shop',
+            ], 400);
+        }
+
+        $request->request->add([
+            'shop_payment_method_id' => $shopPaymentMethodMap->id,
+            'shipment_receiver' => $request->receiver ?? null,
+            'shipment_address' => $request->address ?? null,
+            'created_by' => $request->access_token_user_id,
+            'updated_by' => $request->access_token_user_id,
+        ]);
+
         $cartItemArray = app('App\Http\Controllers\CartController')->cartGet($cart->id, $request)->getData();
         $shopArray = $cartItemArray->shop;
 
@@ -393,30 +418,6 @@ As for payment: If successful, payment status = 'Paid'. If not, payment status =
                 ], 400);
             }
         }
-
-        $paymentMethod = PaymentMethod::where('id', $request->payment_method_id)->whereNull('deleted_at')->first();
-        if (empty($paymentMethod)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid payment method id',
-            ], 400);
-        }
-
-        $shopPaymentMethodMap = ShopPaymentMethodMap::where('shop_id', $request->shop_id)->where('payment_method_id', $request->payment_method_id)->whereNull('deleted_at')->first();
-        if (empty($shopPaymentMethodMap)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment method not available for that shop',
-            ], 400);
-        }
-
-        $request->request->add([
-            'shop_payment_method_id' => $shopPaymentMethodMap->id,
-            'shipment_receiver' => $request->receiver ?? null,
-            'shipment_address' => $request->address ?? null,
-            'created_by' => $request->access_token_user_id,
-            'updated_by' => $request->access_token_user_id,
-        ]);
 
         if (isset($request->is_successful)) {
             $paymentStatus = $request->is_successful ? 'paid' : 'wait for payment';

@@ -78,6 +78,11 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
      */
     public function cartGet(string $cart_id = null, Request $request = null)
     {
+        // This endpoint is for Consumer / Guest ONLY
+        if (!in_array($request->user_type, ['consumer', 'guest'])) {
+            return response()->json((object)[], 200);
+        }
+
         if (isset($cart_id)) {
             $cart = Cart::where('id', $cart_id)->whereNull('deleted_at')->first();
         }
@@ -88,18 +93,17 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             }
         }
 
-        $cartItemList = null;
-        if (!empty($cart)) {
-            $cartItemList = CartItem::where('cart_id', $cart->id)->whereNull('order_id')->whereNull('deleted_at')->get();
-        }
-
         $data = [
             'cart_id' => $cart->id ?? null,
             'shop' => [],
         ];
 
-        // Re-validate active product list
-        $cartItemListActive = CartItem::where('cart_id', $cart->id)->whereNull('order_id')->whereNull('deleted_at');
+        if (empty($cart)) {
+            return response()->json($data, 200);
+        }
+
+        $cartItemList = CartItem::where('cart_id', $cart->id)->whereNull('order_id')->whereNull('deleted_at')->get();
+
         $cartItemListIds = [];
 
         foreach ($cartItemList as $cartItemItem) {
@@ -108,6 +112,9 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                 $cartItemListIds[] = $cartItemItem->id;
             }
         }
+
+        // Re-validate active product list
+        $cartItemListActive = CartItem::where('cart_id', $cart->id)->whereNull('order_id')->whereNull('deleted_at');
 
         $cartItemListActive->whereIn('id', $cartItemListIds);
         $cartItemList = $cartItemListActive->get();
@@ -128,13 +135,46 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             'shop' => [],
         ];
 
+        $newList = [];
+
+        foreach ($cartItemList as $cartItem) {
+            $cartItemIndex = "{$cartItem->cart_id}:{$cartItem->product_id}:{$cartItem->attribute_id}";
+            if (isset($newList[$cartItemIndex])) {
+                $newList[$cartItemIndex]['quantity'] += $cartItem->quantity;
+
+                // Avoid negative quantity
+                if ($newList[$cartItemIndex]['quantity'] < 0) {
+                    $newList[$cartItemIndex]['quantity'] = 0;
+                }
+            } else {
+                $newList[$cartItemIndex]['cart_item_id'] = $cartItem->id;
+                $newList[$cartItemIndex]['quantity'] = $cartItem->quantity;
+            }
+        }
+
+        $newerList = [];
+
+        foreach ($newList as $itemKey => $newItem) {
+            $item = [];
+            $itemKeyArray = explode(':', $itemKey);
+            $item['id'] = $newItem['cart_item_id'];
+            $item['cart_id'] = $itemKeyArray[0];
+            $item['product_id'] = $itemKeyArray[1];
+            $item['attribute_id'] = $itemKeyArray[2];
+            $item['quantity'] = $newItem['quantity'];
+            $newerList[] = $item;
+        }
+
+        $cartItemList = $newerList;
+
         $productGroupList = [];
+
         foreach ($cartItemList as $cartItem) {
             $productQuery = \DB::table('product')
                 ->leftJoin('shop', 'shop.id', '=', 'product.shop_id')
                 ->leftJoin('user', 'user.id', '=', 'shop.user_id')
                 ->select('product.*')
-                ->where('product.id', $cartItem->product_id)
+                ->where('product.id', $cartItem['product_id'])
                 ->whereNull('product.deleted_at');
 
             if ($request->filter_inactive == true) {
@@ -152,13 +192,15 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
             if (!empty($product)) {
                 $product = Product::where('id', $product->id)->whereNull('deleted_at')->first();
                 $productGroupList[$product->shop_id][] = [
-                    'cart_item_id' => $cartItem->id,
+                    'cart_item_id' => $cartItem['id'],
+                    'quantity' => $cartItem['quantity'],
                 ];
             }
         }
 
 //SAVE.THIS        echo "=== Raw Version: \r\n\r\n";
         $shopCtr = 0;
+
         foreach ($productGroupList as $shopId => $productGroup) {
             $shop = app('App\Http\Controllers\ShopController')->shopGet($shopId, $request)->getData();
 
@@ -213,10 +255,9 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                     'shop_cart_total' => 0.00,
                 ];
 
-                $productCtr = 0;
                 $data['shop'][$shopCtr]['product'] = [];
-                foreach ($productGroup as $cartItemId) {
-                    $cartItem = CartItem::where('id', $cartItemId)->whereNull('deleted_at')->first();
+                foreach ($productGroup as $productKey => $cartItemItem) {
+                    $cartItem = CartItem::where('id', $cartItemItem['cart_item_id'])->whereNull('deleted_at')->first();
                     if (!empty($cartItem)) {
                         $product = app('App\Http\Controllers\ProductController')->productGetClone($cartItem->product_id, $request)->getData();
                         if (!empty($product)) {
@@ -231,92 +272,55 @@ If no token is provided, it will need the <strong>cart_id</strong> to retrieve t
                             $attribute['color'] = Color::where('id', $attribute->color_id)->whereNull('deleted_at')->first();
                             $attribute['size'] = Size::where('id', $attribute->size_id)->whereNull('deleted_at')->first();
 
-                            $cartShopProductIndex = $productCtr;
-
-                            // Merge similar product and attribute in cart
-                            $isProductAndAttributeExists = false;
-                            foreach ($data['shop'][$shopCtr]['product'] as $key => $item) {
-                                if ($item['product_id'] == $cartItem->product_id
-                                    && $item['attribute_id'] == $cartItem->attribute_id) {
-                                        $isProductAndAttributeExists = true;
-                                        $cartShopProductIndex = $key;
-                                    break;
-                                }
-                            }
 //SAVE.THIS                            echo "Cart: {$cartItem->cart_id}, Product: {$cartItem->product_id}, Attribute: {$cartItem->attribute_id}, Quantity: {$cartItem->quantity} \r\n";
 
-                            $cartItemQuantity = $cartItem->quantity;
-                            if ($isProductAndAttributeExists == true) {
-                                if ($cartItem->quantity < 0) {
-                                    if (abs($cartItem->quantity) > $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity']) {
-                                        $cartItemQuantity = -1 * $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity'];
-                                    }
-                                }
-                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['merge_count'] += 1;
-                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['quantity'] += $cartItemQuantity;
-                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['total_price'] += ($cartItemQuantity * $product->price_original);
-                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['total_price_discounted'] += !empty($product->price_discounted) ? ($cartItemQuantity * $product->price_discounted) : null;
-                                $data['shop'][$shopCtr]['product'][$cartShopProductIndex]['shipping_price_total'] += ($cartItemQuantity * $shippingPrice);
+                            $cartItemQuantity = $cartItemItem['quantity'];
 
-                                $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
-                                $data['shop'][$shopCtr]['total_quantity'] += $cartItemQuantity;
-                                $data['shop'][$shopCtr]['total_amount'] += ($cartItemQuantity * $product->price_original);
-                                $data['shop'][$shopCtr]['total_amount_discounted'] += $cartItemQuantity * (!empty($product->price_discounted) ? $product->price_discounted : $product->price_original);
-                                $data['shop'][$shopCtr]['shipment_fee_computed'] += ($cartItemQuantity * $shippingPrice);
-
-                                $productCtr++;
-                            } else {
-                                if ($cartItem->quantity > 0) {
-                                    $orderItemStatus = null;
-                                    $orderItemEntity = Entity::where('name', 'order_item')->first();
-                                    $statusMap = StatusMap::where('entity', $orderItemEntity->id)->where('entity_id', $cartItem->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
-                                    if (!empty($statusMap)) {
-                                        $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
-                                        if (!empty($status)) {
-                                            $orderItemStatus = $status->name;
-                                        }
-                                    }
-
-                                    $data['shop'][$shopCtr]['product'][$cartShopProductIndex] = [
-                                        'cart_item_id' => $cartItem->id,
-                                        'product_id' => $cartItem->product_id,
-                                        'attribute_id' => $cartItem->attribute_id,
-                                        'attribute' => $attribute,
-                                        'image_url' => $product->image[0]->url ?? null,
-                                        'name' => $product->name,
-                                        'name_en' => $product->name_en,
-                                        'name_tc' => $product->name_tc,
-                                        'name_sc' => $product->name_sc,
-                                        'shop_name' => $shop->name,
-                                        'shop_name_en' => $shop->name_en,
-                                        'shop_name_tc' => $shop->name_tc,
-                                        'shop_name_sc' => $shop->name_sc,
-                                        'description' => $product->description,
-                                        'description_en' => $product->description_en,
-                                        'description_tc' => $product->description_tc,
-                                        'description_sc' => $product->description_sc,
-                                        'merge_count' => 1,
-                                        'cart_date' => $cartItem->created_at->format('Y-m-d H:i:s'),
-                                        'product_date' => $product->created_at,
-                                        'price' => $product->price_original,
-                                        'price_discounted' => $product->price_discounted,
-                                        'quantity' => $cartItemQuantity,
-                                        'total_price' => $cartItemQuantity * $product->price_original,
-                                        'total_price_discounted' => !empty($product->price_discounted) ? $cartItemQuantity * $product->price_discounted : null,
-                                        'shipping_price' => $shippingPrice,
-                                        'shipping_price_total' => $cartItemQuantity * $shippingPrice,
-                                        'order_item_status' => $orderItemStatus,
-                                    ];
-
-                                    $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
-                                    $data['shop'][$shopCtr]['total_quantity'] += $cartItemQuantity;
-                                    $data['shop'][$shopCtr]['total_amount'] += ($cartItemQuantity * $product->price_original);
-                                    $data['shop'][$shopCtr]['total_amount_discounted'] += $cartItemQuantity * (!empty($product->price_discounted) ? $product->price_discounted : $product->price_original);
-                                    $data['shop'][$shopCtr]['shipment_fee_computed'] += ($cartItemQuantity * $shippingPrice);
-
-                                    $productCtr++;
+                            $orderItemStatus = null;
+                            $orderItemEntity = Entity::where('name', 'order_item')->first();
+                            $statusMap = StatusMap::where('entity', $orderItemEntity->id)->where('entity_id', $cartItem->id)->whereNull('deleted_at')->orderBy('id', 'DESC')->first();
+                            if (!empty($statusMap)) {
+                                $status = Status::where('id', $statusMap->status_id)->whereNull('deleted_at')->first();
+                                if (!empty($status)) {
+                                    $orderItemStatus = $status->name;
                                 }
                             }
+
+                            $data['shop'][$shopCtr]['product'][$productKey] = [
+                                'cart_item_id' => $cartItem->id,
+                                'product_id' => $cartItem->product_id,
+                                'attribute_id' => $cartItem->attribute_id,
+                                'attribute' => $attribute,
+                                'image_url' => $product->image[0]->url ?? null,
+                                'name' => $product->name,
+                                'name_en' => $product->name_en,
+                                'name_tc' => $product->name_tc,
+                                'name_sc' => $product->name_sc,
+                                'shop_name' => $shop->name,
+                                'shop_name_en' => $shop->name_en,
+                                'shop_name_tc' => $shop->name_tc,
+                                'shop_name_sc' => $shop->name_sc,
+                                'description' => $product->description,
+                                'description_en' => $product->description_en,
+                                'description_tc' => $product->description_tc,
+                                'description_sc' => $product->description_sc,
+                                'cart_date' => $cartItem->created_at->format('Y-m-d H:i:s'),
+                                'product_date' => $product->created_at,
+                                'price' => $product->price_original,
+                                'price_discounted' => $product->price_discounted,
+                                'quantity' => $cartItemQuantity,
+                                'total_price' => $cartItemQuantity * $product->price_original,
+                                'total_price_discounted' => !empty($product->price_discounted) ? $cartItemQuantity * $product->price_discounted : null,
+                                'shipping_price' => $shippingPrice,
+                                'shipping_price_total' => $cartItemQuantity * $shippingPrice,
+                                'order_item_status' => $orderItemStatus,
+                            ];
+
+                            $data['shop'][$shopCtr]['cart_date'] = $cartItem->created_at->format('Y-m-d H:i:s');
+                            $data['shop'][$shopCtr]['total_quantity'] += $cartItemQuantity;
+                            $data['shop'][$shopCtr]['total_amount'] += ($cartItemQuantity * $product->price_original);
+                            $data['shop'][$shopCtr]['total_amount_discounted'] += $cartItemQuantity * (!empty($product->price_discounted) ? $product->price_discounted : $product->price_original);
+                            $data['shop'][$shopCtr]['shipment_fee_computed'] += ($cartItemQuantity * $shippingPrice);
                         }
                     }
                 }
