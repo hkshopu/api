@@ -79,6 +79,7 @@ class ImageController extends Controller
             $productQuery
                 ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
                 ->whereNotNull('shop_payment_method_map.id')
+                ->whereNull('shop_payment_method_map.deleted_at')
                 ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
@@ -175,6 +176,7 @@ class ImageController extends Controller
             $productQuery
                 ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
                 ->whereNotNull('shop_payment_method_map.id')
+                ->whereNull('shop_payment_method_map.deleted_at')
                 ->groupBy('product.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
@@ -271,6 +273,7 @@ class ImageController extends Controller
             $shopQuery
                 ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
                 ->whereNotNull('shop_payment_method_map.id')
+                ->whereNull('shop_payment_method_map.deleted_at')
                 ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
@@ -365,6 +368,7 @@ class ImageController extends Controller
             $shopQuery
                 ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
                 ->whereNotNull('shop_payment_method_map.id')
+                ->whereNull('shop_payment_method_map.deleted_at')
                 ->groupBy('shop.id')
                 ->whereNull('user.deleted_at');
         }
@@ -461,6 +465,7 @@ class ImageController extends Controller
             $blogQuery
                 ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
                 ->whereNotNull('shop_payment_method_map.id')
+                ->whereNull('shop_payment_method_map.deleted_at')
                 ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
@@ -557,6 +562,7 @@ class ImageController extends Controller
             $blogQuery
                 ->leftJoin('shop_payment_method_map', 'shop_payment_method_map.shop_id', '=', 'shop.id')
                 ->whereNotNull('shop_payment_method_map.id')
+                ->whereNull('shop_payment_method_map.deleted_at')
                 ->groupBy('blog.id')
                 ->whereNull('shop.deleted_at')
                 ->whereNull('user.deleted_at');
