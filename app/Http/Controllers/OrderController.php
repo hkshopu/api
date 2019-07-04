@@ -184,7 +184,7 @@ class OrderController extends Controller
         $orderList = [];
         $orderListRaw = $orderFilter->get();
         foreach ($orderListRaw as $orderItem) {
-            $orderInfo = self::orderGetTwoPointOw($orderItem->id, $request)->getData();
+            $orderInfo = self::orderGet($orderItem->id, $request)->getData();
             if (!empty($orderInfo->shop_order)) {
                 $orderList[] = $orderInfo;
             }
