@@ -935,6 +935,11 @@ class ProductController extends Controller
                     continue;
                 }
 
+                if (empty($productAttribute->attribute_id)) {
+                    $productStock -= $productAttributeStock;
+                    continue;
+                }
+
                 $productAttribute->stock = $productAttributeStock;
                 $productAttribute->size = null;
                 $productAttribute->color = null;
