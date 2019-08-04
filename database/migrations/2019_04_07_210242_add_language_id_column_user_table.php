@@ -38,3 +38,4 @@ class AddLanguageIdColumnUserTable extends Migration
         });
     }
 }
+

@@ -36,3 +36,4 @@ class ModifyProductNameDescriptionColumn extends Migration
         });
     }
 }
+

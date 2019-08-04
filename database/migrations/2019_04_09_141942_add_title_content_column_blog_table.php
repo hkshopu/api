@@ -38,3 +38,4 @@ class AddTitleContentColumnBlogTable extends Migration
         });
     }
 }
+

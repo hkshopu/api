@@ -61,3 +61,4 @@ class PopulateLangugeStatusMap extends Migration
         }
     }
 }
+

@@ -37,3 +37,4 @@ class ModifyShopNameDescriptionColumn extends Migration
         });
     }
 }
+

@@ -36,3 +36,4 @@ class ModifyBlogTitleContentColumn extends Migration
         });
     }
 }
+

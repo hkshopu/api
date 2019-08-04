@@ -18,4 +18,3 @@ class Controller extends BaseController
      */
 }
 
-

@@ -39,3 +39,4 @@ class InsertLanguageEntity extends Migration
         ]);
     }
 }
+

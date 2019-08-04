@@ -49,3 +49,4 @@ class CreateLanguageTable extends Migration
         Schema::dropIfExists(self::TABLE_NAME);
     }
 }
+

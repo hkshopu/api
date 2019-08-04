@@ -1146,3 +1146,4 @@ If no token is provided, it will need the <strong>cart_id</strong> to update the
         return response()->json(self::cartGet($cartActual->id, $request)->getData(), 201);
     }
 }
+
