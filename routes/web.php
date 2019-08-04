@@ -172,3 +172,4 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('orderview/{order_id}',  ['uses' => 'ViewController@orderViewGet']);
 
 });
+

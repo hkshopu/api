@@ -79,3 +79,4 @@ class CreateShopTable extends Migration
         Schema::dropIfExists(self::TABLE_NAME);
     }
 }
+

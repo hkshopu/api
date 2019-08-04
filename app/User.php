@@ -59,3 +59,4 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         'deleted_by',
     ];
 }
+

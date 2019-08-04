@@ -1446,3 +1446,4 @@ class ShopController extends Controller
         return response()->json($shipmentList, 200);
     }
 }
+
